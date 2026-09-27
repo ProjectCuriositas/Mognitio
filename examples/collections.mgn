@@ -1,0 +1,10 @@
+type Page = product { title: String; score: Int; };
+let initial: List<Page> = List<Page>[Page { title: "one", score: 2 }];
+let pages: List<Page> = initial->append(Page { title: "two", score: 3 });
+var titles: String = "";
+var total: Int = 0;
+loop over (pages as page: Page) {
+    titles = titles + page.title;
+    total = total + page.score;
+};
+initial->length() == 1 && pages->length() == 2 && titles == "onetwo" && total == 5

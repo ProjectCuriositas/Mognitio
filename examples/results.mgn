@@ -1,0 +1,9 @@
+let prefix: Function(String): Result<String, SliceError> =
+    function(text: String): Result<String, SliceError> {
+        let first: String = try text->slice(0, 1);
+        Result<String, SliceError>::Ok(first + "!")
+    };
+branch on prefix("hello") {
+    Result<String, SliceError>::Ok(text: String) => text == "h!",
+    Result<String, SliceError>::Err => false,
+}

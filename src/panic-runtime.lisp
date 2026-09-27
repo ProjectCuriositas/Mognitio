@@ -2,7 +2,7 @@
 
 (define-condition program-panic (program-runtime-failure)
   ((message :initarg :message :reader panic-message)))
-(defparameter *panic-prefix* (sb-ext:string-to-octets "runtime: panic: " :external-format :utf-8))
+(defparameter *panic-prefix* (sb-ext:string-to-octets "panic: " :external-format :utf-8))
 (defparameter *panic-newline* (make-array 1 :element-type '(unsigned-byte 8) :initial-element 10))
 (defun raise-panic (message) (error 'program-panic :kind :panic :message message))
 

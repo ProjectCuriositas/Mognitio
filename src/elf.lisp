@@ -1,7 +1,7 @@
 (in-package #:mognitio.elf)
 
-(defconstant +image-base+ #x400000)
-(defconstant +code-offset+ #x80)
+(defconstant +image-base+ mognitio.object::+image-base+)
+(defconstant +code-offset+ mognitio.object::+code-offset+)
 
 (defun image-size (code-size)
   (unless (typep code-size '(integer 1 *))

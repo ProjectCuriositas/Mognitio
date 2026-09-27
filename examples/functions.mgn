@@ -1,7 +1,7 @@
-let total :function(int,int):int= function(price: int, count: int): int {
+let total :Function(Int,Int):Int= function(price: Int, count: Int): Int {
     price * count
 };
-let payable :function(int,bool):int= function(amount: int, discount: bool): int {
+let payable :Function(Int,Bool):Int= function(amount: Int, discount: Bool): Int {
     branch when{(discount)=>{ amount - 25 },else=>{ amount }}
 };
 payable(total(75, 4), true) == 275

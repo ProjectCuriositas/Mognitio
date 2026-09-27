@@ -2,12 +2,13 @@
 
 (defconstant +retry-budget+ 16)
 (defparameter *failure-data*
-  '((:overflow "runtime: integer overflow")
-    (:division-by-zero "runtime: division by zero")
-    (:remainder-by-zero "runtime: remainder by zero")
+  '((:overflow "runtime error: integer overflow")
+    (:division-by-zero "runtime error: division by zero")
+    (:remainder-by-zero "runtime error: division by zero")
     (:string-index-out-of-bounds "runtime: string_index_out_of_bounds")
-    (:string-size-overflow "runtime: string_size_overflow")
-    (:allocation-failed "runtime: allocation_failed")))
+    (:string-size-overflow "runtime error: string length overflow")
+    (:list-length-overflow "runtime error: list length overflow")
+    (:allocation-failed "runtime error: allocation failure")))
 (define-condition program-runtime-failure (error)
   ((kind :initarg :kind :reader failure-kind)))
 (define-condition integer-runtime-failure (program-runtime-failure) ())
@@ -47,3 +48,7 @@
                    (finish-output stream)))
       ((or error storage-condition) () nil)))
   (failure-status (failure-kind condition)))
+
+(defvar *allocation-hook* nil)
+(defun allocation-point (kind)
+  (when *allocation-hook* (funcall *allocation-hook* kind)))

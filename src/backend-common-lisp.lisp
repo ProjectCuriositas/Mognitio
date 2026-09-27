@@ -47,20 +47,22 @@
                          (list 'cl:otherwise (list 'mognitio.diagnostics:internal-error "Invalid Result tag")))))))
       (loop-expression
        (let* ((id (loop-info-id (checked-loop checked node))) (exit (make-symbol "BREAK")) (again (make-symbol "CONTINUE"))
-              (inner (acons id (cons exit again) loops)))
-         (let* ((condition (loop-expression-condition node))
-                (condition-form (when condition (expression-form condition checked names functions exits inner))))
-           (list 'cl:block exit
-                 (append (list 'cl:tagbody again)
-                         (when condition
-                           (list (if (checked-normal-type checked condition)
-                                     (list 'cl:unless condition-form (list 'cl:return-from exit (list 'cl:quote *void-value*)))
-                                     condition-form)))
-                         (when (or (null condition) (checked-normal-type checked condition))
-                           (list (expression-form (loop-expression-body node) checked names functions exits inner)))
-                         (when (and (or (null condition) (checked-normal-type checked condition))
-                                    (checked-normal-type checked (loop-expression-body node)))
-                           (list (list 'cl:go again))))))))
+              (start (make-symbol "LOOP")) (inner (acons id (cons exit again) loops))
+              (target (loop-expression-target node)) (condition (loop-expression-condition node)))
+         (if target
+             (let ((buffer (make-symbol "BUFFER")) (index (make-symbol "INDEX")) (binder (loop-expression-binder node)))
+               (list 'cl:let (list (list buffer (list 'mognitio.value::list-buffer (form target))) (list index 0))
+                 (list 'cl:block exit
+                   (list 'cl:tagbody start
+                     (list 'cl:when (list 'cl:>= index (list 'cl:length buffer)) (list 'cl:return-from exit (list 'cl:quote *void-value*)))
+                     (list 'cl:let (list (list (symbol-for binder) (list 'cl:aref buffer index)))
+                           (expression-form (loop-expression-body node) checked names functions exits inner))
+                     again (list 'cl:incf index) (list 'cl:go start)))))
+             (list 'cl:block exit
+               (list 'cl:tagbody again
+                 (list 'cl:unless (form condition) (list 'cl:return-from exit (list 'cl:quote *void-value*)))
+                 (expression-form (loop-expression-body node) checked names functions exits inner)
+                 (list 'cl:go again))))))
       (break-statement
        (let ((value (break-statement-value node)))
          (if (or (null value) (checked-normal-type checked value))
@@ -70,11 +72,15 @@
        (list 'cl:go (cddr (assoc (loop-info-id (checked-control checked node)) loops))))
       (string-literal (list 'cl:quote (mognitio.text:literal-value (string-literal-payload node))))
       (void-literal (list 'cl:quote *void-value*))
+      (local-binding (form (local-binding-initializer node)))
       (expression-statement (form (expression-statement-expression node)))
       (assignment (list 'cl:progn (list 'cl:setq (symbol-for node) (form (assignment-rhs node))) (list 'cl:quote *void-value*)))
       (boolean-literal (ecase (boolean-literal-value node) (:true t) (:false nil)))
       (integer-literal (checked-literal checked node))
-      (concrete-function-reference (concrete-function-reference-target node))
+      (concrete-function-reference
+       (let ((signature (checked-function checked node)))
+         (list* 'mognitio.value::closure (list 'cl:function (gethash (signature-id signature) functions))
+                (mapcar (lambda (binding) (gethash (local-symbol-id binding) names)) (signature-captures signature)))))
       (function-expression (signature-id (checked-function checked node)))
       (variable-reference (or (local-symbol-static-target (checked-symbol checked node)) (symbol-for node)))
       (sequence-node (sequence-form (sequence-node-statements node) (sequence-node-terminal node) 0))
@@ -87,17 +93,26 @@
       (method-call
        (if (not (checked-operation checked node))
            (value-expression-form node checked names functions exits loops)
-       (ordered (cons (method-call-receiver node) (coerce (method-call-arguments node) 'list))
-                (lambda (args)
-                  (cons (ecase (operation-info-kind (checked-operation checked node))
-                          (:text.length 'mognitio.text:text-length) (:text.slice 'mognitio.text:text-slice)) args)))))
+           (ordered (cons (method-call-receiver node) (coerce (method-call-arguments node) 'list))
+             (lambda (args)
+               (let* ((info (checked-operation checked node)) (result (operation-info-result-type info))
+                      (error-type (when (member (operation-info-kind info) '(:list.at :text.slice.result))
+                                    (second (mognitio.semantic::type-info-arguments (context-type (checked-program-values checked) result))))))
+                 (append
+                   (list (ecase (operation-info-kind info)
+                           (:text.length 'mognitio.text:text-length)
+                           (:text.slice.result 'mognitio.value::text-slice-result)
+                           (:list.length 'mognitio.value::list-length-value)
+                           (:list.append 'mognitio.value::list-append-value)
+                           (:list.at 'mognitio.value::list-at-value)))
+                   args (when error-type (list (list 'cl:quote result) (list 'cl:quote error-type)))))))))
       (call-expression
-       (ordered (cons (call-expression-callee node) (coerce (call-expression-arguments node) 'list))
-                (lambda (args)
-                  (list* 'cl:case (first args)
-                         (append (loop for id in (call-info-targets (checked-call checked node))
-                                       collect (list id (cons (gethash id functions) (rest args))))
-                                 (list (list 'cl:otherwise (list 'mognitio.diagnostics:internal-error "Invalid function value"))))))))
+       (if (checked-pack checked node) (form (aref (call-expression-arguments node) 0))
+           (ordered (cons (call-expression-callee node) (coerce (call-expression-arguments node) 'list))
+                    (lambda (args) (cons 'mognitio.value::closure-call args)))))
+      (list-expression
+       (ordered (coerce (list-expression-elements node) 'list)
+                (lambda (args) (cons 'mognitio.value::list-literal args))))
       (if-expression
        (if (null (checked-normal-type checked (if-expression-condition node)))
            (form (if-expression-condition node))
@@ -105,25 +120,25 @@
                    (form (if-expression-then-branch node)) (form (if-expression-else-branch node)))))
       (unary-expression
        (if (checked-literal-p checked node) (checked-literal checked node)
-           (if (checked-normal-type checked (unary-expression-operand node))
-               (list 'mognitio.integer:checked-arithmetic :neg (form (unary-expression-operand node)))
-               (form (unary-expression-operand node)))))
+           (let ((child (unary-expression-operand node)))
+             (if (checked-normal-type checked child)
+                 (if (eq :not (token-kind (unary-expression-operator node))) (list 'cl:not (form child))
+                     (list 'mognitio.integer:checked-arithmetic :neg (form child))) (form child)))))
       (binary-expression
-       (ordered (list (binary-expression-left node) (binary-expression-right node))
-         (lambda (args)
-           (let ((op (token-kind (binary-expression-operator node))))
-             (if (checked-operation checked node)
-                 (cons (ecase (operation-info-kind (checked-operation checked node))
-                         (:text.concat 'mognitio.text:text-concat) (:text.equal 'mognitio.text:text-equal)
-                         (:text.not-equal 'mognitio.text:text-not-equal)) args)
-                 (if (member op '(:add :sub :mul :div :rem))
-                 (list* 'mognitio.integer:checked-arithmetic op args)
-                 (let ((comparison
-                         (cons (case op
-                                 ((:eq :ne) (if (eq (checked-normal-type checked (binary-expression-left node)) :bool)
-                                                'cl:eq 'cl:=))
-                                 (:lt 'cl:<) (:le 'cl:<=) (:gt 'cl:>) (:ge 'cl:>=)) args)))
-                   (if (eq op :ne) (list 'cl:not comparison) comparison))))))))
+       (let ((op (token-kind (binary-expression-operator node))) (a (binary-expression-left node)) (b (binary-expression-right node)))
+         (if (member op '(:and :or))
+             (list (if (eq op :and) 'cl:and 'cl:or) (form a) (form b))
+             (ordered (list a b)
+               (lambda (args)
+                 (let ((kind (operation-info-kind (checked-operation checked node))))
+                   (cond
+                     ((member kind '(:text.concat :text.equal :text.not-equal))
+                      (cons (ecase kind (:text.concat 'mognitio.text:text-concat) (:text.equal 'mognitio.text:text-equal)
+                                        (:text.not-equal 'mognitio.text:text-not-equal)) args))
+                     ((member op '(:add :sub :mul :div :rem)) (list* 'mognitio.integer:checked-arithmetic op args))
+                     (t (let ((comparison (cons (case op ((:eq :ne) (if (eq :int (checked-normal-type checked a)) 'cl:= 'cl:eq))
+                                                         (:lt 'cl:<) (:le 'cl:<=) (:gt 'cl:>) (:ge 'cl:>=)) args)))
+                          (if (eq op :ne) (list 'cl:not comparison) comparison))))))))))
       (t (internal-error "Invalid checked AST")))))
 
 (defun program-form (checked)
@@ -137,17 +152,22 @@
     (let ((definitions
             (loop for signature across (checked-program-signatures checked)
                   for declaration = (signature-declaration signature) when declaration collect
-              (list (gethash (signature-id signature) functions)
-                    (append (when (signature-receiver signature) (list (gethash (local-symbol-id (signature-receiver signature)) names)))
-                            (map 'list (lambda (p) (gethash (local-symbol-id (checked-symbol checked p)) names))
-                                 (function-expression-parameters declaration)))
-                    (list 'cl:block (gethash (signature-id signature) exits)
-                          (expression-form (function-expression-body declaration) checked names functions exits)))))
+              (let ((context (make-symbol "CONTEXT")))
+                (list (gethash (signature-id signature) functions)
+                      (append (unless (signature-receiver signature) (list context))
+                              (map 'list (lambda (p) (gethash (local-symbol-id (checked-symbol checked p)) names))
+                                   (function-expression-parameters declaration)))
+                      (list 'cl:declare (list 'cl:ignorable
+                        (if (signature-receiver signature) (gethash (local-symbol-id (signature-receiver signature)) names) context)))
+                      (list 'cl:let
+                        (loop for capture in (signature-captures signature) for index from 0
+                              collect (list (gethash (local-symbol-id capture) names) (list 'mognitio.value::capture context index)))
+                        (list 'cl:block (gethash (signature-id signature) exits)
+                              (expression-form (function-expression-body declaration) checked names functions exits)))))))
           (entry (expression-form (make-sequence-node :statements (program-statements program)
                                     :terminal (program-root program)) checked names functions exits)))
       (if definitions
-          (list 'cl:labels definitions (list 'cl:declare (cons 'cl:notinline (mapcar #'first definitions))) entry)
-          entry))))
+          (list 'cl:labels definitions (list 'cl:declare (cons 'cl:notinline (mapcar #'first definitions))) entry) entry))))
 
 (defun host-compile (form)
   (with-compilation-unit (:override t)
@@ -170,7 +190,7 @@
 (defun compile-program (checked)
   (setf checked (mognitio.semantic::prepare-runtime-program checked))
   (let* ((root (program-root (checked-program-program checked)))
-         (span (node-span root)))
+         (span (node-span (or root (checked-program-program checked)))))
     (call-isolated
      span
      (lambda ()

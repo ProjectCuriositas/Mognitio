@@ -5,14 +5,10 @@
 (defun ascii-digit-p (ch) (char<= #\0 ch #\9))
 (defun word-start-p (ch) (or (ascii-letter-p ch) (char= ch #\_)))
 (defparameter *keywords*
-  '(("true" . :true) ("false" . :false) ("if" . :if) ("else" . :else)
-    ("let" . :let) ("var" . :var)
-    ("type" . :type) ("struct" . :struct) ("enum" . :enum) ("interface" . :interface)
-    ("implement" . :implement) ("against" . :against) ("this" . :this)
-    ("try" . :try) ("panic" . :panic) ("branch" . :branch) ("when" . :when) ("on" . :on) ("match" . :match)
-    ("while" . :while) ("loop" . :loop) ("break" . :break) ("continue" . :continue) ("string" . :string) ("void" . :void) ("function" . :function) ("return" . :return) ("int" . :int) ("bool" . :bool)))
+  '(("alias" . :alias) ("against" . :against) ("as" . :as) ("branch" . :branch) ("break" . :break) ("continue" . :continue) ("contract" . :contract) ("discard" . :discard) ("else" . :else) ("function" . :function) ("implement" . :implement) ("let" . :let) ("loop" . :loop) ("on" . :on) ("over" . :over) ("panic" . :panic) ("product" . :product) ("return" . :return) ("sum" . :sum) ("template" . :template) ("try" . :try) ("type" . :type) ("var" . :var) ("when" . :when) ("while" . :while) ("true" . :true) ("false" . :false) ("unit" . :unit)))
 (defparameter *operators*
-  '(("::" . :scope) ("=>" . :fat-arrow) ("->" . :arrow) ("==" . :eq) ("!=" . :ne) ("<=" . :le) (">=" . :ge)
+  '(("&&" . :and) ("||" . :or) ("::" . :scope) ("=>" . :fat-arrow) ("->" . :arrow) ("==" . :eq) ("!=" . :ne) ("<=" . :le) (">=" . :ge)
+    ("!" . :not) ("." . :dot) ("[" . :left-bracket) ("]" . :right-bracket)
     ("=" . :assign) ("+" . :add) ("-" . :sub) ("*" . :mul)
     ("/" . :div) ("%" . :rem) ("<" . :lt) (">" . :gt)
     ("(" . :left-paren) (")" . :right-paren)

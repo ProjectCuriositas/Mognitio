@@ -1,16 +1,16 @@
 (in-package #:mognitio.backend.cl)
 
-(defun interface-table (checked implementation)
+(defun interface-table (checked implementation functions)
   (let* ((context (checked-program-values checked)) (contract (implementation-info-contract implementation)))
     (map 'vector (lambda (requirement)
-                   (signature-id (cdr (assoc (requirement-name requirement) (implementation-info-methods implementation) :test #'string=))))
+                   (list 'cl:function (gethash (signature-id (cdr (assoc (requirement-name requirement) (implementation-info-methods implementation) :test #'string=))) functions)))
          (type-info-methods (context-type context contract)))))
 
 (defun expression-form (node checked names functions exits &optional loops)
   (let ((form (unpacked-expression-form node checked names functions exits loops))
         (pack (checked-pack checked node)))
     (if pack (list 'mognitio.value:pack form (list 'quote (implementation-info-contract pack))
-                   (list 'quote (interface-table checked pack))) form)))
+                   (cons 'cl:vector (coerce (interface-table checked pack functions) 'list))) form)))
 
 (defun value-expression-form (node checked names functions exits loops)
   (labels ((form (child) (expression-form child checked names functions exits loops))
@@ -59,18 +59,13 @@
                                      (list (member-info-variant (checked-member checked pattern))
                                            (list 'let
                                                  (loop for token across (or (variant-pattern-bindings pattern) #()) for index from 0
-                                                       unless (string= "_" (token-text token)) collect (list (binding token) (list 'mognitio.value:field name index)))
+                                                       collect (list (binding token) (list 'mognitio.value:field name index)))
                                                  (form (branch-arm-value arm))))))
                                (unless (some (lambda (arm) (null (branch-arm-selector arm))) (coerce (branch-expression-arms node) 'list))
                                  (list (list 'otherwise (list 'mognitio.diagnostics:internal-error "Invalid enum tag")))))))))))
       (method-call
        (ordered (cons (method-call-receiver node) (coerce (method-call-arguments node) 'list))
-                (lambda (args)
-                  (let ((info (checked-member checked node)))
-                    (if (member-info-signature info)
-                        (cons (gethash (signature-id (member-info-signature info)) functions) args)
-                        (list* 'case (list 'mognitio.value:method-id (first args) (member-info-index info))
-                               (append (loop for id in (call-info-targets (checked-call checked node)) collect
-                                         (list id (list* (gethash id functions) (list 'mognitio.value:receiver (first args)) (rest args))))
-                                       (list (list 'otherwise (list 'mognitio.diagnostics:internal-error "Invalid interface method"))))))))))
+         (lambda (args)
+           (list* 'cl:funcall (list 'mognitio.value:method-id (first args) (member-info-index (checked-member checked node)))
+                  (list 'mognitio.value:receiver (first args)) (rest args)))))
       (t (internal-error "Invalid host value node")))))
