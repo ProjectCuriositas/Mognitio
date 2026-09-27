@@ -1,7 +1,7 @@
 (defpackage #:mognitio.diagnostics
   (:use #:cl)
   (:export #:diagnostic #:make-diagnostic #:diagnostic-phase #:diagnostic-message
-           #:diagnostic-path #:diagnostic-line #:diagnostic-column
+           #:diagnostic-path #:diagnostic-line #:diagnostic-column #:diagnostic-start-byte #:diagnostic-end-byte
            #:compiler-failure #:failure-diagnostic #:source-failure
            #:usage-or-io-failure #:internal-failure #:fail #:internal-error
            #:render-diagnostic #:one-line))

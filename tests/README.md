@@ -6,7 +6,7 @@ The suite is connected to `asdf:test-system "mognitio"`.
 | Acceptance IDs | Coverage |
 |---|---|
 | V01–V02 | Both literals, eight conditional combinations, nested conditions and branches |
-| V03–V04 | Whitespace, EOF, allowed BOM and invalid BOM placement |
+| V03–V04 | Whitespace, EOF, and UTF-8 BOM rejection (updated for v0.9) |
 | V05–V08 | Strict UTF-8 byte boundaries, invalid words/characters, source locations |
 | V09–V12 | Empty input/blocks, missing delimiters/else, extra input, excluded grammar |
 | V13–V14 | Full semantic traversal, malformed ASTs, checked boundary, generated form structure |
@@ -394,3 +394,13 @@ fields and enum payloads reject function types.
 Existing regression groups remain enabled. `v08-migration.json` records the
 annotation and function-binding fixture changes without changing historical
 release sources or records.
+
+## v0.9.0 source migration
+
+`v09-source.lisp` tests line comments, decimal and identifier boundaries,
+Unicode scalar escapes, source byte ranges, and host/native execution agreement.
+It checks that source failures leave an existing build artifact unchanged.
+The BOM, raw string scalar, and leading-zero cases in older test groups now
+follow the development branch's source rules. Older branch fixtures now use
+explicit unused payload names instead of underscore patterns. Full v0.9.0 syntax and semantics
+remain outside this initial increment; see [progress](../verification/v0.9.0-progress.md).

@@ -20,11 +20,10 @@
 (deftest v06-integration-source-rejections
   (dolist (pair (append
                  (mapcar (lambda (text) (list (sb-ext:string-to-octets text :external-format :utf-8) "lex"))
-                         (list "\"abc" "\"abc\\" "\"a\\q\"" (format nil "\"a~C\"" #\Tab)
-                               (format nil "\"a~C\"" #\Newline) (format nil "\"a~C\"" #\Return)
-                               (format nil "\"a~C\"" (code-char 0)) (format nil "\"a~C\"" (code-char 127))))
+                         (list "\"abc" "\"abc\\" "\"a\\q\""
+                               (format nil "\"a~C\"" #\Newline) (format nil "\"a~C\"" #\Return)))
                  (mapcar (lambda (bytes) (list bytes "source"))
-                         '(#(34 237 160 128 34) #(34 239 187 191 34) #(34 192 128 34)
+                         '(#(34 237 160 128 34) #(34 192 128 34)
                            #(239 187 191 239 187 191 34 34)))))
     (let ((source (put-bytes (fresh-path) (coerce (first pair) '(vector (unsigned-byte 8)))))
           (output (put-text (fresh-path ".elf") "previous")))
@@ -34,7 +33,7 @@
           (is (search (namestring source) err))))
       (same "previous" (uiop:read-file-string output))))
   (let ((source (format nil "~C~A" (code-char #xfeff) "\"A\"->length()==1")))
-    (expect-source source :true) (v06-expect-native source :true)))
+    (v03-reject source "source")))
 
 (deftest v06-integration-lifetime-and-composition
   (dolist (source

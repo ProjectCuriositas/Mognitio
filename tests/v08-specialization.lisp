@@ -3,7 +3,7 @@
 (defparameter *v08-instances-source*
   "let identity:function<T>(T):T=function<T>(x:T):T{x}; let alias:function<T>(T):T=identity; let a:int=identity<int>(42); let b:string=alias<string>(\"ok\"); let c:int=alias<int>(a); branch when{c==42=>b==\"ok\",else=>false}")
 (defparameter *v08-nested-source*
-  "let outer:function<T>():bool=function<T>():bool{let leaf:function():Result<T,string> =function():Result<T,string>{Result<T,string>::Err(\"x\")};let inner:function():bool=function():bool{branch on(leaf()){Result<T,string>::Ok(_)=>false,Result<T,string>::Err(e)=>e==\"x\"}};inner()}; outer<int>()==outer<string>()")
+  "let outer:function<T>():bool=function<T>():bool{let leaf:function():Result<T,string> =function():Result<T,string>{Result<T,string>::Err(\"x\")};let inner:function():bool=function():bool{branch on(leaf()){Result<T,string>::Ok(ignoredPayload1)=>false,Result<T,string>::Err(e)=>e==\"x\"}};inner()}; outer<int>()==outer<string>()")
 
 (deftest v08-instance-closure-and-isolation
   (dolist (pair (list (cons *v08-instances-source* 3) (cons *v08-nested-source* 7)
@@ -30,10 +30,10 @@
              "let change:function<T>(T,T):T=function<T>(x:T,y:T):T{var value:T=x;value=y;value};change<int>(1,42)==42"
              "let choose:function<T>(T):T=function<T>(x:T):T{let a:function(T):T=function(y:T):T{y};let b:function(T):T=function(z:T):T{z};(branch when{true=>a,else=>b})(x)};choose<int>(42)==42"
              "type Box<T> =struct{value:T;};let identity:function<T>(T):T=function<T>(x:T):T{x};type U=struct{box:Box<int>;};interface I{let get=function():int;}implement U against I{let get=function():int{identity<int>(this->box->value)};}let use:function(I):int=function(i:I):int{i->get()};use(U{box:Box<int>{value:42}})==42"
-             "let wrap:function<T,E>(T):Result<T,E> =function<T,E>(value:T):Result<T,E>{Result<T,E>::Ok(value)};let x:Result<void,string> =wrap<void,string>(void);branch on(x){Result<void,string>::Ok(v)=>{v;true},Result<void,string>::Err(_)=>false}"
+             "let wrap:function<T,E>(T):Result<T,E> =function<T,E>(value:T):Result<T,E>{Result<T,E>::Ok(value)};let x:Result<void,string> =wrap<void,string>(void);branch on(x){Result<void,string>::Ok(v)=>{v;true},Result<void,string>::Err(ignoredPayload2)=>false}"
              "let identity:function<T>(T):T=function<T>(x:T):T{x};branch when{true=>identity<int>(42)==42,else=>identity<string>(\"ok\")==\"ok\"}"))
     (v07-accept source))
-  (let ((source "type Box<T> =struct{value:T;};let make:function<T>(T):Box<T> =function<T>(x:T):Box<T>{Box<T>{value:x}};let keep:Box<Result<string,int>> =make<Result<string,int>>(Result<string,int>::Ok(\"keep\"+\"!\"));var i:int=0;loop while(i<2000){let dead:Box<string> =make<string>(\"dead\"+\"!\");i=i+1;};branch on(keep->value){Result<string,int>::Ok(s)=>s==\"keep!\",Result<string,int>::Err(_)=>false}"))
+  (let ((source "type Box<T> =struct{value:T;};let make:function<T>(T):Box<T> =function<T>(x:T):Box<T>{Box<T>{value:x}};let keep:Box<Result<string,int>> =make<Result<string,int>>(Result<string,int>::Ok(\"keep\"+\"!\"));var i:int=0;loop while(i<2000){let dead:Box<string> =make<string>(\"dead\"+\"!\");i=i+1;};branch on(keep->value){Result<string,int>::Ok(s)=>s==\"keep!\",Result<string,int>::Err(ignoredPayload3)=>false}"))
     (v07-accept source))
   (same (native-image *v08-instances-source*) (native-image *v08-instances-source*)))
 

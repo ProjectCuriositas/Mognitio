@@ -112,3 +112,9 @@ The test bound is not a language limit. Operating-system termination,
 uncatchable resource exhaustion, and simultaneous filesystem changes by other processes
 are outside the guarantees established by the test suite. Native broken-output
 handling is tested separately from successful delivery.
+
+## v0.9.0 development
+
+The [progress record](v0.9.0-progress.md) separates the implemented source and
+lexer increment from the remaining frontend, runtime, and native migration.
+The cumulative test suite still covers the retained v0.8.1 implementation.
