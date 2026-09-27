@@ -4,10 +4,10 @@
   (dolist (source
            '("type Box<T> =struct{value:T;}; let x:Box<int> =Box<int>{value:42}; x->value==42"
              "type Box<T> =struct{value:T;}; type Alias<T> =Box<T>; type Count=Alias<int>; let x:Count=Box<int>{value:42}; x->value==42"
-             "type Either<T,E> =enum{A(T);B(E);}; type Swap<T,E> =Either<E,T>; let x:Swap<string,int> =Either<int,string>::A(42); branch on(x){Swap<string,int>::A(v)=>v==42,Swap<string,int>::B(_)=>false,}"
+             "type Either<T,E> =enum{A(T);B(E);}; type Swap<T,E> =Either<E,T>; let x:Swap<string,int> =Either<int,string>::A(42); branch on(x){Swap<string,int>::A(v)=>v==42,Swap<string,int>::B(ignoredPayload1)=>false,}"
              "type Box<T> =struct{value:T;}; let x:Box<Box<string>> =Box<Box<string>>{value:Box<string>{value:\"ok\"}}; x->value->value==\"ok\""
-             "type E=enum{Bad;}; type CountResult=Result<int,E>; let result:CountResult=Result<int,E>::Ok(42); branch on(result){CountResult::Ok(value)=>value==42,CountResult::Err(_)=>false,}"
-             "let result:Result<void,string> =Result<void,string>::Ok(void); branch on(result){Result<void,string>::Ok(value)=>{value;true},Result<void,string>::Err(_)=>false,}"
+             "type E=enum{Bad;}; type CountResult=Result<int,E>; let result:CountResult=Result<int,E>::Ok(42); branch on(result){CountResult::Ok(value)=>value==42,CountResult::Err(ignoredPayload2)=>false,}"
+             "let result:Result<void,string> =Result<void,string>::Ok(void); branch on(result){Result<void,string>::Ok(value)=>{value;true},Result<void,string>::Err(ignoredPayload3)=>false,}"
              "type Box<T> =struct{value:T;}; type Wrapper=struct{box:Box<int>;}; implement Wrapper{let get=function():int{this->box->value};} Wrapper{box:Box<int>{value:42}}->get()==42"
              "type Alias<T> =T; let Result:int=42; let x:Alias<int> =Result; x==42"
              "type Box<T> =struct{value:T;}; true"))
@@ -41,7 +41,7 @@
              "type Box<T> =struct{value:T;}; type Later=T; true"
              "type Box<T> =struct{value:T;}; let x:int=0; Box<int>{value:false}->value==x"
              "let x:Result<int,string> =Result::Ok(42); true"
-             "let x:Result<int,string> =Result<int,string>::Ok(42); branch on(x){Result::Ok(v)=>true,Result::Err(_)=>false,}"
+             "let x:Result<int,string> =Result<int,string>::Ok(42); branch on(x){Result::Ok(v)=>true,Result::Err(ignoredPayload4)=>false,}"
              "type Plain=struct{}; Plain<int>{}; true"))
     (v03-reject source "semantic")))
 

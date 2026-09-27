@@ -1,7 +1,7 @@
 (in-package #:mognitio.tests)
 
 (defparameter *v08-err-source*
-  "let f:function(Result<int,string>):Result<bool,string> =function(r:Result<int,string>):Result<bool,string>{let n:int=try r;Result<bool,string>::Ok(n==42)};branch on(f(Result<int,string>::Err(\"kept\"+\"!\"))){Result<bool,string>::Ok(_)=>false,Result<bool,string>::Err(e)=>e==\"kept!\"}")
+  "let f:function(Result<int,string>):Result<bool,string> =function(r:Result<int,string>):Result<bool,string>{let n:int=try r;Result<bool,string>::Ok(n==42)};branch on(f(Result<int,string>::Err(\"kept\"+\"!\"))){Result<bool,string>::Ok(ignoredPayload1)=>false,Result<bool,string>::Err(e)=>e==\"kept!\"}")
 
 (deftest v08-try-core-guards-and-last-payload-use
   (let* ((module (native-ir *v08-err-source*))

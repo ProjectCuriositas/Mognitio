@@ -1,5 +1,17 @@
 # Mognitio
 
+## v0.9.0 development
+
+This branch starts the v0.9.0 source and lexer migration. It rejects UTF-8
+BOMs, standalone `_`, and leading-zero decimal literals; adds line comments
+and braced Unicode escapes; and reports UTF-8 byte ranges in source diagnostics.
+See [development progress](verification/v0.9.0-progress.md) for tested scope
+and the remaining migration. This is an incomplete development branch, not a
+v0.9.0 release. The syntax and CLI examples below still describe the retained
+v0.8.1 frontend and will migrate in later increments.
+
+## Existing implementation
+
 Mognitio is a small language with typed functions, structured iteration,
 and immutable data. Version 0.8.0 adds explicit generics,
 canonical `Result<T, E>`, prefix `try`, and `panic { ... }` to the existing

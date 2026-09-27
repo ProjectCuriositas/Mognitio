@@ -14,7 +14,7 @@
              "let outer:function<T>(T):T=function<T>(value:T):T{let inner:function(T):T=function(item:T):T{item};inner(value)}; outer<int>(42)==42"
              "let outer:function<T>(T):T=function<T>(value:T):T{let inner:function<U>(T,U):T=function<U>(a:T,b:U):T{a};inner<bool>(value,true)}; outer<int>(42)==42"
              "type Box<T> =struct{value:T;}; let unbox:function<T>(Box<T>):T=function<T>(value:Box<T>):T{value->value}; unbox<int>(Box<int>{value:42})==42"
-             "let wrap:function<T,E>(T):Result<T,E> =function<T,E>(value:T):Result<T,E>{Result<T,E>::Ok(value)}; branch on(wrap<int,string>(42)){Result<int,string>::Ok(x)=>x==42,Result<int,string>::Err(_)=>false,}"
+             "let wrap:function<T,E>(T):Result<T,E> =function<T,E>(value:T):Result<T,E>{Result<T,E>::Ok(value)}; branch on(wrap<int,string>(42)){Result<int,string>::Ok(x)=>x==42,Result<int,string>::Err(ignoredPayload1)=>false,}"
              "let unused:function<T>(T):T=function<T>(value:T):T{value}; let alias:function<T>(T):T=unused; true"
              "let make:function():bool=function():bool{let unused:function<T>(T):T=function<T>(value:T):T{value}; let alias:function<T>(T):T=unused; true}; make()"
              "let identity:function<T>(T):T=function<T>(value:T):T{let copy:T=value; copy}; identity<void>(void); true"

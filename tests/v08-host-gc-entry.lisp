@@ -3,7 +3,7 @@
   (asdf:load-asd (merge-pathnames "mognitio.asd" root)))
 (let ((*standard-output* (make-broadcast-stream)) (*error-output* (make-broadcast-stream)))
   (asdf:load-system "mognitio"))
-(let* ((source "type Box<T> =struct{value:T;};let make:function():Result<int,Box<string>> =function():Result<int,Box<string>>{Result<int,Box<string>>::Err(Box<string>{value:\"keep\"+\"!\"})};let forward:function(Result<int,Box<string>>):Result<bool,Box<string>> =function(r:Result<int,Box<string>>):Result<bool,Box<string>>{let n:int=try r;Result<bool,Box<string>>::Ok(n==42)};let held:Result<bool,Box<string>> =forward(make());var i:int=0;loop while(i<10000){let dead:Result<bool,Box<string>> =forward(make());i=i+1;};branch on(held){Result<bool,Box<string>>::Ok(_)=>false,Result<bool,Box<string>>::Err(e)=>e->value==\"keep!\"}")
+(let* ((source "type Box<T> =struct{value:T;};let make:function():Result<int,Box<string>> =function():Result<int,Box<string>>{Result<int,Box<string>>::Err(Box<string>{value:\"keep\"+\"!\"})};let forward:function(Result<int,Box<string>>):Result<bool,Box<string>> =function(r:Result<int,Box<string>>):Result<bool,Box<string>>{let n:int=try r;Result<bool,Box<string>>::Ok(n==42)};let held:Result<bool,Box<string>> =forward(make());var i:int=0;loop while(i<10000){let dead:Result<bool,Box<string>> =forward(make());i=i+1;};branch on(held){Result<bool,Box<string>>::Ok(ignoredPayload1)=>false,Result<bool,Box<string>>::Err(e)=>e->value==\"keep!\"}")
        (decoded (mognitio.source:decode-source "values.mgn" (sb-ext:string-to-octets source :external-format :utf-8)))
        (compiled (mognitio.backend.cl:compile-program (mognitio.semantic:check-program
                     (mognitio.frontend:parse-program decoded (mognitio.frontend:lex-source decoded)))))

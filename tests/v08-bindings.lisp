@@ -26,6 +26,7 @@ implement Value against I {let get=function():int {this->n};}
 let x:I=Value {n:42}; var y:I=x; y=Value {n:43}; x->get()+y->get()==85" :true))
 
 (deftest v081-explicit-binding-annotations
+  (v03-reject "let x:_=42; true" "lex")
   (dolist (source '("let x:int=42; x==42"
                     "let f:function(int):int=function(value:int):int{value}; f(42)==42"
                     "let cond:bool=true; let f:function():bool=branch when{cond=>function():bool{true},else=>function():bool{false},}; f()"
@@ -37,7 +38,6 @@ let x:I=Value {n:42}; var y:I=x; y=Value {n:43}; x->get()+y->get()==85" :true))
     (v07-accept source :true))
   (dolist (source '("let x=42; true"
                     "let f=function(value:int):int{value}; true"
-                    "let x:_=42; true"
                     "let f:function(bool):int=function(value:int):int{value}; true"
                     "let f:function(int):bool=function(value:int):int{value}; true"
                     "let identity:function<T,U>(T):U=function<T>(value:T):T{value}; true"

@@ -59,7 +59,7 @@
   ;; C07-06,28,40: earlier operand failures win; allocator failures remain
   ;; runtime failures after successful compilation.
   (dolist (source '("type U=struct{x:int;y:string;}; U{x:1/0,y:\"a\"->slice(-1,0)}->x==0"
-                    "type E=enum{A(int,string);};branch on(E::A(1/0,\"a\"->slice(-1,0))){E::A(x,_)=>x==0}"))
+                    "type E=enum{A(int,string);};branch on(E::A(1/0,\"a\"->slice(-1,0))){E::A(x,ignoredPayload1)=>x==0}"))
     (v03-runtime source "division by zero"))
   (v03-runtime "type U=struct{s:string;x:int;};U{s:\"a\"->slice(-1,0),x:1/0}->x==0" "string_index_out_of_bounds")
   (dolist (source '("type U=struct{};let u: U=U{};let later: int=1/0;true"

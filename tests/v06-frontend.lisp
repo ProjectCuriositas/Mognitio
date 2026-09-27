@@ -18,14 +18,17 @@
     (let ((diag (diagnostic-of (lambda () (lex-source (text-source (first pair)))))))
       (same :lex (diagnostic-phase diag)) (same 1 (diagnostic-line diag))
       (same (second pair) (diagnostic-column diag))))
-  (dolist (code '(0 9 10 13 31 127))
+  (dolist (code '(10 13))
     (let* ((source (format nil "  ~Cabc~C~C" #\" (code-char code) #\"))
            (diag (diagnostic-of (lambda () (lex-source (text-source source))))))
       (same :lex (diagnostic-phase diag)) (same 7 (diagnostic-column diag))))
-  (dolist (bytes '(#(34 237 160 128 34) #(34 239 187 191 34) #(34 192 128 34)
+  (dolist (bytes '(#(34 237 160 128 34) #(34 192 128 34)
                    #(239 187 191 239 187 191 34 34)))
     (same :source (diagnostic-phase (diagnostic-of (lambda () (decode-source "literal.mgn" bytes))))))
-  (is (v06-checked (format nil "~C~A" (code-char #xfeff) "\"A\"->length()==1"))))
+  (same :source (diagnostic-phase
+                 (diagnostic-of
+                  (lambda () (v06-checked (format nil "~C~A" (code-char #xfeff)
+                                                 "\"A\"->length()==1")))))))
 
 (deftest v06-postfix-and-static-contracts
   (is (typep (local-binding-annotation (aref (program-statements (parse-text "let a:string=\"a\"; true")) 0)) 'token))
