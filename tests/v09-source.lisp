@@ -26,7 +26,7 @@
   (dolist (source '("0==0" "10==10" "-10<0"
                     "9223372036854775807>0" "-9223372036854775808<0"))
     (expect-source source :true))
-  (expect-source "let _value:int=1; _value==1" :true))
+  (expect-source "let _value:Int=1; _value==1" :true))
 
 (deftest v09-unicode-escapes
   (dolist (pair '(("0" 0) ("000000" 0) ("7f" 127) ("80" 128)
@@ -89,7 +89,6 @@
            (output (fresh-path ".elf"))
            (sentinel #(11 22 33)))
       (put-bytes output sentinel)
-      (expect-cli (list "build" "--target" "linux/amd64" "--output" (namestring output)
-                        (namestring source))
+      (expect-cli (list "build" (namestring source) "-o" (namestring output))
                   1 :phase (if (= (aref bytes 0) 48) "lex" "source"))
       (same sentinel (mognitio.source::read-octets (namestring output))))))

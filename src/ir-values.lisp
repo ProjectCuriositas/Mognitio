@@ -44,7 +44,7 @@
        (lower-value-branch node checked block env lower emit new-block new-value))
       (t (internal-error "Invalid value lowering node")))))
 
-(defun lower-value-branch (node checked block env lower emit new-block new-value)
+(defun lower-value-branch (node checked block env lower emit new-block new-value &optional (result-type (checked-normal-type checked node)))
   (let ((on-p (eq :on (branch-expression-mode node))) (subject nil) (tag nil) (ends nil)
         (visible (sort (remove-duplicates (mapcar #'car env)) #'<)))
     (labels ((fresh () (funcall new-block (node-span node)))
@@ -57,7 +57,7 @@
                    (let ((variant (member-info-variant (checked-member checked pattern)))
                          (type (member-info-type (checked-member checked pattern))))
                      (loop for token across (or (variant-pattern-bindings pattern) #()) for index from 0
-                           unless (string= "_" (token-text token)) do
+                           do
                        (let* ((symbol (checked-symbol checked token))
                               (id (value where (local-symbol-type symbol) :enum.payload
                                          :data (list type variant index) :operands (list subject))))
@@ -90,7 +90,7 @@
           (values (first (first ends)) (second (first ends))
                   (mapcar (lambda (id) (lookup id (third (first ends)))) visible))))
       (let* ((join (fresh)) (result (funcall new-value)) (merged nil)
-             (parameters (list (cons result (checked-normal-type checked node))))
+             (parameters (list (cons result result-type)))
              (arguments (mapcar (lambda (end) (list (first end))) ends)))
         (dolist (id visible)
           (let ((incoming (mapcar (lambda (end) (cdr (lookup id (third end)))) ends)))

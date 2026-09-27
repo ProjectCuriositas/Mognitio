@@ -1,7 +1,11 @@
-var count: int = 0;
-let result: int = loop {
+var count: Int = 0;
+var result: Int = 0;
+loop while (count < 4) {
     count = count + 1;
-    branch when{(count < 4)=>{ continue; }};
-    break count * 10;
+    branch when {
+        count < 4 => { continue; },
+        else => unit,
+    };
+    result = count * 10;
 };
 result == 40

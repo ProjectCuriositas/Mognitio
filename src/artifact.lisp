@@ -59,6 +59,18 @@
 (defun close-image (stream) (close stream))
 (defun replace-image (temporary output) (sb-posix:rename temporary output))
 
+(defun verify-image (image temporary)
+  (with-open-file (stream temporary :direction :input :element-type '(unsigned-byte 8))
+    (unless (= (length image) (file-length stream)) (io-failure temporary))
+    (loop for expected across image for observed = (read-byte stream nil nil)
+          unless (eql expected observed) do (io-failure temporary))))
+(defun commit-image (temporary output)
+  (handler-case (replace-image temporary output)
+    (sb-posix:syscall-error (condition)
+      (if (= (sb-posix:syscall-errno condition) sb-posix:eio)
+          (fail 'usage-or-io-failure nil "File I/O failed; replacement outcome is unknown" :path output)
+          (error condition)))))
+
 (defun publish-image (image source output)
   (unless (and (typep image '(vector (unsigned-byte 8))) (plusp (length image)))
     (internal-error "Cannot publish an empty or invalid image"))
@@ -79,7 +91,8 @@
                 (set-executable fd)
                 (close-image stream)
                 (setf stream nil fd nil)
-                (replace-image temporary destination)
+                (verify-image image temporary)
+                (commit-image temporary destination)
                 (setf published t))
            ;; Preserve the original failure if cleanup itself also fails.
            (when stream (ignore-errors (close stream :abort t)))

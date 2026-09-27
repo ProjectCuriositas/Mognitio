@@ -6,10 +6,10 @@
   (contract nil :read-only t) (table #() :read-only t) (value nil :read-only t))
 
 (defun construct (type variant &rest slots)
-  (handler-case (%make-data-value type variant (coerce slots 'vector))
+  (handler-case (progn (mognitio.runtime::allocation-point :data) (%make-data-value type variant (coerce slots 'vector)))
     (storage-condition () (mognitio.runtime:runtime-error :allocation-failed))))
 (defun pack (value contract table)
-  (handler-case (%make-interface-value contract table value)
+  (handler-case (progn (mognitio.runtime::allocation-point :contract) (%make-interface-value contract table value))
     (storage-condition () (mognitio.runtime:runtime-error :allocation-failed))))
 (defun field (value index) (aref (data-value-slots value) index))
 (defun tag (value) (data-value-variant value))

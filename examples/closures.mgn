@@ -1,0 +1,12 @@
+template reader<T> = function(value: T): Function(): T {
+    function(): T { value }
+};
+var readers: List<Function(): Int> = List<Function(): Int>[];
+loop over (List<Int>[1, 2, 3] as value: Int) {
+    readers = readers->append(reader<Int>(value));
+};
+var total: Int = 0;
+loop over (readers as read: Function(): Int) {
+    total = total + read();
+};
+total == 6

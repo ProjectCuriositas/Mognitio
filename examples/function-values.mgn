@@ -1,7 +1,7 @@
-let add :function(int,int):int= function(a: int, b: int): int { a + b };
-let subtract :function(int,int):int= function(a: int, b: int): int { a - b };
-var count: int = 0;
-var total: int = 0;
+let add :Function(Int,Int):Int= function(a: Int, b: Int): Int { a + b };
+let subtract :Function(Int,Int):Int= function(a: Int, b: Int): Int { a - b };
+var count: Int = 0;
+var total: Int = 0;
 loop while (count < 4) {
     total = total + (branch when{(count < 2)=>{ add },else=>{ subtract }})(10, count);
     count = count + 1;

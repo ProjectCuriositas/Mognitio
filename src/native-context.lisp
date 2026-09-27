@@ -18,7 +18,7 @@
 (defconstant +trace+ 112)
 (defconstant +peak-live+ 184)
 (defconstant +peak-roots+ 192)
-(defconstant +context-size+ 208)
+(defconstant +context-size+ 240)
 
 (defun option (key &optional default) (getf *test-options* key default))
 (defun bump (offset &optional (amount 1))

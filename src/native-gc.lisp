@@ -7,9 +7,10 @@
   (runtime-unit :validate
     (append
       '((:load-word :rdx :rsp 8))
-      (when (option :validate)
-        (loop for id below literal-count append
-          `((:lea-text (:text ,id)) (:cmp-rax-rdx) (:jz :static))))
+      (loop for id below literal-count append
+        `((:lea-text (:text ,id)) (:cmp-rax-rdx) (:jz :static)))
+      (loop for object in (static-objects) append
+        `((:lea-object ,(first object)) (:cmp-rax-rdx) (:jz :static)))
       '((:load-word :r8 :r15 8)
         (:label :arena) (:cmp-imm :r8 0) (:jz :bad)
         (:load-word :r10 :r8 8) (:add-reg :r10 :r8) (:lea-base :r9 :r8 32)
@@ -20,9 +21,9 @@
         (:cmp-reg :rcx :r10) (:ja :bad)
         (:cmp-reg :r9 :rdx) (:jz :found) (:mov-reg :r9 :rcx) (:jmp :block)
         (:label :next) (:load-word :r8 :r8 0) (:jmp :arena)
-        (:label :found) (:load-word :rax :r9 8) (:and-imm :rax -59)
+        (:label :found) (:load-word :rax :r9 8) (:and-imm :rax -123)
         (:cmp-imm :rax 1) (:jnz :bad) (:ret))
-      (when (option :validate) '((:label :static) (:imm-rax 5) (:ret)))
+      '((:label :static) (:imm-rax 5) (:ret))
       '((:label :bad) (:mov-edi 3) (:mov-eax 60) (:syscall) (:ud2)))))
 
 (defun watch-reclamation ()
@@ -36,7 +37,7 @@
 
 (defun collect-unit (&optional context)
   (runtime-unit :collect
-    (append (helper-frame 16) (bump +collections+)
+    (append (helper-frame 20) (bump +collections+)
       `((:load-word :rax :r15 ,+root-head+) (:store-frame -8 :rax)
         (:label :frame) (:load-frame :rax -8) (:test) (:jz :trace-pass)
         (:load-word :rcx :rax 8) (:store-frame -16 :rcx)
@@ -45,11 +46,8 @@
         (:load-frame :rax -8) (:add-imm :rax 16) (:store-frame -24 :rax)
         (:label :slot) (:load-frame :rcx -16) (:test-rcx) (:jz :next-frame)
         (:load-frame :rdx -24) (:load-word :rax :rdx 0) (:test) (:jz :next-slot))
-      (unless (option :validate)
-        '((:load-word :rcx :rax 8) (:and-imm :rcx 4) (:test-rcx) (:jnz :next-slot)))
-      '((:store-frame -32 :rax) (:store-out 0 :rax))
-      (when (option :validate)
-        '((:call (:runtime :validate)) (:cmp-imm :rax 5) (:jz :next-slot)))
+      '((:store-frame -32 :rax) (:store-out 0 :rax)
+        (:call (:runtime :validate)) (:cmp-imm :rax 5) (:jz :next-slot))
       '((:load-frame :rdx -32) (:load-word :rax :rdx 8) (:or-imm :rax 2) (:store-word :rdx 8 :rax)
         (:label :next-slot) (:load-frame :rax -24) (:add-imm :rax 8) (:store-frame -24 :rax)
         (:load-frame :rcx -16) (:dec-rcx) (:store-frame -16 :rcx) (:jmp :slot)

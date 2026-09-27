@@ -1,8 +1,8 @@
 (in-package #:mognitio.semantic)
 
 (defstruct local-symbol id owner name mutability type span targets static-target template)
-(defstruct signature id declaration parameter-types result-type receiver method type-parameters lexical-parameters (parent 0))
-(defstruct completion normal-type may-return targets exits)
+(defstruct signature id declaration parameter-types result-type receiver method type-parameters lexical-parameters (parent 0) captures template-node)
+(defstruct completion structure normal-type may-return targets exits)
 (defstruct loop-info id owner node normal-type targets plain valued types)
 (defstruct call-info type targets owner type-arguments template)
 (defstruct error-info kind operand-type result-type return-type owner)
@@ -52,3 +52,10 @@
                      (setf (gethash (car edge) colors) :gray)
                      (push (list (car edge) (copy-list (gethash (car edge) edges))) stack))))))))))
   t)
+
+(defvar *checked*)
+(defvar *owner* 0)
+(defvar *scopes*)
+(defvar *loops* nil)
+(defvar *template-owner* nil)
+(defvar *template-edges*)

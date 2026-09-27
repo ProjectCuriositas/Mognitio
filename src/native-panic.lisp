@@ -7,7 +7,7 @@
     (append (helper-frame 6)
       '((:load-frame :rax 16) (:store-frame -8 :rax)
         (:imm-rax 0) (:store-frame -32 :rax)
-        (:lea-rsi :prefix) (:mov-edx 16)
+        (:lea-rsi :prefix) (:mov-edx 7)
         (:label :setup) (:store-frame -16 :rsi) (:store-frame -24 :rdx)
         (:imm-rax 16) (:store-frame -40 :rax)
         (:label :write-loop) (:load-frame :rsi -16) (:load-frame :rdx -24)

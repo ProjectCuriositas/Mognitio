@@ -1,6 +1,9 @@
 (in-package #:mognitio.object)
 
 ;; These records describe only the in-memory image owned by this compiler.
+(defconstant +image-base+ #x400000)
+(defconstant +code-offset+ #x80)
+
 (defstruct code-unit owner instructions entry)
 (defstruct image-symbol name kind offset)
 (defstruct fixup offset end target (kind :pc-rel32) use)
@@ -13,7 +16,9 @@
     ((and (listp name) (= (length name) 2) (eq (first name) :runtime)
           (member (second name) '(:allocate :allocate-block :collect :find-free :physical-size :sum :validate))) :helper)
     ((and (listp name) (= (length name) 2) (eq (first name) :helper)
-          (consp (second name)) (member (first (second name)) '(:struct.make :enum.make :interface.pack))) :helper)
+          (consp (second name)) (member (first (second name)) '(:struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result))) :helper)
+    ((and (listp name) (= 3 (length name)) (eq :static-object (first name)) (member (second name) '(:list :buffer :closure))) :object)
+    ((and (listp name) (= 2 (length name)) (eq :layout (first name)) (consp (second name))) :metadata)
     ((and (listp name) (member (first name) '(:descriptor :method-table))
           (member (length name) '(2 3))
           (every (lambda (id) (typep id '(integer 0 *))) (rest name))) :metadata)
@@ -27,7 +32,7 @@
                   (every (lambda (id) (typep id '(integer 0 *))) (rest name))))))
      (if (eq (first name) :function) :function :code))
     ((and (listp name) (= 2 (length name)) (eq (first name) :data)
-          (member (second name) '(:true :false :overflow :division-by-zero :remainder-by-zero :string-index-out-of-bounds :string-size-overflow :allocation-failed))) :data)
+          (member (second name) '(:true :false :overflow :division-by-zero :remainder-by-zero :string-index-out-of-bounds :string-size-overflow :list-length-overflow :allocation-failed))) :data)
     (t (internal-error "Invalid image symbol"))))
 
 (defun layout-units (units)

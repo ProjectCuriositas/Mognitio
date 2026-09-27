@@ -40,7 +40,7 @@
     (let ((remaining (copy-list (root-plan-sites plan))) (capacity 0))
       (dolist (b (sort (copy-list (ir-function-blocks function)) #'< :key #'basic-block-id))
         (loop for inst in (basic-block-instructions b) for index from 0 do
-          (when (member (instruction-op inst) '(:call :call.value :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface))
+          (when (member (instruction-op inst) '(:call :call.value :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
             (let* ((site (pop remaining))
                    (expected (sort (loop for value in (gethash (list (basic-block-id b) index) before)
                                          when (mognitio.semantic:reference-type-p (gethash value types)) collect value) #'<)))
