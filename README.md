@@ -60,7 +60,7 @@ permits exact-type rebinding. Functions retain values captured at creation.
 A returned function or a value stored in a container remains usable.
 
 `product` and `sum` create nominal types; `alias` preserves identity.
-Contract values require explicit packaging backed by an `implement ... against ...`
+Contract values require explicit packaging backed by a `witness ... implements ...`
 declaration. Templates require explicit type arguments. See
 [contracts](examples/data-contract.mgn) and [results](examples/results.mgn).
 
@@ -97,3 +97,20 @@ sha256sum -c verification/SHA256SUMS
 The full suite requires a non-root Linux amd64 host, Python 3, and permission
 to trace its own child processes. Test allocation and collection controls are
 internal bindings, with no public CLI or environment-variable switches.
+
+## Loops and members
+
+Unconditional loops return their explicit break value:
+
+```mgn
+let answer: Int = loop { break 42; };
+answer == 42
+```
+
+Use `break unit;` for a Unit result; a loop without a normal break has no
+normal result. While/over loops produce Unit and accept only plain `break;`.
+All value members use `->`: fields, Function field calls, type operations,
+and contract dispatch. Declare evidence with
+`witness Concrete implements Contract { ... }`.
+The identifier `_` is an ordinary name; use `discard expression;` to
+discard a non-Unit value, or omit an unused payload binder.

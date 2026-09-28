@@ -35,11 +35,16 @@
        (ordered (cons (method-call-receiver node) (coerce (method-call-arguments node) 'list))
                 (lambda (operands)
                   (let ((info (checked-member checked node)))
-                    (if (member-info-signature info)
-                        (emit block (checked-normal-type checked node) :call :value (signature-id (member-info-signature info)) :operands operands)
-                        (emit block (checked-normal-type checked node) :call.interface
-                              :value (list (member-info-contract info) (member-info-index info) (call-info-targets (checked-call checked node)))
-                              :operands operands))))))
+                    (cond
+                      ((eq :field-call (member-info-kind info))
+                       (let ((callee (emit block (call-info-type (checked-call checked node)) :struct.field
+                                           :value (member-info-index info) :operands (list (first operands)))))
+                         (emit block (checked-normal-type checked node) :closure.call :value (call-info-type (checked-call checked node)) :operands (cons callee (rest operands)))))
+                      ((member-info-signature info)
+                       (emit block (checked-normal-type checked node) :call :value (signature-id (member-info-signature info)) :operands operands))
+                      (t (emit block (checked-normal-type checked node) :call.interface
+                               :value (list (member-info-contract info) (member-info-index info) (call-info-targets (checked-call checked node)))
+                               :operands operands)))))))
       (branch-expression
        (lower-value-branch node checked block env lower emit new-block new-value))
       (t (internal-error "Invalid value lowering node")))))

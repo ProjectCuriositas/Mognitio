@@ -11,6 +11,7 @@ The summary counts test groups, assertions, and actual child processes.
 |---|---|
 | v09-source | Strict UTF-8, comments, decimals, identifiers, scalar escapes, byte spans |
 | v09-fixtures, v09-boundaries, v09-frontend | Positive and rejection matrices, type identity, scopes, completion, captures, templates, methods, lists, control |
+| v09-revision | Value-loop joins and exits, arrow field/call resolution, witness evidence, ordinary underscore, host allocation boundary, body-only generic type proof mutations |
 | v09-runtime | Host/native outcomes, exact diagnostic bytes, allocation failure at each stage, publication failures |
 | v09-proofs | Symbolic and concrete proof mutations, builtin records, Core bounds/type graph, root plans, encoded metadata, host reclamation |
 | v09-abi | Handwritten caller/generated callee and reverse, hidden context, arguments, return handoff, machine mutations |
@@ -45,7 +46,8 @@ Historical validation records preserve their original counts and results.
 | `struct` / `enum` / `interface`, implicit packaging, `this` | Product/sum/contract, explicit evidence, typed Self receiver |
 | Binding-only generic signatures | Top-level templates and first-class explicit specialization |
 | Noncapturing finite function IDs | Snapshot closures, higher-order storage, indirect ABI, runtime dispatch recursion |
-| Unit named void, bare return, value-producing unconditional loop | Unit/unit, return value, while/over with plain control statements |
+| Unit named void, bare return | Unit/unit, return value, while/over with plain break; unconditional loop with explicit break value |
+| Dot projection, implement/against evidence spelling, forbidden standalone underscore | Arrow member selection, witness/implements, ordinary underscore names |
 | Optional when else, on wildcard/else, untyped payload binding | Required final else for when, exhaustive named on cases, optional typed binder |
 | Slice bounds trap | Result<String,SliceError> with requested bounds and length |
 | Old build flags and required source suffix | Canonical run/build arguments and unrestricted suffix |

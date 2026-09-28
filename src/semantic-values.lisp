@@ -110,6 +110,15 @@
          (args (coerce (method-call-arguments node) 'list)) (children (mapcar #'c-expression args))
          (name (token-text (method-call-name node))) (parameters nil) (result nil) (op nil))
     (cond
+      ((nominal-type-p type :struct)
+       (let* ((fields (type-info-fields (context-type (c-context) type)))
+              (index (position name fields :key #'car :test #'string=))
+              (function (when index (cdr (nth index fields)))))
+         (unless (function-type-p function) (fail-at (node-span node) :type "Selected field is not a Function"))
+         (setf parameters (second function) result (third function))
+         (c-member node (make-member-info :kind :field-call :type type :index index))
+         (setf (gethash node (checked-program-calls *checked*))
+               (make-call-info :type function :owner *owner*))))
       ((or (list-type-p type) (eq type :string))
        (cond
          ((string= name "length") (setf result :int op (if (list-type-p type) :list.length :text.length)))

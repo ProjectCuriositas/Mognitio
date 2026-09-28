@@ -33,14 +33,14 @@
           (same 4 code) (same "" out) (same expected err))))))
 
 (defparameter *v09-allocation-fixtures*
-  '(("product" "type P=product{x:String;};P{x:\"a\"+\"b\"}.x==\"ab\"")
+  '(("product" "type P=product{x:String;};P{x:\"a\"+\"b\"}->x==\"ab\"")
     ("sum" "type S=sum{A(String);};branch on S::A(\"a\"+\"b\"){S::A(x:String)=>x==\"ab\"}")
     ("closure" "let s:String=\"a\"+\"b\";let f:Function():String=function():String{s};f()==\"ab\"")
-    ("package" "contract C{get(self:Self):String;}implement String against C{get(self:Self):String{self}}let p:C=C(\"a\"+\"b\");p->get()==\"ab\"")
+    ("package" "contract C{get(self:Self):String;}witness String implements C{get(self:Self):String{self}}let p:C=C(\"a\"+\"b\");p->get()==\"ab\"")
     ("list-result" "let a:List<String>=List<String>[\"a\"+\"b\"];branch on a->at(0){Result<String,IndexError>::Ok(s:String)=>s==\"ab\",Result<String,IndexError>::Err=>false}")
-    ("index-error" "branch on List<String>[]->at(-1){Result<String,IndexError>::Ok=>false,Result<String,IndexError>::Err(e:IndexError)=>e.index==(-1)&&e.length==0}")
+    ("index-error" "branch on List<String>[]->at(-1){Result<String,IndexError>::Ok=>false,Result<String,IndexError>::Err(e:IndexError)=>e->index==(-1)&&e->length==0}")
     ("slice-result" "branch on (\"a\"+\"b\")->slice(0,1){Result<String,SliceError>::Ok(s:String)=>s==\"a\",Result<String,SliceError>::Err=>false}")
-    ("slice-error" "branch on \"abc\"->slice(3,1){Result<String,SliceError>::Ok=>false,Result<String,SliceError>::Err(e:SliceError)=>e.start==3&&e.end==1&&e.length==3}")
+    ("slice-error" "branch on \"abc\"->slice(3,1){Result<String,SliceError>::Ok=>false,Result<String,SliceError>::Err(e:SliceError)=>e->start==3&&e->end==1&&e->length==3}")
     ("buffer" "let a:List<String>=List<String>[\"a\"+\"b\",\"c\"+\"d\"];var s:String=\"\";loop over(a as x:String){s=s+x;};s==\"abcd\"")))
 
 (deftest v09-allocation-failure-at-every-stage

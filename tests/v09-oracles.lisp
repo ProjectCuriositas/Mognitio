@@ -17,7 +17,7 @@
                  items suffix (length items) (reduce #'+ expected) index
                  (if (<= 0 index (1- (length expected))) (format nil "n==~D" (nth index expected)) "false")
                  (if (<= 0 index (1- (length expected))) "false"
-                     (format nil "e.index==~D&&e.length==~D" index (length expected))))))
+                     (format nil "e->index==~D&&e->length==~D" index (length expected))))))
           (handler-case (same :true (compiled-result source)) (compiler-failure (c) (error "Oracle source ~S: ~A" source (diagnostic-message (failure-diagnostic c))))) (v06-expect-native source :true '(:stress t :validate t)))
         (let* ((text (coerce (loop repeat (next 9) collect (code-char (aref scalars (next (length scalars))))) 'string))
                (start (- (next (+ 3 (length text))) 1)) (end (- (next (+ 3 (length text))) 1))
@@ -26,7 +26,7 @@
                  "let s:String=~A;s->length()==~D&&(branch on s->slice(~D,~D){Result<String,SliceError>::Ok(part:String)=>~A,Result<String,SliceError>::Err(e:SliceError)=>~A})"
                  (v09-string-source text) (length text) start end
                  (if valid (format nil "part==~A" (v09-string-source (subseq text start end))) "false")
-                 (if valid "false" (format nil "e.start==~D&&e.end==~D&&e.length==~D" start end (length text))))))
+                 (if valid "false" (format nil "e->start==~D&&e->end==~D&&e->length==~D" start end (length text))))))
           (handler-case (same :true (compiled-result source)) (compiler-failure (c) (error "Oracle source ~S: ~A" source (diagnostic-message (failure-diagnostic c))))) (v06-expect-native source :true '(:stress t :validate t)))))))
 
 (deftest v09-precommit-preserves-executable

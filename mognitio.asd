@@ -80,6 +80,7 @@
                (:file "tests/v09-inherited")
                (:file "tests/v09-fixtures")
                (:file "tests/v09-boundaries")
+               (:file "tests/v09-revision")
                (:file "tests/v09-frontend")
                (:file "tests/v09-source")
                (:file "tests/v09-runtime")

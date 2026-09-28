@@ -66,6 +66,10 @@
       (method-call
        (ordered (cons (method-call-receiver node) (coerce (method-call-arguments node) 'list))
          (lambda (args)
-           (list* 'cl:funcall (list 'mognitio.value:method-id (first args) (member-info-index (checked-member checked node)))
-                  (list 'mognitio.value:receiver (first args)) (rest args)))))
+           (let ((member (checked-member checked node)))
+             (if (eq :field-call (member-info-kind member))
+                 (list* 'mognitio.value::closure-call
+                        (list 'mognitio.value:field (first args) (member-info-index member)) (rest args))
+                 (list* 'cl:funcall (list 'mognitio.value:method-id (first args) (member-info-index member))
+                        (list 'mognitio.value:receiver (first args)) (rest args)))))))
       (t (internal-error "Invalid host value node")))))

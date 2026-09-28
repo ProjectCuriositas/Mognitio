@@ -60,7 +60,7 @@
                      again (list 'cl:incf index) (list 'cl:go start)))))
              (list 'cl:block exit
                (list 'cl:tagbody again
-                 (list 'cl:unless (form condition) (list 'cl:return-from exit (list 'cl:quote *void-value*)))
+                 (when condition (list 'cl:unless (form condition) (list 'cl:return-from exit (list 'cl:quote *void-value*))))
                  (expression-form (loop-expression-body node) checked names functions exits inner)
                  (list 'cl:go again))))))
       (break-statement
@@ -182,7 +182,8 @@
         (if runtime-allowed (error condition)
             (internal-error "Runtime operation evaluated during host compilation")))
       (storage-condition ()
-        (fail-at span :internal "Host storage failure outside text allocation" 'internal-failure))
+        (if runtime-allowed (mognitio.runtime:runtime-error :allocation-failed)
+            (fail-at span :internal "Host compilation storage failure" 'internal-failure)))
       (compiler-failure (condition) (error condition))
       (error ()
         (fail-at span :internal "Host compilation or execution failed" 'internal-failure)))))
