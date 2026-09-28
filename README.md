@@ -2,13 +2,13 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-This branch contains the v0.9.0 implementation. Version-branch integration is
-separate from a release.
+This is the v0.9.0 source distribution for Linux amd64.
 
 ## Start here
 
 - [Examples](examples/): small programs using the current language.
 - [Test coverage and migration](tests/README.md): current and historical fixtures.
+- [Release validation](verification/v0.9.0-release.md): pinned candidate and release checks.
 - [Implementation verification](verification/v0.9.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.

@@ -1,6 +1,7 @@
 # Verification
 
-The current implementation record is [v0.9.0](v0.9.0.md).
+The current release validation is [v0.9.0](v0.9.0-release.md).
+The corresponding implementation record is [v0.9.0](v0.9.0.md).
 Run checks from the repository root on a non-root Linux amd64 host with SBCL,
 Python 3, and permission to trace child processes.
 
