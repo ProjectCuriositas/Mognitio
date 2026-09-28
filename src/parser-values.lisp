@@ -34,7 +34,7 @@
                                :span (p-span p keyword (p-expect p :right-brace)))))
 (defun p-implementation (p)
   (let* ((keyword (p-take p)) (target (p-type p)) (methods nil))
-    (p-expect p :against)
+    (p-expect p :implements)
     (let ((contract (p-type p)))
       (p-expect p :left-brace)
       (loop until (eq (p-kind p) :right-brace) do

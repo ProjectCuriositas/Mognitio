@@ -18,7 +18,7 @@
               1 :phase "source"))
 
 (deftest v09-identifiers-and-decimals
-  (dolist (text '("00" "010" "0_1" "0x10" "1_000" "1u" "_"))
+  (dolist (text '("00" "010" "0_1" "0x10" "1_000" "1u"))
     (expect-invalid (concatenate 'string text " == 0") "lex"))
   (let* ((tokens (lex-source (text-source "_value value_ __ X0")))
          (kinds (map 'list #'token-kind tokens)))
@@ -54,7 +54,7 @@
     (v06-expect-native source :true '(:stress t :validate t))))
 
 (deftest v09-byte-spans
-  (let* ((source (text-source (format nil "// あ~C~C\"😀\" _" #\Return #\Newline)))
+  (let* ((source (text-source (format nil "// あ~C~C\"😀\" @" #\Return #\Newline)))
          (diag (diagnostic-of (lambda () (lex-source source)))))
     (same :lex (diagnostic-phase diag))
     (same 2 (diagnostic-line diag)) (same 5 (diagnostic-column diag))
@@ -76,7 +76,7 @@
       (same (second case) (diagnostic-start-byte diag))
       (same (third case) (diagnostic-end-byte diag))
       (is (search (format nil "[bytes ~D,~D)" (second case) (third case)) err))))
-  (let ((err (expect-cli (list "run" (namestring (put-text (fresh-path) "_")))
+  (let ((err (expect-cli (list "run" (namestring (put-text (fresh-path) "@")))
                           1 :phase "lex")))
     (is (search "[bytes 0,1)" err))))
 

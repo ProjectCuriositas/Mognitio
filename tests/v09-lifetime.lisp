@@ -55,7 +55,7 @@
 (defparameter *v09-lifetime-source*
   "let obsolete:String=\"dead\"+\"first\";type Page=product{text:String;};type State=sum{Ready(Page);};
 contract Readable{read(self:Self):String;}
-implement State against Readable{read(self:Self):String{branch on self{State::Ready(p:Page)=>p.text}}}
+witness State implements Readable{read(self:Self):String{branch on self{State::Ready(p:Page)=>p->text}}}
 let make:Function(String):Function():String=function(text:String):Function():String{function():String{text}};
 let keep:String=\"keep\"+\"!\";
 let fn:Function():String=make(keep);
@@ -136,7 +136,7 @@ run()")
     (v06-expect-native source :true '(:arena-unit 65536 :cap 65536 :validate t))))
 
 (deftest v09-extracted-child-outlives-parent
-  (let ((source "type Leaf=product{text:String;};type Parent=product{child:Leaf;marker:Int;};let make:Function():Leaf=function():Leaf{let parent:Parent=Parent{child:Leaf{text:\"child\"+\"!\"},marker:7};parent.child};let kept:Leaf=make();var i:Int=0;loop while(i<2000){discard Parent{child:Leaf{text:\"trash\"+\"!\"},marker:9};i=i+1;};kept.text==\"child!\""))
+  (let ((source "type Leaf=product{text:String;};type Parent=product{child:Leaf;marker:Int;};let make:Function():Leaf=function():Leaf{let parent:Parent=Parent{child:Leaf{text:\"child\"+\"!\"},marker:7};parent->child};let kept:Leaf=make();var i:Int=0;loop while(i<2000){discard Parent{child:Leaf{text:\"trash\"+\"!\"},marker:9};i=i+1;};kept->text==\"child!\""))
     (same :true (compiled-result source))
     (dolist (stress '(nil t))
       (v09-check-heap (v06-gc-artifact source (list :arena-unit 4096 :cap 4096 :validate t :stress stress)) "extracted"))))

@@ -139,6 +139,17 @@
         (ensure (equal (function-instance-key instance)
                        (canonical-function-instance-key source context free (function-instance-declaration instance)
                          (function-instance-arguments instance) (function-instance-environment instance))) "Invalid instance key"))
+      ;; Body-only generic applications may not exist in the symbolic context.
+      ;; Recreate their identities from original templates and explicit arguments,
+      ;; never from the producer's cached fields or payload layouts.
+      (let ((recorded (specialization-proof-type-context proof)))
+        (loop for id from (length (value-context-types context)) below (length (value-context-types recorded))
+              for proposed = (aref (value-context-types recorded) id)
+              for template = (gethash (type-info-origin proposed) (value-context-templates context)) do
+          (ensure (and template (notany #'symbolic-type-p (type-info-arguments proposed))) "Invalid concrete type origin")
+          (dolist (argument (type-info-arguments proposed)) (concrete-type-key context argument))
+          (let ((derived (instantiate-generic-type context template (type-info-arguments proposed))))
+            (ensure (equal derived (canonical-type proposed)) "Invalid concrete type identity"))))
       (maphash (lambda (original target)
         (let ((a (context-type context original)) (b (context-type actual target)))
           (ensure (and (eq (type-info-kind a) (type-info-kind b))

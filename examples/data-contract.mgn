@@ -1,8 +1,8 @@
 type Item = product { text: String; };
 type State = sum { Empty; Ready(Item); };
 contract Named { name(self: Self): String; }
-implement Item against Named {
-    name(item: Self): String { item.text }
+witness Item implements Named {
+    name(item: Self): String { item->text }
 }
 let render: Function(Named): String = function(value: Named): String {
     value->name()
