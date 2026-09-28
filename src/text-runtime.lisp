@@ -19,9 +19,9 @@
 (defun allocate-text (size count fill)
   ;; Only program payload/object allocation converts host storage failures.
   (handler-case
-      (let ((bytes (allocate-bytes size)))
+      (progn (mognitio.runtime::allocation-point :string) (let ((bytes (allocate-bytes size)))
         (funcall fill bytes)
-        (%make-text-value bytes count))
+        (%make-text-value bytes count)))
     (storage-condition () (mognitio.runtime:runtime-error :allocation-failed))))
 (defun text-length (text) (text-value-scalar-count text))
 (defun text-equal (a b)
@@ -30,8 +30,8 @@
 (defun text-not-equal (a b) (not (text-equal a b)))
 (defun text-concat (a b)
   (let* ((left (text-value-octets a)) (right (text-value-octets b))
-         (size (checked-size (length left) (length right)))
-         (count (checked-size (text-length a) (text-length b))))
+         (count (checked-size (text-length a) (text-length b)))
+         (size (+ (length left) (length right))))
     (cond ((zerop size) *empty*)
           (t (allocate-text size count
                (lambda (out) (replace out left) (replace out right :start1 (length left))))))))

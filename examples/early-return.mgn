@@ -1,7 +1,7 @@
-let magnitude :function(int):int= function(value: int): int {
+let magnitude :Function(Int):Int= function(value: Int): Int {
     branch when{(value < 0)=>{ return -value; },else=>{ value }}
 };
-let twice :function(int):int= function(value: int): int {
+let twice :Function(Int):Int= function(value: Int): Int {
     value * 2
 };
 twice(magnitude(-6)) == 12

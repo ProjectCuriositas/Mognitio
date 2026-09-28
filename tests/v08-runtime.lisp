@@ -61,7 +61,7 @@
               (progn (same nil bytes) (same (if (eq mode :eintr) 16 1) calls))))))))
 
 (deftest v08-try-and-panic-lifetime
-  (v07-accept "type Box<T> =struct{value:T;};let leaf:function():Result<int,Box<string>> =function():Result<int,Box<string>>{Result<int,Box<string>>::Err(Box<string>{value:\"keep\"+\"!\"})};let middle:function():Result<string,Box<string>> =function():Result<string,Box<string>>{let n:int=try leaf();Result<string,Box<string>>::Ok(\"unreachable\")};let outer:function():Result<bool,Box<string>> =function():Result<bool,Box<string>>{let s:string=try middle();Result<bool,Box<string>>::Ok(false)};let payload:Box<string> =branch on(outer()){Result<bool,Box<string>>::Ok(_)=>Box<string>{value:\"bad\"},Result<bool,Box<string>>::Err(e)=>e};var i:int=0;loop while(i<2000){let dead:Box<string> =Box<string>{value:\"dead\"+\"!\"};i=i+1;};payload->value==\"keep!\"")
+  (v07-accept "type Box<T> =struct{value:T;};let leaf:function():Result<int,Box<string>> =function():Result<int,Box<string>>{Result<int,Box<string>>::Err(Box<string>{value:\"keep\"+\"!\"})};let middle:function():Result<string,Box<string>> =function():Result<string,Box<string>>{let n:int=try leaf();Result<string,Box<string>>::Ok(\"unreachable\")};let outer:function():Result<bool,Box<string>> =function():Result<bool,Box<string>>{let s:string=try middle();Result<bool,Box<string>>::Ok(false)};let payload:Box<string> =branch on(outer()){Result<bool,Box<string>>::Ok(ignoredPayload1)=>Box<string>{value:\"bad\"},Result<bool,Box<string>>::Err(e)=>e};var i:int=0;loop while(i<2000){let dead:Box<string> =Box<string>{value:\"dead\"+\"!\"};i=i+1;};payload->value==\"keep!\"")
   (v08-failure "panic {let message:string=\"keep\"+\"!\";var i:int=0;loop while(i<2000){let dead:Result<string,int> =Result<string,int>::Ok(\"dead\"+\"!\");i=i+1;};message}" "panic: keep!")
   (let ((calls 0) (original (fdefinition 'mognitio.runtime::raise-panic)))
     (replacing (mognitio.runtime::raise-panic (lambda (message) (incf calls) (funcall original message)))
@@ -81,4 +81,4 @@
       (expect-driver (build-args invalid artifact) 1 "semantic:")
       (same before (read-bytes artifact))
       (same nil (temporary-images))))
-  (check-native-relocation "let f:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(42)};branch on(f()){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(_)=>false}" :true))
+  (check-native-relocation "let f:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(42)};branch on(f()){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(ignoredPayload2)=>false}" :true))

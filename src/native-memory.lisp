@@ -43,6 +43,11 @@
       (internal-error "Invalid internal heap configuration"))
     (runtime-unit :allocate-block
       (append (helper-frame 10)
+        (when (option :fail-allocation)
+          (unless (typep (option :fail-allocation) '(integer 1 2147483647))
+            (internal-error "Invalid allocation fault ordinal"))
+          (append (bump 232)
+                  `((:cmp-imm :rax ,(option :fail-allocation)) (:jz :allocation-failed))))
         '((:load-frame :rax 16) (:store-out 0 :rax) (:call (:runtime :physical-size))
           (:store-frame -8 :rax))
         (when (option :stress) '((:call (:runtime :collect))))

@@ -29,7 +29,7 @@
       "type E=enum{A;B(int);}; branch on(E::B (2,)){E::A=>false,E::B(x)=>x==2}"
       "type E=enum{A;B(int);}; let value: E=E::A;true"
       "type E=enum{A;B(int);}; let value: E=E::B(1);true"
-      "type E=enum{A;B(int);}; branch on(E::A){E::A=>true,E::B(_)=>false}"))
+      "type E=enum{A;B(int);}; branch on(E::A){E::A=>true,E::B(ignoredPayload1)=>false}"))
     (v07-accept source))
   (dolist (source
     '("type A=struct{x:int;}; type B=struct{x:int;}; let f:function(A):int=function(a:A):int{a->x}; f(B{x:1})==1"
@@ -63,7 +63,7 @@
   (v03-reject "type E=enum{A;B;};branch on(E::A){E::A|E::B=>true}" "lex")
   (dolist (source
     '("var n: int=0; let x: int=branch when{{n=n+1;false}=>1,{n=n+1;true}=>{n=n+10;2},{n=n+100;true}=>1/0,else=>0};x+n==14"
-      "type E=enum{A(int,int);B(int,int);}; var n: int=0; let x: int=branch on({n=n+1;E::B(2,3)}){E::A(_,_)=>0,E::B(a,b)=>a+b};x+n==6"
+      "type E=enum{A(int,int);B(int,int);}; var n: int=0; let x: int=branch on({n=n+1;E::B(2,3)}){E::A(ignoredPayload2,ignoredPayload3)=>0,E::B(a,b)=>a+b};x+n==6"
       "type E=enum{A;B;}; branch on(E::B){E::A=>false,else=>true}"
       "type E=enum{A;}; branch on(E::A){else=>true}"
       "branch when{false=>void};true" "branch when{true=>void,};true"

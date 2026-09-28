@@ -1,11 +1,13 @@
-type Item = struct { text: string; };
-type State = enum { Empty; Ready(Item); };
-interface Named { let name = function(): string; }
-implement Item against Named {
-    let name = function(): string { this->text };
+type Item = product { text: String; };
+type State = sum { Empty; Ready(Item); };
+contract Named { name(self: Self): String; }
+witness Item implements Named {
+    name(item: Self): String { item->text }
 }
-let display :function(Named):string= function(value: Named): string { value->name() };
-branch on (State::Ready(Item { text: "data" + "!" })) {
+let render: Function(Named): String = function(value: Named): String {
+    value->name()
+};
+branch on State::Ready(Item { text: "example" }) {
     State::Empty => false,
-    State::Ready(item) => display(item) == "data!",
+    State::Ready(item: Item) => render(Named(item)) == "example",
 }

@@ -41,7 +41,7 @@
          (cache (merge-pathnames "native-cache/" *temp*))
          (source (put-text (fresh-path) text))
          (output (fresh-path ".elf")) (baseline nil))
-    (dolist (file (append (list (root-path "mognitio.asd") (root-path "bin/mgn"))
+    (dolist (file (append (list (root-path "mognitio.asd") (root-path "bin/mognitio"))
                           (directory (merge-pathnames (make-pathname :name :wild :type "lisp")
                                                       (root-path "src/")))
                           (directory (merge-pathnames (make-pathname :name :wild :type "lisp")
@@ -49,10 +49,10 @@
       (let ((destination (merge-pathnames (enough-namestring file (root-path "")) copy)))
         (ensure-directories-exist destination)
         (uiop:copy-file file destination)))
-    (sb-posix:chmod (namestring (merge-pathnames "bin/mgn" copy)) #o700)
+    (sb-posix:chmod (namestring (merge-pathnames "bin/mognitio" copy)) #o700)
     (is (not (probe-file cache)))
-    (dolist (launcher (list (root-path "bin/mgn") (merge-pathnames "bin/mgn" copy)
-                            (merge-pathnames "bin/mgn" copy)))
+    (dolist (launcher (list (root-path "bin/mognitio") (merge-pathnames "bin/mognitio" copy)
+                            (merge-pathnames "bin/mognitio" copy)))
       (multiple-value-bind (out err code)
           (process-result
            (append (list "env" (format nil "XDG_CACHE_HOME=~A" (namestring cache))
@@ -77,12 +77,12 @@
     (multiple-value-bind (out err code)
         (process-result (list "env" "-i" "PATH=/nonexistent" (namestring output) "ignored") :directory *temp*)
       (if (stringp expected)
-          (progn (same 4 code) (same "" out) (same (format nil "runtime: ~A~%" expected) err))
+          (progn (same 4 code) (same "" out) (same (format nil "runtime error: ~A~%" expected) err))
           (progn (same 0 code) (same "" err) (same (format nil "~(~A~)~%" expected) out))))))
 
 (deftest n24-d08-deterministic-cold-warm-relocation
-  (check-native-relocation "var x: int = 1; let n: int = branch when{(true)=>{x = 2; 3},else=>{4}}; x + n == 6" :false))
+  (check-native-relocation "var x: Int = 1; let n: Int = branch when{(true)=>{x = 2; 3},else=>{4}}; x + n == 6" :false))
 
 (deftest v04-deterministic-standalone
-  (check-native-relocation "let g :function(int):int= function(n: int): int { branch when{(n < 0)=>{return -n;},else=>{n}} }; let f :function(int):int= function(n: int): int { g(n) + 1 }; f(-3) == 4" :true)
-  (check-native-relocation "let g :function(int):int= function(n: int): int { return 1 / n; }; let f :function(int):int= function(n: int): int { g(n) }; f(0) == 0" "division by zero"))
+  (check-native-relocation "let g :Function(Int):Int= function(n: Int): Int { branch when{(n < 0)=>{return -n;},else=>{n}} }; let f :Function(Int):Int= function(n: Int): Int { g(n) + 1 }; f(-3) == 4" :true)
+  (check-native-relocation "let g :Function(Int):Int= function(n: Int): Int { return 1 / n; }; let f :Function(Int):Int= function(n: Int): Int { g(n) }; f(0) == 0" "division by zero"))

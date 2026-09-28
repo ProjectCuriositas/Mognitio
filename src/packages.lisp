@@ -1,7 +1,7 @@
 (defpackage #:mognitio.diagnostics
   (:use #:cl)
   (:export #:diagnostic #:make-diagnostic #:diagnostic-phase #:diagnostic-message
-           #:diagnostic-path #:diagnostic-line #:diagnostic-column
+           #:diagnostic-path #:diagnostic-line #:diagnostic-column #:diagnostic-start-byte #:diagnostic-end-byte
            #:compiler-failure #:failure-diagnostic #:source-failure
            #:usage-or-io-failure #:internal-failure #:fail #:internal-error
            #:render-diagnostic #:one-line))
@@ -13,7 +13,11 @@
            #:span-diagnostic #:fail-at))
 (defpackage #:mognitio.syntax
   (:use #:cl #:mognitio.source)
-  (:export #:concrete-function-reference #:make-concrete-function-reference #:concrete-function-reference-target
+  (:export #:program-declarations #:expression-statement-discard-p #:loop-expression-target #:loop-expression-binder
+           #:template-declaration #:template-declaration-name #:template-declaration-parameters #:template-declaration-function #:template-declaration-span #:make-template-declaration
+           #:specialization-reference #:specialization-reference-name #:specialization-reference-arguments #:specialization-reference-span #:make-specialization-reference
+           #:list-expression #:list-expression-type #:list-expression-elements #:list-expression-span #:make-list-expression
+           #:concrete-function-reference #:make-concrete-function-reference #:concrete-function-reference-target
            #:type-syntax #:make-type-syntax #:type-syntax-name #:type-syntax-arguments
            #:function-type-syntax #:make-function-type-syntax #:function-type-syntax-parameters #:function-type-syntax-result #:function-type-syntax-span
            #:function-type-syntax-p #:generic-signature-syntax #:make-generic-signature-syntax #:generic-signature-syntax-p #:generic-signature-syntax-type-parameters #:generic-signature-syntax-parameters #:generic-signature-syntax-result #:generic-signature-syntax-span
@@ -59,7 +63,8 @@
   (:export #:lex-source #:parse-program))
 (defpackage #:mognitio.semantic
   (:use #:cl #:mognitio.diagnostics #:mognitio.source #:mognitio.syntax)
-  (:export #:checked-program-values #:checked-member #:checked-pack #:checked-value-type #:signature-receiver #:signature-method #:signature-runtime-types #:nominal-type-p #:reference-type-p #:valid-value-type-p #:canonical-type #:context-type #:type-info #:type-info-id #:type-info-kind #:type-info-name #:type-info-fields #:type-info-variants #:type-info-methods #:variant-info #:variant-info-id #:variant-info-name #:variant-info-types #:requirement #:requirement-name #:requirement-parameters #:requirement-result #:implementation-info #:implementation-info-id #:implementation-info-concrete #:implementation-info-contract #:implementation-info-methods #:member-info #:member-info-kind #:member-info-type #:member-info-index #:member-info-variant #:member-info-implementation #:member-info-signature #:member-info-contract #:value-context-types #:value-context-implementations
+  (:export #:completion-structure #:signature-captures #:list-type-p
+           #:checked-program-values #:checked-member #:checked-pack #:checked-value-type #:signature-receiver #:signature-method #:signature-runtime-types #:nominal-type-p #:reference-type-p #:valid-value-type-p #:canonical-type #:context-type #:type-info #:type-info-id #:type-info-kind #:type-info-name #:type-info-fields #:type-info-variants #:type-info-methods #:variant-info #:variant-info-id #:variant-info-name #:variant-info-types #:requirement #:requirement-name #:requirement-parameters #:requirement-result #:implementation-info #:implementation-info-id #:implementation-info-concrete #:implementation-info-contract #:implementation-info-methods #:member-info #:member-info-kind #:member-info-type #:member-info-index #:member-info-variant #:member-info-implementation #:member-info-signature #:member-info-contract #:value-context-types #:value-context-implementations
            #:checked-error #:error-info-kind #:error-info-operand-type #:error-info-result-type #:error-info-return-type #:error-info-owner
            #:checked-string-literals #:checked-operation #:operation-info #:operation-info-kind #:operation-info-operands
            #:operation-info-parameter-types #:operation-info-result-type

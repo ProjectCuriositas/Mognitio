@@ -1,11 +1,8 @@
 (in-package #:mognitio.tests)
 
-(defun build-args (source output &optional reverse-options)
-  (append (list "build")
-          (if reverse-options
-              (list "--output" (sb-ext:native-namestring output) "--target" "linux/amd64")
-              (list "--target" "linux/amd64" "--output" (sb-ext:native-namestring output)))
-          (list (sb-ext:native-namestring source))))
+(defun build-args (source output &optional unused)
+  (declare (ignore unused))
+  (list "build" (sb-ext:native-namestring source) "-o" (sb-ext:native-namestring output)))
 (defun read-bytes (path)
   (with-open-file (stream path :element-type '(unsigned-byte 8))
     (let ((bytes (make-array (file-length stream) :element-type '(unsigned-byte 8))))
@@ -51,8 +48,8 @@
       (expect-cli args 2))
     (dolist (suffix '(".MGN" ".txt" "" "-" ".mgn.bak"))
       (let ((invalid (put-text (fresh-path suffix) "true")))
-        (expect-cli (list "run" (namestring invalid)) 2)
-        (expect-cli (build-args invalid output) 2)))
+        (expect-cli (list "run" (namestring invalid)) 0 :output (format nil "true~%"))
+        (expect-cli (build-args invalid output) 0)))
     (let ((before (read-bytes output)))
       (expect-cli (build-args (merge-pathnames "absent.txt" *temp*) output) 2)
       (same before (read-bytes output)))
@@ -69,11 +66,12 @@
         (expect-artifact output :true)))
     (dolist (bytes (list (sb-ext:string-to-octets (format nil " ~Ctrue~%" #\Tab)
                                                  :external-format :utf-8)
-                        #(239 187 191 116 114 117 101)))
+                        #(116 114 117 101)))
       (let ((source (put-bytes (fresh-path) bytes)))
         (expect-cli (build-args source output) 0)
         (expect-artifact output :true)))
     (dolist (case '((#(255) "source") (#(192 128) "source")
+                    (#(239 187 191 116 114 117 101) "source")
                     (#(237 160 128) "source") (#(244 144 128 128) "source")
                     (#(239 187 191 239 187 191 116 114 117 101) "source")
                     (#(64) "lex")))
@@ -84,7 +82,7 @@
                     "branch when{(true)=>{true},else=>{true false}}" "branch when{(false)=>{@},else=>{true}}"))
       (let ((source (put-text (fresh-path) text)))
         (expect-cli (build-args source output) 1
-                    :phase (if (find #\@ text) "lex" "parse"))))
+                    :phase (cond ((find #\@ text) "lex") ((string= text "") "type") (t "parse")))))
     (let ((source (put-text (fresh-path) (format nil "branch when{(true)=>{true},else=>{~%@}}"))))
       (is (search ":2:1: lex:" (expect-cli (build-args source output) 1))))))
 
@@ -141,7 +139,7 @@
     (dolist (name '("space name.mgn" "日本語.mgn" "*.mgn" "file[1]?.mgn" "-.mgn"))
       (let ((source (merge-pathnames (sb-ext:parse-native-namestring name) directory)))
         (put-text source "true")
-        (expect-cli (list "build" "--output" "-" "--target" "linux/amd64" name)
+        (expect-cli (list "build" (concatenate 'string "./" name) "-o" "-")
                     0 :directory directory)
         (expect-artifact (merge-pathnames "-" directory) :true)))
     (expect-cli '("build" "--target" "linux/amd64" "--output" "new" "-")
@@ -167,7 +165,7 @@
           (setf (fdefinition name) original))))
     (dolist (name '(mognitio.artifact::write-image mognitio.artifact::flush-image
                     mognitio.artifact::set-executable mognitio.artifact::close-image
-                    mognitio.artifact::replace-image))
+                    mognitio.artifact::verify-image mognitio.artifact::replace-image))
       (dolist (existing '(nil t))
         (when (probe-file output) (delete-file output))
         (when existing (put-text output "keep"))
@@ -193,7 +191,7 @@
     (let ((calls 0))
       (replacing (mognitio.artifact:validate-paths
                   (lambda (&rest args) (declare (ignore args)) (incf calls)))
-        (expect-driver (build-args (fresh-path ".txt") output) 2))
+        (expect-driver (list "build" "--output" "out" "missing") 2))
       (same 0 calls))))
 
 (deftest n22-n23-native-runtime
@@ -272,7 +270,7 @@
     (sb-posix:chmod (namestring (merge-pathnames "dirname" tools)) #o700)
     (multiple-value-bind (out err code)
         (process-result (append (list "env" (format nil "PATH=~A" (namestring tools))
-                                     (namestring (root-path "bin/mgn")))
+                                     (namestring (root-path "bin/mognitio")))
                                (build-args source output)))
       (same 0 code) (same "" out) (same "" err))
     (expect-artifact output :false)
@@ -285,13 +283,13 @@
 
 (deftest d08-missing-bootstrap-entry
   (let* ((copy (merge-pathnames "missing-entry/" *temp*))
-         (launcher (merge-pathnames "bin/mgn" copy)))
+         (launcher (merge-pathnames "bin/mognitio" copy)))
     (ensure-directories-exist launcher)
-    (uiop:copy-file (root-path "bin/mgn") launcher)
+    (uiop:copy-file (root-path "bin/mognitio") launcher)
     (sb-posix:chmod (namestring launcher) #o700)
     (multiple-value-bind (out err code) (process-result (list (namestring launcher)))
       (same 3 code) (same "" out)
-      (same (format nil "mgn: internal: Compiler bootstrap failed~%") err))))
+      (same (format nil "mognitio: internal: Compiler bootstrap failed~%") err))))
 
 (deftest native-host-output-isolation
   (let ((source (put-text (fresh-path) "true")) (output (fresh-path ".elf"))

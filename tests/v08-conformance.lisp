@@ -16,9 +16,9 @@
      ("type E=enum{One;};type Box<T> =struct{value:T;};let x:Box<E> =Box<E>{value:E::One};branch on(x->value){E::One=>true}" "true")
      ("type E=enum{One;};type Box<T> =struct{value:T;};type A=E;let x:Box<A> =Box<A>{value:E::One};branch on(x->value){E::One=>true}" "true"))
     ("C08-02"
-     ("type Choice<T,E> =enum{Value(T);Error(E);};branch on(Choice<string,int>::Value(\"ok\")){Choice<string,int>::Value(v)=>v==\"ok\",Choice<string,int>::Error(_)=>false}" "true"))
+     ("type Choice<T,E> =enum{Value(T);Error(E);};branch on(Choice<string,int>::Value(\"ok\")){Choice<string,int>::Value(v)=>v==\"ok\",Choice<string,int>::Error(ignoredPayload1)=>false}" "true"))
     ("C08-03"
-     ("type Choice<T,E> =Result<E,T>;type Count=Choice<string,int>;let r:Count=Count::Ok(42);branch on(r){Count::Ok(v)=>v==42,Count::Err(_)=>false}" "true"))
+     ("type Choice<T,E> =Result<E,T>;type Count=Choice<string,int>;let r:Count=Count::Ok(42);branch on(r){Count::Ok(v)=>v==42,Count::Err(ignoredPayload2)=>false}" "true"))
     ("C08-04"
      ("type Box<T> =struct{value:T;};let b:Box<Box<int,>,> =Box<Box<int,>,>{value:Box<int,>{value:42}};b->value->value==42" "true")
      ("type Box<T> =struct{value:T;};type Bad=Box<>;true" "parse")
@@ -65,50 +65,50 @@
      ("let identity:function<T>(T):T=function<T>(x:T):T{x};let n:int=branch when{true=>identity(42),else=>0};true" "semantic")
      ("let identity:function<T>(T):T=function<T>(x:T):T{x};let n:int=identity(42);n==42" "semantic"))
     ("C08-15"
-     ("branch on(Result<int,string>::Ok(42)){Result::Ok(v)=>true,Result::Err(_)=>false}" "semantic")
-     ("branch on(Result<int,string>::Ok(42)){Result<bool,string>::Ok(v)=>true,Result<bool,string>::Err(_)=>false}" "semantic"))
+     ("branch on(Result<int,string>::Ok(42)){Result::Ok(v)=>true,Result::Err(ignoredPayload3)=>false}" "semantic")
+     ("branch on(Result<int,string>::Ok(42)){Result<bool,string>::Ok(v)=>true,Result<bool,string>::Err(ignoredPayload4)=>false}" "semantic"))
     ("C08-16"
      ("branch on(Result<int,string>::Ok(42)){Result<int,string>::Ok(v)=>true}" "semantic")
-     ("branch on(Result<int,string>::Ok(42)){Result<int,string>::Ok(v)=>true,Result<int,string>::Ok(w)=>false,Result<int,string>::Err(_)=>false}" "semantic")
-     ("branch on(Result<int,string>::Ok(42)){Result<int,string>::Ok(v)=>true,Result<int,string>::Err(_)=>false,else=>false}" "semantic")
-     ("let n:bool=branch on(Result<int,string>::Ok(42)){Result<int,string>::Ok(v)=>true,Result<int,string>::Err(_)=>false};v==42" "semantic"))
+     ("branch on(Result<int,string>::Ok(42)){Result<int,string>::Ok(v)=>true,Result<int,string>::Ok(w)=>false,Result<int,string>::Err(ignoredPayload5)=>false}" "semantic")
+     ("branch on(Result<int,string>::Ok(42)){Result<int,string>::Ok(v)=>true,Result<int,string>::Err(ignoredPayload6)=>false,else=>false}" "semantic")
+     ("let n:bool=branch on(Result<int,string>::Ok(42)){Result<int,string>::Ok(v)=>true,Result<int,string>::Err(ignoredPayload7)=>false};v==42" "semantic"))
     ("C08-17"
-     ("let make:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(42)};let r:Result<int,string> =make();branch on(r){Result<int,string>::Ok(v)=>v==42,Result<int,string>::Err(_)=>false}" "true"))
+     ("let make:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(42)};let r:Result<int,string> =make();branch on(r){Result<int,string>::Ok(v)=>v==42,Result<int,string>::Err(ignoredPayload8)=>false}" "true"))
     ("C08-18"
-     ("let r:Result<int,string> =Result<int,string>::Err(\"ordinary\");let n:int=42;branch on(r){Result<int,string>::Ok(_)=>true,Result<int,string>::Err(_)=>n!=42}" "false"))
+     ("let r:Result<int,string> =Result<int,string>::Err(\"ordinary\");let n:int=42;branch on(r){Result<int,string>::Ok(ignoredPayload9)=>true,Result<int,string>::Err(ignoredPayload10)=>n!=42}" "false"))
     ("C08-19"
-     ("type Wrapped=struct{text:string;};let convert:function(Result<int,string>):Result<int,Wrapped> =function(r:Result<int,string>):Result<int,Wrapped>{branch on(r){Result<int,string>::Ok(v)=>Result<int,Wrapped>::Ok(v),Result<int,string>::Err(e)=>Result<int,Wrapped>::Err(Wrapped{text:e})}};branch on(convert(Result<int,string>::Err(\"kept\"))){Result<int,Wrapped>::Ok(_)=>false,Result<int,Wrapped>::Err(e)=>e->text==\"kept\"}" "true"))
+     ("type Wrapped=struct{text:string;};let convert:function(Result<int,string>):Result<int,Wrapped> =function(r:Result<int,string>):Result<int,Wrapped>{branch on(r){Result<int,string>::Ok(v)=>Result<int,Wrapped>::Ok(v),Result<int,string>::Err(e)=>Result<int,Wrapped>::Err(Wrapped{text:e})}};branch on(convert(Result<int,string>::Err(\"kept\"))){Result<int,Wrapped>::Ok(ignoredPayload11)=>false,Result<int,Wrapped>::Err(e)=>e->text==\"kept\"}" "true"))
     ("C08-20"
-     ("let f:function():Result<void,string> =function():Result<void,string>{try Result<void,string>::Ok(void);Result<void,string>::Ok(void)};branch on(f()){Result<void,string>::Ok(v)=>{v;true},Result<void,string>::Err(_)=>false}" "true")
+     ("let f:function():Result<void,string> =function():Result<void,string>{try Result<void,string>::Ok(void);Result<void,string>::Ok(void)};branch on(f()){Result<void,string>::Ok(v)=>{v;true},Result<void,string>::Err(ignoredPayload12)=>false}" "true")
      ("let r:Result<void,string> =Result<void,string>::Ok();true" "semantic"))
     ("C08-21"
      ("type Result=int;true" "semantic")
      ("type Fake=enum{Ok(int);Err(string);};let f:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try Fake::Ok(42))};true" "semantic")
-     ("type R=Result<int,string>;let f:function():R=function():R{R::Ok(try R::Ok(42))};branch on(f()){R::Ok(v)=>v==42,R::Err(_)=>false}" "true"))
+     ("type R=Result<int,string>;let f:function():R=function():R{R::Ok(try R::Ok(42))};branch on(f()){R::Ok(v)=>v==42,R::Err(ignoredPayload13)=>false}" "true"))
     ("C08-22"
-     ("let f:function():Result<int,string> =function():Result<int,string>{var count:int=0;let n:int=try {count=count+1;Result<int,string>::Ok(count)};Result<int,string>::Ok(count*10+n)};branch on(f()){Result<int,string>::Ok(v)=>v==11,Result<int,string>::Err(_)=>false}" "true"))
+     ("let f:function():Result<int,string> =function():Result<int,string>{var count:int=0;let n:int=try {count=count+1;Result<int,string>::Ok(count)};Result<int,string>::Ok(count*10+n)};branch on(f()){Result<int,string>::Ok(v)=>v==11,Result<int,string>::Err(ignoredPayload14)=>false}" "true"))
     ("C08-23"
-     ("let f:function():Result<int,string> =function():Result<int,string>{let n:int=try Result<int,string>::Err(\"early\");Result<int,string>::Ok(n+1/0)};branch on(f()){Result<int,string>::Ok(_)=>false,Result<int,string>::Err(e)=>e==\"early\"}" "true"))
+     ("let f:function():Result<int,string> =function():Result<int,string>{let n:int=try Result<int,string>::Err(\"early\");Result<int,string>::Ok(n+1/0)};branch on(f()){Result<int,string>::Ok(ignoredPayload15)=>false,Result<int,string>::Err(e)=>e==\"early\"}" "true"))
     ("C08-24"
-     ("let f:function():Result<string,string> =function():Result<string,string>{let n:int=try Result<int,string>::Err(\"same\");Result<string,string>::Ok(\"bad\")};branch on(f()){Result<string,string>::Ok(_)=>false,Result<string,string>::Err(e)=>e==\"same\"}" "true"))
+     ("let f:function():Result<string,string> =function():Result<string,string>{let n:int=try Result<int,string>::Err(\"same\");Result<string,string>::Ok(\"bad\")};branch on(f()){Result<string,string>::Ok(ignoredPayload16)=>false,Result<string,string>::Err(e)=>e==\"same\"}" "true"))
     ("C08-25"
-     ("let a:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Err(\"chain\")};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};let c:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try b())};branch on(c()){Result<int,string>::Ok(_)=>false,Result<int,string>::Err(e)=>e==\"chain\"}" "true"))
+     ("let a:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Err(\"chain\")};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};let c:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try b())};branch on(c()){Result<int,string>::Ok(ignoredPayload17)=>false,Result<int,string>::Err(e)=>e==\"chain\"}" "true"))
     ("C08-26"
-     ("let a:function(Result<int,string>):Result<int,string> =function(r:Result<int,string>):Result<int,string>{let n:int=try r;Result<int,string>::Ok(n+1)};let b:function(Result<int,string>):Result<int,string> =function(r:Result<int,string>):Result<int,string>{let n:int=branch on(r){Result<int,string>::Ok(v)=>v,Result<int,string>::Err(e)=>{return Result<int,string>::Err(e);}};Result<int,string>::Ok(n+1)};let check:function(Result<int,string>):bool=function(r:Result<int,string>):bool{branch on(a(r)){Result<int,string>::Ok(x)=>branch on(b(r)){Result<int,string>::Ok(y)=>x==y,Result<int,string>::Err(_)=>false},Result<int,string>::Err(x)=>branch on(b(r)){Result<int,string>::Ok(_)=>false,Result<int,string>::Err(y)=>x==y}}};branch when{check(Result<int,string>::Ok(41))=>check(Result<int,string>::Err(\"bad\")),else=>false}" "true"))
+     ("let a:function(Result<int,string>):Result<int,string> =function(r:Result<int,string>):Result<int,string>{let n:int=try r;Result<int,string>::Ok(n+1)};let b:function(Result<int,string>):Result<int,string> =function(r:Result<int,string>):Result<int,string>{let n:int=branch on(r){Result<int,string>::Ok(v)=>v,Result<int,string>::Err(e)=>{return Result<int,string>::Err(e);}};Result<int,string>::Ok(n+1)};let check:function(Result<int,string>):bool=function(r:Result<int,string>):bool{branch on(a(r)){Result<int,string>::Ok(x)=>branch on(b(r)){Result<int,string>::Ok(y)=>x==y,Result<int,string>::Err(ignoredPayload18)=>false},Result<int,string>::Err(x)=>branch on(b(r)){Result<int,string>::Ok(ignoredPayload19)=>false,Result<int,string>::Err(y)=>x==y}}};branch when{check(Result<int,string>::Ok(41))=>check(Result<int,string>::Err(\"bad\")),else=>false}" "true"))
     ("C08-27"
      ("try panic {\"stop\"}" "semantic")
      ("let f:function():int=function():int{try Result<int,string>::Ok(42)};true" "semantic")
      ("let f:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try 42)};true" "semantic")
      ("let f:function():Result<int,int> =function():Result<int,int>{Result<int,int>::Ok(try Result<int,string>::Ok(42))};true" "semantic"))
     ("C08-28"
-     ("let outer:function():bool=function():bool{let inner:function():Result<int,string> =function():Result<int,string>{loop{let n:int=try Result<int,string>::Err(\"inner\");break Result<int,string>::Ok(n);}};branch on(inner()){Result<int,string>::Ok(_)=>false,Result<int,string>::Err(e)=>e==\"inner\"}};outer()" "true"))
+     ("let outer:function():bool=function():bool{let inner:function():Result<int,string> =function():Result<int,string>{loop{let n:int=try Result<int,string>::Err(\"inner\");break Result<int,string>::Ok(n);}};branch on(inner()){Result<int,string>::Ok(ignoredPayload20)=>false,Result<int,string>::Err(e)=>e==\"inner\"}};outer()" "true"))
     ("C08-29"
-     ("let f:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try try Result<Result<int,string>,string>::Ok(Result<int,string>::Ok(41))+1)};branch on(f()){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(_)=>false}" "true")
+     ("let f:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try try Result<Result<int,string>,string>::Ok(Result<int,string>::Ok(41))+1)};branch on(f()){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(ignoredPayload21)=>false}" "true")
      ("let f:function():bool=function():bool{try {return true;}};f()" "true"))
     ("C08-30"
-     ("let a:function():Result<int,string> =function():Result<int,string>{panic {\"callee\"}};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};branch on(b()){Result<int,string>::Ok(_)=>true,Result<int,string>::Err(_)=>false}" "failure:panic: callee")
-     ("let a:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(1/0)};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};branch on(b()){Result<int,string>::Ok(_)=>true,Result<int,string>::Err(_)=>false}" "failure:division by zero")
-     ("let a:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(\"x\"->slice(0,2)->length())};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};branch on(b()){Result<int,string>::Ok(_)=>true,Result<int,string>::Err(_)=>false}" "failure:string_index_out_of_bounds"))
+     ("let a:function():Result<int,string> =function():Result<int,string>{panic {\"callee\"}};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};branch on(b()){Result<int,string>::Ok(ignoredPayload22)=>true,Result<int,string>::Err(ignoredPayload23)=>false}" "failure:panic: callee")
+     ("let a:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(1/0)};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};branch on(b()){Result<int,string>::Ok(ignoredPayload24)=>true,Result<int,string>::Err(ignoredPayload25)=>false}" "failure:division by zero")
+     ("let a:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(\"x\"->slice(0,2)->length())};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};branch on(b()){Result<int,string>::Ok(ignoredPayload26)=>true,Result<int,string>::Err(ignoredPayload27)=>false}" "failure:string_index_out_of_bounds"))
     ("C08-31"
      ("let n:int=branch when{true=>42,else=>panic {\"unselected\"}};n==42" "true")
      ("branch when{true=>panic {\"all\"},else=>panic {\"other\"}}" "failure:panic: all"))
@@ -120,7 +120,7 @@
      ("panic {\"tail\"}" "failure:panic: tail")
      ("panic(\"old\")" "parse"))
     ("C08-40"
-     ("type Box<T> =struct{value:T;};let make:function():Result<Box<string>,int> =function():Result<Box<string>,int>{Result<Box<string>,int>::Ok(Box<string>{value:\"keep\"+\"!\"})};let held:Box<string> =branch on(make()){Result<Box<string>,int>::Ok(v)=>v,Result<Box<string>,int>::Err(_)=>Box<string>{value:\"bad\"}};var i:int=0;loop while(i<2000){let dead:Box<string> =Box<string>{value:\"dead\"+\"!\"};i=i+1;};held->value==\"keep!\"" "true"))
+     ("type Box<T> =struct{value:T;};let make:function():Result<Box<string>,int> =function():Result<Box<string>,int>{Result<Box<string>,int>::Ok(Box<string>{value:\"keep\"+\"!\"})};let held:Box<string> =branch on(make()){Result<Box<string>,int>::Ok(v)=>v,Result<Box<string>,int>::Err(ignoredPayload28)=>Box<string>{value:\"bad\"}};var i:int=0;loop while(i<2000){let dead:Box<string> =Box<string>{value:\"dead\"+\"!\"};i=i+1;};held->value==\"keep!\"" "true"))
     ("C08-41"
      ("let f:function<T>(T):T=function<T>(x:T):T{let g:function<U>(U):T=function<U>(y:U):T{f<T>(x)};x};true" "semantic")
      ("let f:function<T>(T):T=function<T>(x:T):T{f<int>(42)};true" "semantic"))
@@ -129,7 +129,7 @@
     ("C08-43"
      ("let unused:function<T>(T):T=function<T>(x:T):T{panic {\"must not run\"}};true" "true"))
     ("C08-44"
-     ("let a:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Err(\"chain\")};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};let c:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try b())};branch on(c()){Result<int,string>::Ok(_)=>false,Result<int,string>::Err(e)=>e==\"chain\"}" "true"))
+     ("let a:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Err(\"chain\")};let b:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try a())};let c:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try b())};branch on(c()){Result<int,string>::Ok(ignoredPayload29)=>false,Result<int,string>::Err(e)=>e==\"chain\"}" "true"))
     ("C08-45"
      ("let a:int=40;var b:int=a;b=b+2;b==42" "true")
      ("let a=42;true" "semantic")
@@ -144,7 +144,7 @@
      ("let f:function():int=function():int{42};let alias:function():int=f;alias()==42" "true")
      ("let x:int=42;let alias=x;true" "semantic"))
     ("C08-48"
-     ("type R=Result<int,string>;branch on(R::Ok(42)){R::Ok(n)=>n==42,R::Err(_)=>false}" "true"))
+     ("type R=Result<int,string>;branch on(R::Ok(42)){R::Ok(n)=>n==42,R::Err(ignoredPayload30)=>false}" "true"))
     ("C08-49"
      ("let identity:function<T>(T):T=function<T>(x:T):T{x};let n:int=identity<int>(41)+1;n==42" "true"))
     ("C08-50"
@@ -177,12 +177,12 @@
      ("type A=Result<int,string>;type B=A;interface I{}implement B against I{}true" "semantic")
      ("type Box<T> =struct{value:T;};type Wrapper=enum{Value(Box<int>);};type W=Wrapper;implement W{let get=function():int{branch on(this){W::Value(b)=>b->value}};}W::Value(Box<int>{value:42})->get()==42" "true"))
     ("C08-56"
-     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<int,string>(Result<int,string>::Ok(42))){Result<int,string>::Ok(v)=>v==42,Result<int,string>::Err(_)=>false}" "true")
-     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<int,string>(Result<int,string>::Err(\"err\"))){Result<int,string>::Ok(_)=>false,Result<int,string>::Err(e)=>e==\"err\"}" "true")
-     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<string,string>(Result<string,string>::Ok(\"ok\"))){Result<string,string>::Ok(v)=>v==\"ok\",Result<string,string>::Err(_)=>false}" "true")
-     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<string,string>(Result<string,string>::Err(\"err\"))){Result<string,string>::Ok(_)=>false,Result<string,string>::Err(e)=>e==\"err\"}" "true")
-     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<void,string>(Result<void,string>::Ok(void))){Result<void,string>::Ok(v)=>{v;true},Result<void,string>::Err(_)=>false}" "true")
-     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<void,string>(Result<void,string>::Err(\"err\"))){Result<void,string>::Ok(_)=>false,Result<void,string>::Err(e)=>e==\"err\"}" "true"))
+     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<int,string>(Result<int,string>::Ok(42))){Result<int,string>::Ok(v)=>v==42,Result<int,string>::Err(ignoredPayload31)=>false}" "true")
+     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<int,string>(Result<int,string>::Err(\"err\"))){Result<int,string>::Ok(ignoredPayload32)=>false,Result<int,string>::Err(e)=>e==\"err\"}" "true")
+     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<string,string>(Result<string,string>::Ok(\"ok\"))){Result<string,string>::Ok(v)=>v==\"ok\",Result<string,string>::Err(ignoredPayload33)=>false}" "true")
+     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<string,string>(Result<string,string>::Err(\"err\"))){Result<string,string>::Ok(ignoredPayload34)=>false,Result<string,string>::Err(e)=>e==\"err\"}" "true")
+     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<void,string>(Result<void,string>::Ok(void))){Result<void,string>::Ok(v)=>{v;true},Result<void,string>::Err(ignoredPayload35)=>false}" "true")
+     ("let forward:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{let v:T=try r;Result<T,E>::Ok(v)};branch on(forward<void,string>(Result<void,string>::Err(\"err\"))){Result<void,string>::Ok(ignoredPayload36)=>false,Result<void,string>::Err(e)=>e==\"err\"}" "true"))
     ("C08-57"
      ("let n:int=panic {\"stop\"};true" "semantic")
      ("let n:int=branch when{true=>panic {\"a\"},else=>panic {\"b\"}};true" "semantic")

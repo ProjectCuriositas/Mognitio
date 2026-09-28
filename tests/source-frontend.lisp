@@ -27,18 +27,16 @@
       (same (length text) (span-end (token-span (aref tokens 11))))
       (expect-source text :false))))
 
-(deftest v04-bom
-  (let ((valid (put-bytes (fresh-path) #(239 187 191 116 114 117 101))))
-    (expect-cli (list "run" (namestring valid)) 0 :output (format nil "true~%"))
-    (let ((source (read-source (namestring valid))))
-      (same #(3 4 5 6 7) (source-byte-offsets source))
-      (same #(1 1 1 1 1) (source-lines source))
-      (same #(1 2 3 4 5) (source-columns source))))
-  (dolist (case '((#(239 187 191) "parse")
-                  (#(239 187 191 239 187 191) "source")
-                  (#(116 114 117 101 239 187 191) "source")))
-    (expect-cli (list "run" (namestring (put-bytes (fresh-path) (first case))))
-                1 :phase (second case))))
+(deftest v09-bom-rejection
+  (dolist (bytes '(#(239 187 191) #(239 187 191 116 114 117 101)
+                   #(239 187 191 239 187 191)))
+    (let ((diag (diagnostic-of (lambda () (decode-source "bom.mgn" bytes)))))
+      (same :source (diagnostic-phase diag))
+      (same 0 (diagnostic-start-byte diag)) (same 3 (diagnostic-end-byte diag)))
+    (expect-cli (list "run" (namestring (put-bytes (fresh-path) bytes))) 1 :phase "source"))
+  ;; U+FEFF is a scalar inside content, but is not whitespace between tokens.
+  (expect-cli (list "run" (namestring (put-bytes (fresh-path) #(116 114 117 101 239 187 191))))
+              1 :phase "lex"))
 
 (deftest v05-strict-utf8
   (dolist (bytes '(#(128) #(191) #(192 128) #(193 191) #(194) #(223)
@@ -76,13 +74,13 @@
          (diag (diagnostic-of (lambda () (parse-program source (lex-source source))))))
     (same 2 (diagnostic-line diag)) (same 2 (diagnostic-column diag)))
   (let ((diag (diagnostic-of
-               (lambda () (decode-source "bad.mgn" #(239 187 191 13 10 9 226 130 0))))))
+               (lambda () (decode-source "bad.mgn" #(13 10 9 226 130 0))))))
     (same 2 (diagnostic-line diag)) (same 2 (diagnostic-column diag)))
   (let ((source (text-source (format nil "~C~C~C" #\Return #\Newline #\Tab))))
     (same #(1 2 2 2) (source-lines source))
     (same #(1 1 1 2) (source-columns source)))
   (let ((diag (diagnostic-of
-               (lambda () (lex-source (decode-source "bom.mgn" #(239 187 191 9 64)))))))
+               (lambda () (lex-source (decode-source "tab.mgn" #(9 64)))))))
     (same 1 (diagnostic-line diag)) (same 2 (diagnostic-column diag))))
 
 (deftest v08-valid-unicode
@@ -100,9 +98,9 @@
 
 (deftest v06-invalid-words-and-characters
   ;; v0.3 identifiers are lexically valid; unresolved names fail semantically.
-  (dolist (text '("foo" "truefalse" "trueif" "True" "TRUE" "true1" "1" "_" "null"))
+  (dolist (text '("foo" "truefalse" "trueif" "True" "TRUE" "true1" "1" "null"))
     (expect-invalid text "semantic"))
-  (dolist (text '("$x" "@" "#.(quit)")) (expect-invalid text "lex"))
+  (dolist (text '("_" "$x" "@" "#.(quit)")) (expect-invalid text "lex"))
   (dolist (text '(";" "// comment" "/*x*/" "+")) (expect-invalid text "parse"))
   (let* ((source (text-source "truefalse")) (tokens (lex-source source)))
     (same :identifier (token-kind (aref tokens 0)))

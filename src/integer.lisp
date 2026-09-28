@@ -16,9 +16,9 @@
     (mognitio.diagnostics:internal-error "Invalid integer operand"))
   (when (member op '(:div :rem))
     (when (zerop b)
-      (mognitio.runtime:runtime-error (if (eq op :div) :division-by-zero :remainder-by-zero)))
+      (mognitio.runtime:runtime-error :division-by-zero))
     (when (and (= a +minimum+) (= b -1))
-      (mognitio.runtime:runtime-error :overflow)))
+      (if (eq op :rem) (return-from checked-arithmetic 0) (mognitio.runtime:runtime-error :overflow))))
   (let ((result (ecase op
                   (:neg (- a)) (:add (+ a b)) (:sub (- a b)) (:mul (* a b))
                   (:div (truncate a b)) (:rem (nth-value 1 (truncate a b))))))

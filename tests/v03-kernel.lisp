@@ -34,9 +34,9 @@
   (dolist (text
             '("(true)" "let unitPrice: int = 120; var count: int = 2; count = count + 1; count * unitPrice == 360"
               "let a: int = 1 + 2 * 3; let b: int = (1 + 2) * 3; branch when{(a == 7)=>{ b == 9 },else=>{ false }}"
-              "10 - 3 - 2 == 5" "24 / 4 / 2 == 3" "-(-1) == 1" "010 == 10" "000 == 0"
+              "10 - 3 - 2 == 5" "24 / 4 / 2 == 3" "-(-1) == 1" "10 == 10" "0 == 0"
               "-9223372036854775808 < 9223372036854775807"
-              "- 09223372036854775808 == (-9223372036854775808)"
+              "- 9223372036854775808 == (-9223372036854775808)"
               "7 / 3 == 2" "-7 / 3 == -2" "7 / -3 == -2" "-7 / -3 == 2"
               "-7 % 3 == -1" "7 % -3 == 1" "-7 % -3 == -1" "0 % 3 == 0"
               "1 < 2 == true" "(1 < 2) == (3 < 4)" "true != false" "1 != 2"
@@ -95,7 +95,7 @@
         (v03-reject (format nil "~A x = branch when{(~A)=>{~A x = 1; x},else=>{0}};true"
                             outer condition inner) "semantic"))))
   (v03-reject (format nil "~A == 0" (make-string 10000 :initial-element #\9)) "semantic")
-  (v03-positive (format nil "~A1 == 1" (make-string 10000 :initial-element #\0)) :true))
+  (v03-reject (format nil "~A1 == 1" (make-string 10000 :initial-element #\0)) "lex"))
 
 (deftest v03-runtime-arithmetic
   (dolist (expr '("9223372036854775807 + 1" "-9223372036854775808 - 1"

@@ -12,22 +12,22 @@
 
 (deftest v08-try-result-flow
   (dolist (source
-    '("let f:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try Result<int,string>::Ok(41)+1)};branch on(f()){Result<int,string>::Ok(x)=>x==42,Result<int,string>::Err(_)=>false}"
-      "let f:function():Result<bool,string> =function():Result<bool,string>{let n:int=try Result<int,string>::Err(\"bad\"+\"!\");Result<bool,string>::Ok(n==42)};branch on(f()){Result<bool,string>::Ok(_)=>false,Result<bool,string>::Err(e)=>e==\"bad!\"}"
-      "type R=Result<int,string>;type E=string;let f:function():Result<bool,E> =function():Result<bool,E>{let n:int=try R::Err(\"same\");Result<bool,E>::Ok(n==42)};branch on(f()){Result<bool,E>::Ok(_)=>false,Result<bool,E>::Err(e)=>e==\"same\"}"
-      "let f:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{Result<T,E>::Ok(try r)};branch on(f<int,string>(Result<int,string>::Ok(42))){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(_)=>false}"
-      "let f:function<T,E>(Result<T,E>):Result<bool,E> =function<T,E>(r:Result<T,E>):Result<bool,E>{let n:T=try r;Result<bool,E>::Ok(true)};branch on(f<int,string>(Result<int,string>::Err(\"kept\"))){Result<bool,string>::Ok(_)=>false,Result<bool,string>::Err(e)=>e==\"kept\"}"
-      "let f:function():Result<void,string> =function():Result<void,string>{try Result<void,string>::Ok(void);Result<void,string>::Ok(void)};branch on(f()){Result<void,string>::Ok(v)=>{v;true},Result<void,string>::Err(_)=>false}"
-      "let f:function():Result<int,string> =function():Result<int,string>{let g:function(int,int):int=function(x:int,y:int):int{x+y};Result<int,string>::Ok(g(try Result<int,string>::Err(\"early\"),1/0))};branch on(f()){Result<int,string>::Ok(_)=>false,Result<int,string>::Err(e)=>e==\"early\"}"
+    '("let f:function():Result<int,string> =function():Result<int,string>{Result<int,string>::Ok(try Result<int,string>::Ok(41)+1)};branch on(f()){Result<int,string>::Ok(x)=>x==42,Result<int,string>::Err(ignoredPayload1)=>false}"
+      "let f:function():Result<bool,string> =function():Result<bool,string>{let n:int=try Result<int,string>::Err(\"bad\"+\"!\");Result<bool,string>::Ok(n==42)};branch on(f()){Result<bool,string>::Ok(ignoredPayload2)=>false,Result<bool,string>::Err(e)=>e==\"bad!\"}"
+      "type R=Result<int,string>;type E=string;let f:function():Result<bool,E> =function():Result<bool,E>{let n:int=try R::Err(\"same\");Result<bool,E>::Ok(n==42)};branch on(f()){Result<bool,E>::Ok(ignoredPayload3)=>false,Result<bool,E>::Err(e)=>e==\"same\"}"
+      "let f:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{Result<T,E>::Ok(try r)};branch on(f<int,string>(Result<int,string>::Ok(42))){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(ignoredPayload4)=>false}"
+      "let f:function<T,E>(Result<T,E>):Result<bool,E> =function<T,E>(r:Result<T,E>):Result<bool,E>{let n:T=try r;Result<bool,E>::Ok(true)};branch on(f<int,string>(Result<int,string>::Err(\"kept\"))){Result<bool,string>::Ok(ignoredPayload5)=>false,Result<bool,string>::Err(e)=>e==\"kept\"}"
+      "let f:function():Result<void,string> =function():Result<void,string>{try Result<void,string>::Ok(void);Result<void,string>::Ok(void)};branch on(f()){Result<void,string>::Ok(v)=>{v;true},Result<void,string>::Err(ignoredPayload6)=>false}"
+      "let f:function():Result<int,string> =function():Result<int,string>{let g:function(int,int):int=function(x:int,y:int):int{x+y};Result<int,string>::Ok(g(try Result<int,string>::Err(\"early\"),1/0))};branch on(f()){Result<int,string>::Ok(ignoredPayload7)=>false,Result<int,string>::Err(e)=>e==\"early\"}"
       "let f:function():int=function():int{try {return 42;}};f()==42"
       "let f:function():int=function():int{panic {return 42;}};f()==42"
       "let f:function():int=function():int{try panic {return 42;}};f()==42"
       "let n:int=loop{panic {break 42;}};n==42"
       "var i:int=0;loop while(i<3){i=i+1;panic {continue;}};i==3"
-      "let f:function():Result<int,string> =function():Result<int,string>{let n:int=loop{break try Result<int,string>::Ok(42);};Result<int,string>::Ok(n)};branch on(f()){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(_)=>false}"
-      "type U=struct{};interface I{let f=function():Result<int,string>;}implement U against I{let f=function():Result<int,string>{Result<int,string>::Ok(try Result<int,string>::Ok(42))};}branch on(U{}->f()){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(_)=>false}"
-      "let f:function():Result<string,int> =function():Result<string,int>{Result<string,int>::Ok((try Result<string,int>::Ok(\"abc\"))->slice(1,3))};branch on(f()){Result<string,int>::Ok(s)=>s==\"bc\",Result<string,int>::Err(_)=>false}"
-      "let f:function():Result<int,void> =function():Result<int,void>{let x:string=try Result<string,void>::Err(void);Result<int,void>::Ok(x->length())};branch on(f()){Result<int,void>::Ok(_)=>false,Result<int,void>::Err(v)=>{v;true}}"))
+      "let f:function():Result<int,string> =function():Result<int,string>{let n:int=loop{break try Result<int,string>::Ok(42);};Result<int,string>::Ok(n)};branch on(f()){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(ignoredPayload8)=>false}"
+      "type U=struct{};interface I{let f=function():Result<int,string>;}implement U against I{let f=function():Result<int,string>{Result<int,string>::Ok(try Result<int,string>::Ok(42))};}branch on(U{}->f()){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(ignoredPayload9)=>false}"
+      "let f:function():Result<string,int> =function():Result<string,int>{Result<string,int>::Ok((try Result<string,int>::Ok(\"abc\"))->slice(1,3))};branch on(f()){Result<string,int>::Ok(s)=>s==\"bc\",Result<string,int>::Err(ignoredPayload10)=>false}"
+      "let f:function():Result<int,void> =function():Result<int,void>{let x:string=try Result<string,void>::Err(void);Result<int,void>::Ok(x->length())};branch on(f()){Result<int,void>::Ok(ignoredPayload11)=>false,Result<int,void>::Err(v)=>{v;true}}"))
     (v07-accept source)))
 
 (deftest v08-error-syntax-and-types
@@ -61,7 +61,7 @@
     (v08-failure "panic {\"Aあ😀\\0\\nZ\"}" (concatenate 'string "panic: " message))))
 
 (deftest v08-error-metadata-and-core-rejection
-  (dolist (source '("panic {\"stop\"}" "let f:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{Result<T,E>::Ok(try r)};branch on(f<int,string>(Result<int,string>::Ok(42))){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(_)=>false}"))
+  (dolist (source '("panic {\"stop\"}" "let f:function<T,E>(Result<T,E>):Result<T,E> =function<T,E>(r:Result<T,E>):Result<T,E>{Result<T,E>::Ok(try r)};branch on(f<int,string>(Result<int,string>::Ok(42))){Result<int,string>::Ok(n)=>n==42,Result<int,string>::Err(ignoredPayload12)=>false}"))
     (dolist (mode '(:source :concrete))
       (dolist (mutation '(:owner :input :result :return :extra))
         (let* ((original (v08-check-template source))
