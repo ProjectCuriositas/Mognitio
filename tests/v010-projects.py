@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "bin/mgn"
 checks = 0
 
-def command(args, code=0, err=None, out=b"", env=None):
+def command(args, code=0, err=None, out=b"", env=None, cwd=None):
     global checks
-    r = subprocess.run([str(x) for x in args], capture_output=True, timeout=25, env=env)
+    r = subprocess.run([str(x) for x in args], capture_output=True, timeout=25, env=env, cwd=cwd)
     checks += 1
     assert r.returncode == code, (args[0], code, r.returncode, r.stderr.decode(errors="backslashreplace"))
     assert r.stdout == out, (r.stdout, out)
@@ -164,6 +164,47 @@ with tempfile.TemporaryDirectory(prefix="mgn-project-tests-") as tmp:
     command(["sh", "-c", 'exec "$1" 1>&-', "project", root / "out"])
     (root / "mognitio.toml").rename(root / "mgn.toml")
     command([CLI, "run", root / "mgn.toml"], 2)
+
+
+    # Symbolic generic applications are nominal types before instantiation.
+    # Keep these declarations unreachable so specialization cannot mask a gap.
+    for declaration in [
+        "public alias Exposed<T> = Hidden<T>;",
+        "public type Exposed<T> = product { value: Hidden<T>; };",
+        "public type Exposed<T> = sum { Value(Hidden<T>); };",
+        "public template expose<T> = function(x: Hidden<T>): Unit { discard x; unit };",
+        "public template expose<T> = function(x: T): Hidden<T> { Hidden<T> { value: x } };",
+        "public alias Exposed<T> = Function(List<Hidden<T>>): Unit;",
+        "public type Wrapper<A,B> = product { value: A; }; public alias Exposed<T> = Wrapper<T,Hidden<T>>;",
+    ]:
+        pair({"app.mgn": empty,
+              "lib.mgn": "namespace App; type Hidden<T> = product { value: T; }; " + declaration},
+             1, "semantic: Public signature exposes a private type")
+    pair({"app.mgn": 'namespace App; use App\\{Exposed,make}; let main:Function():Unit=function():Unit{let result:Exposed<Int>=make<Int>(42);discard result->value;unit};',
+          "lib.mgn": 'namespace App; type Hidden<T>=product{value:T;}; public alias Exposed<T>=Hidden<T>; public template make<T>=function(value:T):Exposed<T>{Hidden<T>{value:value}};'},
+         1, "semantic: Public signature exposes a private type")
+    pair({"app.mgn": 'namespace App; use App\\{Exposed,make}; let main:Function():Unit=function():Unit{let result:Exposed<Int>=make<Int>(42);discard result->value;unit};',
+          "lib.mgn": 'namespace App; public type Box<T>=product{value:T;}; alias Local<T>=Box<T>; public alias Exposed<T>=Local<T>; public template make<T>=function(value:T):Exposed<T>{Box<T>{value:value}};'})
+
+    # Directories are traversed before source suffix classification. Empty
+    # directories are not source inputs; source-containing names must be valid.
+    root = project({"app.mgn": empty})
+    (root / "src/ignored.mgn").mkdir()
+    command([CLI, "run", root / "mognitio.toml"])
+    command([CLI, "build", root / "mognitio.toml", "-o", root / "out"])
+    command([root / "out"])
+    (root / "src/ignored.mgn/child.mgn").write_text("namespace App;")
+    before = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+    command([CLI, "run", root / "mognitio.toml"], 2, "Invalid namespace directory")
+    command([CLI, "build", root / "mognitio.toml", "-o", root / "out"], 2, "Invalid namespace directory")
+    assert before == {p: p.read_bytes() for p in before}
+
+    # Users invoke mgn from their project; the real compiler bin is on PATH.
+    root = project({"app.mgn": empty})
+    path_env = dict(os.environ, PATH=str(CLI.parent) + os.pathsep + os.environ["PATH"])
+    command(["mgn", "run", "mognitio.toml"], env=path_env, cwd=root)
+    command(["mgn", "build", "mognitio.toml", "-o", "app"], env=path_env, cwd=root)
+    command([root / "app"])
 
     # Manifest schema and alternative legal TOML representations.
     for manifest in ['project = { name = "app", root_namespace = "App" }\n',
