@@ -2,12 +2,13 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-The v0.10.0 version branch adds multiple modules within one project.
+This v0.10.0 source release adds multiple modules within one project.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
+- [Release validation](verification/v0.10.0-release.md): pinned release checks.
 - [Implementation verification](verification/v0.10.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
