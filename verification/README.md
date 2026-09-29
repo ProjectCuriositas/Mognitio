@@ -1,7 +1,7 @@
 # Verification
 
-The current release validation is [v0.9.0](v0.9.0-release.md).
-The corresponding implementation record is [v0.9.0](v0.9.0.md).
+The current implementation record is [v0.10.0](v0.10.0.md).
+The current release validation is [v0.10.0](v0.10.0-release.md).
 Run checks from the repository root on a non-root Linux amd64 host with SBCL,
 Python 3, and permission to trace child processes.
 
@@ -17,14 +17,12 @@ independent oracles, and resource probes. Each failed assertion fails the run.
 ## CLI and native checks
 
 ```sh
-./bin/mognitio run examples/true.mgn
-./bin/mognitio run examples/false.mgn
-./bin/mognitio build examples/collections.mgn -o example
+./bin/mgn run examples/modules/mognitio.toml
+./bin/mgn build examples/modules/mognitio.toml -o example
 ./example
 ```
 
-Expected output is true, false, then true from the executable. Build itself is
-silent. The suite checks ELF fields, standalone execution, deterministic
+All three commands succeed silently with exit 0. The suite checks ELF fields, standalone execution, deterministic
 cold/warm caches, relocation, paths, and failures before and during publication.
 
 Determinism uses source bytes, target, and compiler build identity.

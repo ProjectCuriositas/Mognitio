@@ -1,8 +1,9 @@
 (in-package #:mognitio.tests)
-(deftest v09-distributed-examples
-  (dolist (path (directory (root-path "examples/*.mgn")))
-    (let ((source (uiop:read-file-string path))
-          (expected (if (string= (pathname-name path) "false") :false :true)))
-      (same expected (compiled-result source))
-      (expect-cli (list "run" (namestring path)) 0 :output (format nil "~(~A~)~%" expected))
-      (v06-expect-native source expected))))
+(deftest v010-distributed-examples
+  (let ((paths (directory (merge-pathnames #p"examples/*/mognitio.toml" (root-path "")))))
+    (is (>= (length paths) 13))
+    (dolist (path paths)
+      (expect-project path)
+      (multiple-value-bind (out err code)
+          (process-result (list (namestring (root-path "bin/mgn")) "run" (namestring path)))
+        (same 0 code) (same "" out) (same "" err)))))

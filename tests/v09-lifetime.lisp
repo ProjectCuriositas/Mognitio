@@ -55,7 +55,7 @@
 (defparameter *v09-lifetime-source*
   "let obsolete:String=\"dead\"+\"first\";type Page=product{text:String;};type State=sum{Ready(Page);};
 contract Readable{read(self:Self):String;}
-witness State implements Readable{read(self:Self):String{branch on self{State::Ready(p:Page)=>p->text}}}
+witness Evidence1 = State implements Readable{read(self:Self):String{branch on self{State::Ready(p:Page)=>p->text}}}
 let make:Function(String):Function():String=function(text:String):Function():String{function():String{text}};
 let keep:String=\"keep\"+\"!\";
 let fn:Function():String=make(keep);

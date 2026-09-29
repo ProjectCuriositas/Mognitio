@@ -1,0 +1,3 @@
+[project]
+name = "data_contract"
+root_namespace = "App"

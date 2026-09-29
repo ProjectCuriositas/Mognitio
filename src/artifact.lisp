@@ -71,12 +71,15 @@
           (fail 'usage-or-io-failure nil "File I/O failed; replacement outcome is unknown" :path output)
           (error condition)))))
 
+(defvar *project-validation* nil)
+
 (defun publish-image (image source output)
   (unless (and (typep image '(vector (unsigned-byte 8))) (plusp (length image)))
     (internal-error "Cannot publish an empty or invalid image"))
   (call-with-io-errors
    output
    (lambda ()
+     (when *project-validation* (funcall *project-validation*))
      ;; Recheck immediately before publication preparation as well as before compilation.
      (multiple-value-bind (destination parent) (validate-paths source output)
        (let ((fd nil) (temporary nil) (stream nil) (published nil))

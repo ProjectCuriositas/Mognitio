@@ -2,14 +2,14 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-This is the v0.9.0 source distribution for Linux amd64.
+This v0.10.0 source release adds multiple modules within one project.
 
 ## Start here
 
-- [Examples](examples/): small programs using the current language.
-- [Test coverage and migration](tests/README.md): current and historical fixtures.
-- [Release validation](verification/v0.9.0-release.md): pinned candidate and release checks.
-- [Implementation verification](verification/v0.9.0.md): evidence and limits.
+- [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
+- [Test coverage](tests/README.md): current project cases and internal regression oracles.
+- [Release validation](verification/v0.10.0-release.md): pinned release checks.
+- [Implementation verification](verification/v0.10.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
 
@@ -18,57 +18,97 @@ This is the v0.9.0 source distribution for Linux amd64.
 The compiler host is Linux with SBCL, ASDF, UIOP, and SB-POSIX.
 No Quicklisp, external compiler, assembler, or linker is required.
 
+Add the compiler checkout's real `bin` directory to PATH. From the compiler
+repository root, this configures the current shell:
+
 ```sh
-./bin/mognitio run examples/collections.mgn
-./bin/mognitio build examples/collections.mgn -o example
+export PATH="$PWD/bin:$PATH"
+```
+
+For persistent setup, add that absolute `bin` path to your shell configuration.
+Keep the compiler checkout intact: copying or symlinking only the launcher into
+another directory is not a supported installation method.
+
+From your Mognitio project's directory, use the `mgn` command:
+
+```sh
+mgn run mognitio.toml
+mgn build mognitio.toml -o app
+./app
+```
+
+Compiler contributors can invoke the launcher directly from its checkout:
+
+```sh
+./bin/mgn run examples/modules/mognitio.toml
+./bin/mgn build examples/modules/mognitio.toml -o example
 ./example
 ```
 
-Run and native execution print a Boolean result and one newline.
-Build succeeds silently. The generated Linux amd64 ELF needs no compiler,
-source, libc, dynamic loader, or cache at runtime.
+Normal execution returns silently with exit 0. Build also succeeds silently.
+The generated Linux amd64 ELF needs no compiler, source, libc, dynamic loader,
+or cache at runtime. Build checks all sources without executing initializers.
 
-The canonical arguments are `run <source>` and `build <source> -o <artifact>`.
-There is no required source suffix. Relative paths use the caller's directory;
-prefix a filename starting with `-` with `./`.
-The output parent must exist. Source/output aliases and non-regular output
-files, including output symlinks, are rejected.
+The arguments are `run <mognitio.toml>` and `build <mognitio.toml> -o <artifact>`.
+Relative paths use the caller's directory. The output parent must exist.
+All inputs and future `.mgn` sources are protected against output replacement,
+including aliases through hardlinks and symlinks. Publication uses a temporary
+image and atomic replacement. Precommit failures preserve the old artifact;
+an uncertain rename outcome is reported explicitly.
 
-Build writes, closes, and verifies a temporary image before atomic replacement.
-Precommit failures preserve the old artifact. A rename I/O error with an
-unknown replacement outcome is reported as such.
+## A project
 
-## A small program
+`mognitio.toml` uses TOML 1.0.0 and requires exactly these two string settings:
 
-```mgn
-template reader<T> = function(value: T): Function(): T {
-    function(): T { value }
-};
-var readers: List<Function(): Int> = List<Function(): Int>[];
-loop over (List<Int>[1, 2, 3] as value: Int) {
-    readers = readers->append(reader<Int>(value));
-};
-var total: Int = 0;
-loop over (readers as read: Function(): Int) {
-    total = total + read();
-};
-total == 6
+```toml
+[project]
+name = "app"
+root_namespace = "App"
 ```
 
-Bindings and parameters declare their types. `let` is immutable; `var`
-permits exact-type rebinding. Functions retain values captured at creation.
-A returned function or a value stored in a container remains usable.
+The entry is `src/app.mgn`. Every source is one module, with a namespace matching
+the root namespace plus its directories. Multiple files can share a namespace.
+All modules contain declarations only. The entry declares its own immutable
+`main` binding of type `Function(): Unit`:
 
-`product` and `sum` create nominal types; `alias` preserves identity.
-Contract values require explicit packaging backed by a `witness ... implements ...`
-declaration. Templates require explicit type arguments. See
-[contracts](examples/data-contract.mgn) and [results](examples/results.mgn).
+```mgn
+namespace App;
+use App\Domain\{Page, Printable, PagePrintable, makePage};
 
-`List<T>` is persistent: append returns a new list. Length is constant time,
-append performs constant structural work, indexing is linear, and a complete
-traversal prepares one forward buffer in linear time. Allocator, GC, and loop
-body costs are separate. Indexing and String slicing return `Result`
-values for invalid bounds.
+let main: Function(): Unit = function(): Unit {
+    let page: Page = makePage("Multiple modules");
+    let printable: Printable = Printable(page);
+    branch when {
+        printable->text() == "Multiple modules" => unit,
+        else => panic { "Unexpected page text" }
+    }
+};
+```
+
+The [domain module](examples/modules/src/Domain/page.mgn) declares the imported
+symbols. Every import requires braces, including a single symbol; `as` introduces
+an alias. Other files require explicit imports even within the same namespace.
+Wildcards and re-exporting with `public use` are not supported.
+
+Declarations are private to the file unless marked `public`. Types, aliases,
+contracts, templates, immutable bindings, and named witnesses can be public.
+A witness such as `public witness PagePrintable = Page implements Printable`
+binds compile-time evidence; importing a type alone does not import its witnesses.
+An imported binding retains its original identity and is initialized once.
+Dependencies initialize first, with ready modules ordered by relative UTF-8 path.
+Unused modules are checked but not initialized.
+
+Bindings and parameters declare their types. Functions capture value snapshots.
+`product` and `sum` create nominal types; `alias` preserves identity. Templates
+require explicit type arguments. See [collections](examples/collections/),
+[contracts](examples/data-contract/), and [results](examples/results/).
+All value members use `->`. The identifier `_` is an ordinary name; use
+`discard expression;` to discard a non-Unit result.
+
+`List<T>` is persistent. Length is constant time, append performs constant
+structural work, indexing is linear, and a complete traversal prepares one
+forward buffer in linear time. Allocator, GC, and loop body costs are separate.
+Invalid indexing and String slicing return `Result` values.
 
 ## Results and failures
 
@@ -76,15 +116,23 @@ values for invalid bounds.
 |---|---|
 | 0 | Successful run or build |
 | 1 | Source, lexical, parse, name, or type error |
-| 2 | Invocation or file I/O error |
+| 2 | Invocation, manifest, input path, or file I/O error |
 | 3 | Internal compiler, execution, or bootstrap failure |
 | 4 | Detected runtime failure or panic |
 
-Runtime failures leave stdout empty. Panic writes `panic: `
-followed by the message bytes and a final newline. Other detected failures use
-`runtime error: `
-and a fixed description. Bounds errors are ordinary Result values.
-Diagnostics for static errors include source location and UTF-8 byte ranges.
+Runtime failures leave stdout empty. Panic writes `panic: ` followed by the
+message bytes and a newline. Other detected failures use `runtime error: ` and
+a fixed description. Static diagnostics include source location and UTF-8 byte
+ranges. Paths are escaped to distinguish invalid bytes, newlines, and backslashes.
+Source paths must be valid UTF-8. Symlinks and duplicate physical inputs are
+rejected. Directories are traversed regardless of their suffix. Other `.mgn`
+entries must be regular files; FIFOs, sockets, and devices are rejected before
+reading. An empty directory named `ignored.mgn` is not a source input. If it
+contains a source, its directory name must satisfy the namespace identifier rules.
+
+Before v1.0.0, backwards compatibility is not guaranteed. The old single-source
+CLI and `bin/mognitio` command are removed. Package registries, external
+dependencies, and separate compilation are outside this version's scope.
 
 ## Test
 
@@ -97,20 +145,3 @@ sha256sum -c verification/SHA256SUMS
 The full suite requires a non-root Linux amd64 host, Python 3, and permission
 to trace its own child processes. Test allocation and collection controls are
 internal bindings, with no public CLI or environment-variable switches.
-
-## Loops and members
-
-Unconditional loops return their explicit break value:
-
-```mgn
-let answer: Int = loop { break 42; };
-answer == 42
-```
-
-Use `break unit;` for a Unit result; a loop without a normal break has no
-normal result. While/over loops produce Unit and accept only plain `break;`.
-All value members use `->`: fields, Function field calls, type operations,
-and contract dispatch. Declare evidence with
-`witness Concrete implements Contract { ... }`.
-The identifier `_` is an ordinary name; use `discard expression;` to
-discard a non-Unit value, or omit an unused payload binder.

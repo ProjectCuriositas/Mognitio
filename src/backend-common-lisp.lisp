@@ -4,8 +4,8 @@
 
 (defstruct (compiled-program
              (:constructor %make-compiled-program
-                 (function span &optional warnings-p compiler-output)))
-  (function nil :read-only t) (span nil :read-only t)
+                 (function span &optional warnings-p compiler-output (result-type :bool))))
+  (function nil :read-only t) (span nil :read-only t) (result-type :bool :read-only t)
   (warnings-p nil :read-only t) (compiler-output "" :read-only t))
 
 (defun unpacked-expression-form (node checked names functions exits &optional loops)
@@ -201,7 +201,8 @@
            (fail-at span :internal "Host compile did not produce a valid function"
                     'internal-failure))
          (%make-compiled-program function span warnings-p
-                                 (get-output-stream-string *standard-output*)))))))
+                                 (get-output-stream-string *standard-output*)
+                                 (signature-result-type (aref (checked-program-signatures checked) 0))))))))
 
 (defun execute-program (compiled)
   (unless (typep compiled 'compiled-program)
@@ -210,7 +211,8 @@
    (compiled-program-span compiled)
    (lambda ()
      (let ((result (funcall (compiled-program-function compiled))))
-       (cond ((eq result t) :true)
-             ((eq result nil) :false)
+       (cond ((and (eq (compiled-program-result-type compiled) :void) (eq result *void-value*)) :unit)
+             ((and (eq (compiled-program-result-type compiled) :bool) (eq result t)) :true)
+             ((and (eq (compiled-program-result-type compiled) :bool) (eq result nil)) :false)
              (t (fail-at (compiled-program-span compiled) :internal
-                         "Host returned a non-boolean result" 'internal-failure))))) t))
+                         "Host returned an invalid entry result" 'internal-failure))))) t))

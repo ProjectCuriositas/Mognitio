@@ -1,0 +1,3 @@
+[project]
+name = "nested"
+root_namespace = "App"

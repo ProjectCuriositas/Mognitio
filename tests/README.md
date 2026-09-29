@@ -1,6 +1,6 @@
 # Test coverage
 
-The ASDF `mognitio/tests` system is the current v0.9.0 suite.
+The ASDF `mognitio/tests` system is the current v0.10.0 suite.
 Run it with `sbcl --noinform --script scripts/test.lisp`.
 A failed assertion or unavailable required facility fails the command.
 The summary counts test groups, assertions, and actual child processes.
@@ -20,9 +20,11 @@ The summary counts test groups, assertions, and actual child processes.
 | v09-oracles | Seeded independent sequence/String expectations and executable preservation before publication |
 | v09-inherited | Retained SSA dominance, GC edge liveness, frame transitions, encodings, and mutations |
 | generated, native-generated | Independent Boolean-tree evaluator, deterministic cold/warm and relocated builds |
-| native-ir, native-process | SSA/encoder/ELF checks, canonical CLI, path handling, phase stopping, faults, output isolation, standalone execution |
+| native-ir, native-process | Internal kernel SSA/encoder/ELF checks, kernel invocation, path handling, phase stopping, faults, output isolation, standalone execution |
 | v04-allocation, v05-core | Parallel copies, spills, large frames, loop phi/backedge liveness, alternative block orders |
-| v09-examples | Every distributed example through host and native paths |
+| v09-examples | Every distributed project through public run and native paths; asserts the catalog is nonempty |
+| v010-projects.lisp | Unit main migration of the language matrix, cross-module GC stress, independent project proof mutations, reader and publication faults, symbolic signature proof rejection |
+| v010-projects.py | Public project CLI grammar, manifests, imports, visibility, identities, initialization, path boundaries, deterministic relocated images, symbolic generic visibility, directory classification, PATH invocation and standalone execution |
 
 The short frontend command is `sbcl --noinform --script scripts/test-v09-frontend.lisp`.
 It is a development aid, not a substitute for the full gate.
@@ -50,7 +52,7 @@ Historical validation records preserve their original counts and results.
 | Dot projection, implement/against evidence spelling, forbidden standalone underscore | Arrow member selection, witness/implements, ordinary underscore names |
 | Optional when else, on wildcard/else, untyped payload binding | Required final else for when, exhaustive named on cases, optional typed binder |
 | Slice bounds trap | Result<String,SliceError> with requested bounds and length |
-| Old build flags and required source suffix | Canonical run/build arguments and unrestricted suffix |
+| Single-source CLI and Boolean output | Manifest project CLI with declaration-only modules and silent Unit main |
 | ABI v4 / non-reference Function | ABI v5, closure roots and code pointers, typed List/buffer tracing |
 
 Retained low-level tests were migrated only where source spelling or an explicit
@@ -66,3 +68,16 @@ faults. RSS is not used as the reclamation oracle. Reverse-chain full-heap
 marking remains quadratic in header visits; the tests make that cost visible.
 External termination, uncatchable resource exhaustion, concurrent filesystem
 replacement, and power-loss durability are not certified by these fixtures.
+
+## Project and kernel boundaries
+
+`v010-projects.py` runs automatically after the Lisp suite. Its process checks
+are reported separately from the Lisp test/assertion/process counts.
+The current positive language matrix and all distributed examples execute through
+project loading, module checking, Unit main, and both backends.
+
+`kernel-driver.lisp`, `kernel-entry.lisp`, and `kernel-cli` are test-only adapters.
+They preserve independent Boolean-tree, writer-syscall, ABI, and fault oracles
+without exposing a second installed CLI mode. Historical kernel checks do not
+establish project CLI conformance. The production launcher loads none of these
+adapters and accepts only `mognitio.toml` projects.

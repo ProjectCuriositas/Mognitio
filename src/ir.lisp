@@ -430,7 +430,7 @@
     (dolist (function (module-functions module)) (verify-function function ids edges (module-literal-pool module) (module-values module)))
     (let ((entry (gethash 0 ids)))
       (unless (and entry (null (ir-function-parameter-types entry))
-                   (eq (ir-function-result-type entry) :bool))
+                   (member (ir-function-result-type entry) '(:bool :void)))
         (internal-error "Invalid entry signature"))))
   module)
 

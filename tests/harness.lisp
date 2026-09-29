@@ -56,7 +56,7 @@
     (compiler-failure (condition) (failure-diagnostic condition))))
 (defun driver-result (argv)
   (let* ((out (make-string-output-stream)) (err (make-string-output-stream))
-         (code (mognitio.driver:run-cli argv out err)))
+         (code (mognitio.tests.kernel::run-cli argv out err)))
     (values (get-output-stream-string out) (get-output-stream-string err) code)))
 
 (defun process-result (argv &key directory (timeout 20))
@@ -83,7 +83,7 @@
       (when (probe-file err) (delete-file err)))))
 
 (defun cli-result (args &rest options)
-  (apply #'process-result (cons (namestring (root-path "bin/mognitio")) args) options))
+  (apply #'process-result (cons (namestring (root-path "tests/kernel-cli")) args) options))
 (defun expect-cli (args code &key output phase directory)
   (multiple-value-bind (out err actual) (cli-result args :directory directory)
     (is (= code actual) (format nil "Args=~S expected exit ~D, got ~D: ~A" args code actual err))

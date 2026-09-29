@@ -46,7 +46,7 @@
 (deftest v09-new-machine-proof-mutations
   (dolist (kind '(:incoming :result :hidden :table))
     (let ((source (if (eq kind :table)
-                      "contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{self}}C(42)->f()==42"
+                      "contract C{f(self:Self):Int;}witness Evidence1 = Int implements C{f(self:Self):Int{self}}C(42)->f()==42"
                       "let f:Function(Int):Int=function(n:Int):Int{n+1};f(41)==42")))
       (let* ((captures (v06-frame-capture source))
              (capture (if (eq kind :incoming) (second captures) (first captures))))

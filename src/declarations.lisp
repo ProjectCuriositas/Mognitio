@@ -4,7 +4,8 @@
   (typecase node
     (data-declaration (data-declaration-name node))
     (contract-declaration (contract-declaration-name node))
-    (template-declaration (template-declaration-name node))))
+    (template-declaration (template-declaration-name node))
+    (implementation-declaration (mognitio.syntax::implementation-declaration-name node))))
 (defun ensure-value-declaration-in-scope (context node)
   (case (gethash node (value-context-declaration-state context))
     (:done (return-from ensure-value-declaration-in-scope))
@@ -29,6 +30,8 @@
   (declare-value-type context node)
   (setf (gethash node (value-context-declaration-state context)) :done))
 (defun ensure-value-declaration (context node)
+  (when (typep node 'implementation-declaration)
+    (fail-at (node-span node) :semantic "Witness is not a type"))
   ;; A forward declaration is checked in its own compile-time scope.
   (let* ((outer (value-context-names context)) (isolated (copy-type-names outer)))
     (maphash (lambda (name type) (when (rigid-type-p type) (remhash name isolated))) outer)

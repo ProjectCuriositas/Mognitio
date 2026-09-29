@@ -1,0 +1,10 @@
+namespace App\Domain;
+
+public type Page = product { content: String; };
+public contract Printable { text(self: Self): String; }
+public witness PagePrintable = Page implements Printable {
+    text(self: Self): String { self->content }
+}
+public let makePage: Function(String): Page = function(content: String): Page {
+    Page { content: content }
+};

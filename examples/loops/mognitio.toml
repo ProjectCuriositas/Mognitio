@@ -1,0 +1,3 @@
+[project]
+name = "loops"
+root_namespace = "App"
