@@ -23,8 +23,8 @@ The summary counts test groups, assertions, and actual child processes.
 | native-ir, native-process | Internal kernel SSA/encoder/ELF checks, kernel invocation, path handling, phase stopping, faults, output isolation, standalone execution |
 | v04-allocation, v05-core | Parallel copies, spills, large frames, loop phi/backedge liveness, alternative block orders |
 | v09-examples | Every distributed project through public run and native paths; asserts the catalog is nonempty |
-| v010-projects.lisp | Unit main migration of the language matrix, cross-module GC stress, independent project proof mutations, reader and publication faults |
-| v010-projects.py | Public project CLI grammar, manifests, imports, visibility, identities, initialization, path boundaries, deterministic relocated images and standalone execution |
+| v010-projects.lisp | Unit main migration of the language matrix, cross-module GC stress, independent project proof mutations, reader and publication faults, symbolic signature proof rejection |
+| v010-projects.py | Public project CLI grammar, manifests, imports, visibility, identities, initialization, path boundaries, deterministic relocated images, symbolic generic visibility, directory classification, PATH invocation and standalone execution |
 
 The short frontend command is `sbcl --noinform --script scripts/test-v09-frontend.lisp`.
 It is a development aid, not a substitute for the full gate.

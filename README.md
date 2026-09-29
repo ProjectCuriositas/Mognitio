@@ -17,6 +17,27 @@ The v0.10.0 version branch adds multiple modules within one project.
 The compiler host is Linux with SBCL, ASDF, UIOP, and SB-POSIX.
 No Quicklisp, external compiler, assembler, or linker is required.
 
+Add the compiler checkout's real `bin` directory to PATH. From the compiler
+repository root, this configures the current shell:
+
+```sh
+export PATH="$PWD/bin:$PATH"
+```
+
+For persistent setup, add that absolute `bin` path to your shell configuration.
+Keep the compiler checkout intact: copying or symlinking only the launcher into
+another directory is not a supported installation method.
+
+From your Mognitio project's directory, use the `mgn` command:
+
+```sh
+mgn run mognitio.toml
+mgn build mognitio.toml -o app
+./app
+```
+
+Compiler contributors can invoke the launcher directly from its checkout:
+
 ```sh
 ./bin/mgn run examples/modules/mognitio.toml
 ./bin/mgn build examples/modules/mognitio.toml -o example
@@ -103,7 +124,10 @@ message bytes and a newline. Other detected failures use `runtime error: ` and
 a fixed description. Static diagnostics include source location and UTF-8 byte
 ranges. Paths are escaped to distinguish invalid bytes, newlines, and backslashes.
 Source paths must be valid UTF-8. Symlinks and duplicate physical inputs are
-rejected, as are `.mgn` candidates that are not regular files.
+rejected. Directories are traversed regardless of their suffix. Other `.mgn`
+entries must be regular files; FIFOs, sockets, and devices are rejected before
+reading. An empty directory named `ignored.mgn` is not a source input. If it
+contains a source, its directory name must satisfy the namespace identifier rules.
 
 Before v1.0.0, backwards compatibility is not guaranteed. The old single-source
 CLI and `bin/mognitio` command are removed. Package registries, external

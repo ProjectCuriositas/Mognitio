@@ -117,3 +117,15 @@
                       ("right.mgn" . "namespace App; use App\\{Read}; type Hidden=product{text:String;}; witness Proof=Hidden implements Read{read(self:Self):String{self->text}} public let right:Read=Read(Hidden{text:\"right\"+\"!\"});")))))
     (dolist (stress '(nil t))
       (expect-project manifest (list :arena-unit 4096 :cap 4096 :validate t :stress stress)))))
+
+(deftest v010-symbolic-public-signature-proof
+  ;; Bypass the producer check to create a malformed proof, then require the
+  ;; verifier to reject it. Visibility uses a shared walker; the source type
+  ;; records and module provenance are verified separately.
+  (let* ((manifest (project-fixture
+                     '(("app.mgn" . "namespace App;let main:Function():Unit=function():Unit{unit};")
+                       ("lib.mgn" . "namespace App;type Hidden<T>=product{value:T;};public alias Exposed<T>=Hidden<T>;"))))
+         (checked (replacing (mognitio.project::check-public-signatures
+                               (lambda (program) (declare (ignore program)) nil))
+                    (project-checked manifest))))
+    (signals internal-failure (verify-checked-program checked))))
