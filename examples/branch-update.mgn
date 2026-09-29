@@ -1,8 +1,0 @@
-var count: Int = 1;
-let total: Int = branch when{(count < 2)=>{
-    count = count + 1;
-    count * 120
-},else=>{
-    0
-}};
-branch when{(total == 240)=>{ count == 2 },else=>{ false }}

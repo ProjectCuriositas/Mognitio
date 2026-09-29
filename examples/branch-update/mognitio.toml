@@ -1,0 +1,3 @@
+[project]
+name = "branch_update"
+root_namespace = "App"

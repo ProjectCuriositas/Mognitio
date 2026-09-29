@@ -28,8 +28,8 @@
     ("underscore-parameter" "let f:Function(Int):Int=function(_:Int):Int{_};f(3)==3")
     ("underscore-payload" "branch on Result<Int,String>::Ok(4){Result<Int,String>::Ok(_:Int)=>_==4,Result<Int,String>::Err=>false}")
     ("underscore-element" "var total:Int=0;loop over(List<Int>[1,2] as _:Int){total=total+_;};total==3")
-    ("underscore-receiver-field" "type P=product{_:Int;};contract C{_(receiver:Self):Int;}witness P implements C{_(_:Self):Int{_-> _}}C(P{_:5})->_()==5")
-    ("witness-alias" "alias Number=Int;contract C{get(self:Self):Int;}witness Number implements C{get(value:Self):Int{value}}C(4)->get()==4")
+    ("underscore-receiver-field" "type P=product{_:Int;};contract C{_(receiver:Self):Int;}witness Evidence1 = P implements C{_(_:Self):Int{_-> _}}C(P{_:5})->_()==5")
+    ("witness-alias" "alias Number=Int;contract C{get(self:Self):Int;}witness Evidence2 = Number implements C{get(value:Self):Int{value}}C(4)->get()==4")
     ("member-nested-generic" "type Box<T>=product{value:T;};type Outer<T>=product{box:Box<T>;};template make<T>=function(x:T):T{Outer<T>{box:Box<T>{value:x}}->box->value};make<Int>(2)==2&&make<Bool>(true)")
     ("value-loop-continue-operand" "var n:Int=0;let x:Int=loop{n=n+1;break branch when{n<2=>{continue;},else=>n};};x==2")
     ("member-returned-function" "type P=product{make:Function():Function(Int):Int;};P{make:function():Function(Int):Int{function(x:Int):Int{x}}}->make()(4)==4")
@@ -54,7 +54,7 @@
              "type P=product{x:Int;};P{x:1}.x==1"
              "type P=product{x:Int;};P{x:1}->x()==1"
              "List<Int>[]->length"
-             "contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{self}}C(1)->f"
+             "contract C{f(self:Self):Int;}witness Evidence3 = Int implements C{f(self:Self):Int{self}}C(1)->f"
              "contract C{}implement Int against C{}true"
              "let _:Int=1;let _:Int=2;true"
              "let _:Int=1;{let _:Bool=true;unit};true"
@@ -99,7 +99,7 @@
 (deftest v09-host-allocation-execution-boundary
   ;; Inject before the helper's own handler to cover call/rest/table setup.
   (dolist (entry '((mognitio.value::closure-call . "let f:Function():Bool=function():Bool{true};f()")
-                   (mognitio.value:pack . "contract C{get(self:Self):Bool;}witness Bool implements C{get(self:Self):Bool{self}}C(true)->get()")
+                   (mognitio.value:pack . "contract C{get(self:Self):Bool;}witness Evidence4 = Bool implements C{get(self:Self):Bool{self}}C(true)->get()")
                    (mognitio.value::list-literal . "List<Int>[1]->length()==1")))
     (let* ((symbol (car entry)) (old (fdefinition symbol))
            (source (namestring (put-text (fresh-path) (cdr entry)))))

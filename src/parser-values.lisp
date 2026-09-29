@@ -33,7 +33,9 @@
     (make-contract-declaration :name name :methods (coerce (nreverse members) 'vector)
                                :span (p-span p keyword (p-expect p :right-brace)))))
 (defun p-implementation (p)
-  (let* ((keyword (p-take p)) (target (p-type p)) (methods nil))
+  (let* ((keyword (p-take p)) (name (p-name p))
+         (equals (p-expect p :assign)) (target (p-type p)) (methods nil))
+    (declare (ignore equals))
     (p-expect p :implements)
     (let ((contract (p-type p)))
       (p-expect p :left-brace)
@@ -41,7 +43,7 @@
         (let* ((name (p-name p)) (function (p-function-tail p name)))
           (push (make-local-binding :name name :mutability :let :initializer function
                                     :span (p-span p name function)) methods)))
-      (make-implementation-declaration :target target :contract contract
+      (make-implementation-declaration :name name :target target :contract contract
           :methods (coerce (nreverse methods) 'vector)
           :span (p-span p keyword (p-expect p :right-brace))))))
 (defun p-template (p)

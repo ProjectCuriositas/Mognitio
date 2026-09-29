@@ -1,0 +1,7 @@
+(require :asdf)
+(let* ((root (merge-pathnames "../" *load-truename*))
+       (*compile-verbose* nil) (*compile-print* nil))
+  (asdf:load-asd (truename (merge-pathnames "mognitio.asd" root)))
+  (asdf:load-system "mognitio")
+  (load (merge-pathnames "tests/kernel-driver.lisp" root)))
+(sb-ext:exit :code (mognitio.tests.kernel::run-cli (cdr sb-ext:*posix-argv*) *standard-output* *error-output*))

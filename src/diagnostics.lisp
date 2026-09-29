@@ -1,6 +1,6 @@
 (in-package #:mognitio.diagnostics)
 
-(defstruct diagnostic phase message path line column start-byte end-byte)
+(defstruct diagnostic related phase message path line column start-byte end-byte)
 (define-condition compiler-failure (error)
   ((diagnostic :initarg :diagnostic :reader failure-diagnostic)))
 (define-condition source-failure (compiler-failure) ())
@@ -18,7 +18,8 @@
   (with-output-to-string (out)
     (loop for ch across (princ-to-string text)
           for code = (char-code ch)
-          do (cond ((char= ch #\Newline) (write-string "\\n" out))
+          do (cond ((char= ch #\\) (write-string "\\\\" out))
+                   ((char= ch #\Newline) (write-string "\\n" out))
                    ((char= ch #\Return) (write-string "\\r" out))
                    ((or (< code 32) (= code 127) (= code #x2028) (= code #x2029))
                     (format out "\\u~4,'0X" code))
@@ -41,4 +42,5 @@
                      (if path (one-line path) "mgn")
                      (if (eq phase :internal) "internal: " "")
                      (one-line (diagnostic-message diagnostic))))))
+  (dolist (related (diagnostic-related diagnostic)) (render-diagnostic related stream))
   (finish-output stream))

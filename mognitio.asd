@@ -1,6 +1,6 @@
 (asdf:defsystem "mognitio"
   :description "Mognitio compiler"
-  :version "0.9.0"
+  :version "0.10.0"
   :depends-on ("sb-posix")
   :serial t
   :components ((:file "src/packages")
@@ -62,6 +62,11 @@
                (:file "src/native-metadata-verifier")
                (:file "src/backend-native")
                (:file "src/artifact")
+               (:file "src/project-manifest")
+               (:file "src/project-loader")
+               (:file "src/project-resolution")
+               (:file "src/project-verifier")
+               (:file "src/project-checking")
                (:file "src/driver")
                (:file "src/cli"))
   :in-order-to ((asdf:test-op (asdf:test-op "mognitio/tests"))))
@@ -69,7 +74,8 @@
 (asdf:defsystem "mognitio/tests"
   :depends-on ("mognitio")
   :serial t
-  :components ((:file "tests/harness")
+  :components ((:file "tests/kernel-driver")
+               (:file "tests/harness")
                (:file "tests/generated")
                (:file "tests/native-ir")
                (:file "tests/native-process")
@@ -89,14 +95,17 @@
                (:file "tests/v09-proofs")
                (:file "tests/v09-memory-boundaries")
                (:file "tests/v09-oracles")
-               (:file "tests/v09-examples"))
+               (:file "tests/v09-examples")
+               (:file "tests/v010-projects"))
   :perform (asdf:test-op (op system)
              (declare (ignore op system))
-             (uiop:symbol-call :mognitio.tests :run-tests)))
+             (uiop:symbol-call :mognitio.tests :run-tests)
+             (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" "tests/v010-projects.py"))) :output *standard-output* :error-output *error-output*)))
 
 (asdf:defsystem "mognitio/v09-frontend-tests"
   :depends-on ("mognitio") :serial t
-  :components ((:file "tests/harness")
+  :components ((:file "tests/kernel-driver")
+               (:file "tests/harness")
                (:file "tests/v09-fixtures")
                (:file "tests/v09-boundaries")
                (:file "tests/v09-frontend")))

@@ -27,7 +27,7 @@
 
 (deftest v09-specialization-table-and-loop-mutations
   (dolist (mutation '(:method :receiver :loop :foreign :builtin))
-    (let* ((source "contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{self}}var n:Int=0;loop over(List<Int>[1] as x:Int){n=n+C(x)->f();};n==1")
+    (let* ((source "contract C{f(self:Self):Int;}witness Evidence1 = Int implements C{f(self:Self):Int{self}}var n:Int=0;loop over(List<Int>[1] as x:Int){n=n+C(x)->f();};n==1")
            (concrete (mognitio.semantic::prepare-runtime-program (check-program (parse-text source))))
            (values (checked-program-values concrete)))
       (ecase mutation

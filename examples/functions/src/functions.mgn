@@ -1,7 +1,9 @@
+namespace App;
+let main: Function(): Unit = function(): Unit {
 let total :Function(Int,Int):Int= function(price: Int, count: Int): Int {
     price * count
 };
 let payable :Function(Int,Bool):Int= function(amount: Int, discount: Bool): Int {
     branch when{(discount)=>{ amount - 25 },else=>{ amount }}
 };
-payable(total(75, 4), true) == 275
+branch when { (payable(total(75, 4), true) == 275) == true => unit, else => panic {"fixture mismatch"} } };

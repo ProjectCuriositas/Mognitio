@@ -1,0 +1,7 @@
+namespace App;
+let main: Function(): Unit = function(): Unit {
+branch when { (branch when{(branch when{(false)=>{ true },else=>{ false }})=>{
+    false
+},else=>{
+    true
+}}) == true => unit, else => panic {"fixture mismatch"} } };

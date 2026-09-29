@@ -1,13 +1,15 @@
+namespace App;
 type Item = product { text: String; };
 type State = sum { Empty; Ready(Item); };
 contract Named { name(self: Self): String; }
-witness Item implements Named {
+witness ItemNamed = Item implements Named {
     name(item: Self): String { item->text }
 }
+let main: Function(): Unit = function(): Unit {
 let render: Function(Named): String = function(value: Named): String {
     value->name()
 };
-branch on State::Ready(Item { text: "example" }) {
+branch when { (branch on State::Ready(Item { text: "example" }) {
     State::Empty => false,
     State::Ready(item: Item) => render(Named(item)) == "example",
-}
+}) == true => unit, else => panic {"fixture mismatch"} } };

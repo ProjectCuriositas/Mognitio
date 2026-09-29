@@ -125,7 +125,7 @@
     (setf (value-context-declarations context) (copy-type-names (value-context-declarations (checked-program-values checked)))
           (value-context-function-templates context) (copy-type-names (value-context-function-templates (checked-program-values checked))))
     (v-check (and (plusp (length signatures)) (null (signature-declaration (aref signatures 0)))
-                  (eq :bool (signature-result-type (aref signatures 0)))) "Invalid entry")
+                  (eq (if (mognitio.syntax::program-project program) :void :bool) (signature-result-type (aref signatures 0)))) "Invalid entry")
     (verify-source-type-records program)
     (loop for declaration across (program-declarations program) do
       (typecase declaration
@@ -153,7 +153,9 @@
                            (equal (signature-result-type sig) (requirement-result method))) "Invalid implementation signature")
              (push name seen) (v-body sig t) (v-finish node (signature-type sig) t nil))
            (v-check (= (length seen) (length methods)) "Incomplete implementation")))))
-    (v-sequence program (program-statements program) (program-root program)) (v-exact program :bool)
+    (if (mognitio.syntax::program-project program)
+        (mognitio.project::verify-project-bodies checked)
+        (progn (v-sequence program (program-statements program) (program-root program)) (v-exact program :bool)))
     (loop for sig across signatures for id from 0 do
       (v-check (and (= id (signature-id sig))
                     (v-set-equal (signature-captures sig) (gethash id (verification-state-captures *verification*)))) "Invalid capture snapshot layout"))
