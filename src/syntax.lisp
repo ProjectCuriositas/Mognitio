@@ -1,7 +1,7 @@
 (in-package #:mognitio.syntax)
 
 (defstruct text-payload (octets #() :read-only t) (scalar-count 0 :read-only t))
-(defstruct token (kind nil :read-only t) (span nil :read-only t) (payload nil :read-only t))
+(defstruct token resolved-name (kind nil :read-only t) (span nil :read-only t) (payload nil :read-only t))
 (defstruct (type-syntax (:include token)) name (arguments #()))
 (defstruct function-type-syntax (parameters #() :read-only t) (result nil :read-only t) (span nil :read-only t))
 (defstruct generic-signature-syntax (type-parameters #() :read-only t) (parameters #() :read-only t)
@@ -29,7 +29,7 @@
 (defstruct parameter (type nil :read-only t) (name nil :read-only t) (span nil :read-only t))
 (defstruct call-expression (type-arguments nil :read-only t) (callee nil :read-only t) (arguments #() :read-only t) (span nil :read-only t))
 (defstruct return-statement (keyword nil :read-only t) (value nil :read-only t) (span nil :read-only t))
-(defstruct program (declarations #() :read-only t) (source nil :read-only t) (root nil :read-only t)
+(defstruct program modules project (declarations #() :read-only t) (source nil :read-only t) (root nil :read-only t)
   (statements #() :read-only t))
 (defun node-span (node)
   (typecase node
@@ -65,6 +65,7 @@
         ((typep form 'token) (token-span form))
         (t (node-span form))))
 (defun token-text (token)
+  (when (token-resolved-name token) (return-from token-text (token-resolved-name token)))
   (when (typep token 'type-syntax) (return-from token-text (token-text (type-syntax-name token))))
   (let ((span (token-span token)))
     (subseq (source-text (span-source span)) (span-start span) (span-end span))))

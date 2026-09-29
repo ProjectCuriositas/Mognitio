@@ -1,7 +1,7 @@
 (in-package #:mognitio.driver)
 
 (defun invocation-error ()
-  (fail 'usage-or-io-failure nil "Expected run <source> or build <source> -o <artifact>"))
+  (fail 'usage-or-io-failure nil "Expected run <mognitio.toml> or build <mognitio.toml> -o <artifact>"))
 (defun parse-invocation (argv)
   (unless (and (listp argv) (every #'stringp argv)) (invocation-error))
   (let ((command (first argv)) (source (second argv)) (output nil))
@@ -19,20 +19,21 @@
          (program (parse-program source tokens)))
     (check-program program)))
 
+(defun checked-project (project)
+  (check-program (mognitio.project::project-program (mognitio.project::resolve-project project))))
+
 (defun run-pipeline (argv stdout)
-  (multiple-value-bind (command source output target) (parse-invocation argv)
-    (cond
-      ((string= command "run")
-       (let* ((checked (checked-source source))
-              (compiled (compile-program checked))
-              (result (execute-program compiled)))
-         (write-line (ecase result (:true "true") (:false "false")) stdout)
-         (finish-output stdout)))
-      (t
-       (mognitio.artifact:validate-paths source output)
-       (let* ((checked (checked-source source))
-              (image (mognitio.backend.native:compile-program checked target)))
-         (mognitio.artifact:publish-image image source output)))))
+  (declare (ignore stdout))
+  (multiple-value-bind (command manifest output target) (parse-invocation argv)
+    (let ((project (mognitio.project::load-project manifest)))
+      (when output (mognitio.project::validate-project-output project output))
+      (let ((checked (checked-project project)))
+        (if (string= command "run")
+            (execute-program (compile-program checked))
+            (let* ((image (mognitio.backend.native:compile-program checked target))
+                   (mognitio.artifact::*project-validation*
+                     (lambda () (mognitio.project::validate-project-output project output))))
+              (mognitio.artifact:publish-image image manifest output))))))
   0)
 
 (defun run-cli (argv stdout stderr)

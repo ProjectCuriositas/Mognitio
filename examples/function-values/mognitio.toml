@@ -1,0 +1,3 @@
+[project]
+name = "function_values"
+root_namespace = "App"

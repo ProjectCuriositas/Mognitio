@@ -156,3 +156,6 @@
 (defpackage #:mognitio.value
   (:use #:cl)
   (:export #:construct #:pack #:field #:tag #:receiver #:method-id #:data-value #:interface-value))
+
+(defpackage #:mognitio.project
+  (:use #:cl #:mognitio.diagnostics #:mognitio.source #:mognitio.syntax))

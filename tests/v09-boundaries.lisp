@@ -12,17 +12,17 @@
 ("qualified-member" "type P=product{length:Int;};let length:Int=42;P{length:length}->length==List<Int>[1]->length()+41")
 ("isolated-template-before" "template identity<T>=function(value:T):T{value};let value:Int=1;identity<Int>(value)==1")
 ("isolated-template-local" "let local:Int=0;template identity<T>=function(value:T):T{let local:T=value;local};identity<Int>(42)==42")
-("isolated-implementation-before" "contract Add{add(self:Self,x:Int):Int;}witness Int implements Add{add(self:Self,x:Int):Int{let local:Int=self+x;local}}let self:Int=1;let x:Int=2;let local:Int=99;Add(self)->add(x)==3")
-("self-explicit-alias" "type P=product{x:Int;};alias Page=P;contract Read{read(self:Self):Int;}witness P implements Read{read(page:Page):Int{page->x}}Read(P{x:42})->read()==42")
-("package-snapshot" "contract Read{read(self:Self):Int;}witness Int implements Read{read(x:Self):Int{x}}var n:Int=1;let p:Read=Read(n);n=2;p->read()==1")
-("contract-two-types" "type P=product{x:Int;};contract Read{read(self:Self):Int;}witness Int implements Read{read(x:Self):Int{x}}witness P implements Read{read(p:Self):Int{p->x}}Read(20)->read()+Read(P{x:22})->read()==42")
+("isolated-implementation-before" "contract Add{add(self:Self,x:Int):Int;}witness Evidence1 = Int implements Add{add(self:Self,x:Int):Int{let local:Int=self+x;local}}let self:Int=1;let x:Int=2;let local:Int=99;Add(self)->add(x)==3")
+("self-explicit-alias" "type P=product{x:Int;};alias Page=P;contract Read{read(self:Self):Int;}witness Evidence2 = P implements Read{read(page:Page):Int{page->x}}Read(P{x:42})->read()==42")
+("package-snapshot" "contract Read{read(self:Self):Int;}witness Evidence3 = Int implements Read{read(x:Self):Int{x}}var n:Int=1;let p:Read=Read(n);n=2;p->read()==1")
+("contract-two-types" "type P=product{x:Int;};contract Read{read(self:Self):Int;}witness Evidence4 = Int implements Read{read(x:Self):Int{x}}witness Evidence5 = P implements Read{read(p:Self):Int{p->x}}Read(20)->read()+Read(P{x:22})->read()==42")
 ("generic-discard-closed-shapes" "template drop<T,E>=function(x:List<T>,r:Result<T,E>,f:Function():T):Unit{discard x;discard r;discard f;};drop<Unit,Unit>(List<Unit>[],Result<Unit,Unit>::Ok(unit),function():Unit{});true")
 ("try-unit" "let f:Function():Result<Unit,String>=function():Result<Unit,String>{try Result<Unit,String>::Ok(unit);Result<Unit,String>::Ok(unit)};branch on f(){Result<Unit,String>::Ok(u:Unit)=>u==unit,Result<Unit,String>::Err=>false}")
 ("panic-loop-controls" "var n:Int=0;loop while(n<3){n=n+1;panic{continue;};};loop while(true){panic{break;};};n==3")
 ("list-field-return-unchanged" "type Box=product{items:List<Int>;};let f:Function(List<Int>):List<Int>=function(xs:List<Int>):List<Int>{xs->append(3)};let old:List<Int>=List<Int>[1,2];let b:Box=Box{items:old};let next:List<Int>=f(old);discard next->append(4);old->length()==2&&b->items->length()==2&&next->length()==3")
 ("closure-shared-containers" "type Both=product{a:Function():Int;b:Function():Int;};var n:Int=1;let f:Function():Int=function():Int{n};let p:Both=Both{a:f,b:f};let xs:List<Function():Int>=List<Function():Int>[f];n=2;var value:Int=0;loop over(xs as g:Function():Int){value=g();};p->a()==1&&p->b()==1&&value==1")
 ("over-body-return" "let f:Function():Int=function():Int{loop over(List<Int>[42] as x:Int){return x;};0};f()==42")
-("method-try" "contract Go{go(self:Self):Result<Int,String>;}witness Int implements Go{go(self:Self):Result<Int,String>{let n:Int=try Result<Int,String>::Err(\"bad\");Result<Int,String>::Ok(n)}}branch on Go(1)->go(){Result<Int,String>::Ok=>false,Result<Int,String>::Err(s:String)=>s==\"bad\"}"))))
+("method-try" "contract Go{go(self:Self):Result<Int,String>;}witness Evidence6 = Int implements Go{go(self:Self):Result<Int,String>{let n:Int=try Result<Int,String>::Err(\"bad\");Result<Int,String>::Ok(n)}}branch on Go(1)->go(){Result<Int,String>::Ok=>false,Result<Int,String>::Err(s:String)=>s==\"bad\"}"))))
 (deftest v09-boundary-rejection-matrix
  (dolist (source '("type A<T>=product{b:B;};type B=product{x:T;};true"
 "type Int=product{};true"
@@ -58,16 +58,16 @@
 "let f:Function():Function(Int):Int=function():Function(Int):Int{function(x:Int):Int{x}};f()<Int>(1)==1"
 "contract C{f(self:Self):Self;}true"
 "contract C{f(self:Self,x:Function(Self):Int):Int;}true"
-"contract C{f(self:Self):Int;}witness Int implements C{f(self:Bool):Int{1}}true"
-"contract C{f(self:Self):Int;}witness Int implements C{}true"
-"contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{1}g(self:Self):Int{2}}true"
-"contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{1}f(self:Self):Int{2}}true"
-"contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{1}}witness Int implements C{f(self:Self):Int{1}}true"
+"contract C{f(self:Self):Int;}witness Evidence7 = Int implements C{f(self:Bool):Int{1}}true"
+"contract C{f(self:Self):Int;}witness Evidence8 = Int implements C{}true"
+"contract C{f(self:Self):Int;}witness Evidence9 = Int implements C{f(self:Self):Int{1}g(self:Self):Int{2}}true"
+"contract C{f(self:Self):Int;}witness Evidence10 = Int implements C{f(self:Self):Int{1}f(self:Self):Int{2}}true"
+"contract C{f(self:Self):Int;}witness Evidence11 = Int implements C{f(self:Self):Int{1}}witness Evidence12 = Int implements C{f(self:Self):Int{1}}true"
 "contract C{f(self:Self):Int;}C(1)->f()==1"
-"contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{self}}let c:C=1;true"
-"contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{self}}1->f()==1"
-"contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{self}}discard C(1)->f;true"
-"let outer:Int=1;contract C{f(self:Self):Int;}witness Int implements C{f(self:Self):Int{outer}}true"
+"contract C{f(self:Self):Int;}witness Evidence13 = Int implements C{f(self:Self):Int{self}}let c:C=1;true"
+"contract C{f(self:Self):Int;}witness Evidence14 = Int implements C{f(self:Self):Int{self}}1->f()==1"
+"contract C{f(self:Self):Int;}witness Evidence15 = Int implements C{f(self:Self):Int{self}}discard C(1)->f;true"
+"let outer:Int=1;contract C{f(self:Self):Int;}witness Evidence16 = Int implements C{f(self:Self):Int{outer}}true"
 "alias A=List<A>;true"
 "contract C{f(self:Self):P;}type P=product{c:C;};true"
 "type A=product{r:Result<Int,A>;};true"

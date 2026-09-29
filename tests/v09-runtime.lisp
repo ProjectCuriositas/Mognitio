@@ -36,7 +36,7 @@
   '(("product" "type P=product{x:String;};P{x:\"a\"+\"b\"}->x==\"ab\"")
     ("sum" "type S=sum{A(String);};branch on S::A(\"a\"+\"b\"){S::A(x:String)=>x==\"ab\"}")
     ("closure" "let s:String=\"a\"+\"b\";let f:Function():String=function():String{s};f()==\"ab\"")
-    ("package" "contract C{get(self:Self):String;}witness String implements C{get(self:Self):String{self}}let p:C=C(\"a\"+\"b\");p->get()==\"ab\"")
+    ("package" "contract C{get(self:Self):String;}witness Evidence1 = String implements C{get(self:Self):String{self}}let p:C=C(\"a\"+\"b\");p->get()==\"ab\"")
     ("list-result" "let a:List<String>=List<String>[\"a\"+\"b\"];branch on a->at(0){Result<String,IndexError>::Ok(s:String)=>s==\"ab\",Result<String,IndexError>::Err=>false}")
     ("index-error" "branch on List<String>[]->at(-1){Result<String,IndexError>::Ok=>false,Result<String,IndexError>::Err(e:IndexError)=>e->index==(-1)&&e->length==0}")
     ("slice-result" "branch on (\"a\"+\"b\")->slice(0,1){Result<String,SliceError>::Ok(s:String)=>s==\"a\",Result<String,SliceError>::Err=>false}")

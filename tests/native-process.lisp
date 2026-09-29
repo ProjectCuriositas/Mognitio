@@ -237,7 +237,7 @@
                   ((member mode '("write" "flush" "chmod" "close" "rename") :test #'string=)
                    (error 'file-error :pathname output))
                   (t (error "Injected native failure")))))
-    (sb-ext:exit :code (mognitio.driver:run-cli
+    (sb-ext:exit :code (mognitio.tests.kernel::run-cli
                        (build-args source output) *standard-output* *error-output*))))
 
 (deftest n16-native-process-faults
@@ -270,7 +270,7 @@
     (sb-posix:chmod (namestring (merge-pathnames "dirname" tools)) #o700)
     (multiple-value-bind (out err code)
         (process-result (append (list "env" (format nil "PATH=~A" (namestring tools))
-                                     (namestring (root-path "bin/mognitio")))
+                                     (namestring (root-path "tests/kernel-cli")))
                                (build-args source output)))
       (same 0 code) (same "" out) (same "" err))
     (expect-artifact output :false)
@@ -283,13 +283,13 @@
 
 (deftest d08-missing-bootstrap-entry
   (let* ((copy (merge-pathnames "missing-entry/" *temp*))
-         (launcher (merge-pathnames "bin/mognitio" copy)))
+         (launcher (merge-pathnames "tests/kernel-cli" copy)))
     (ensure-directories-exist launcher)
-    (uiop:copy-file (root-path "bin/mognitio") launcher)
+    (uiop:copy-file (root-path "tests/kernel-cli") launcher)
     (sb-posix:chmod (namestring launcher) #o700)
     (multiple-value-bind (out err code) (process-result (list (namestring launcher)))
       (same 3 code) (same "" out)
-      (same (format nil "mognitio: internal: Compiler bootstrap failed~%") err))))
+      (same (format nil "mgn: internal: Compiler bootstrap failed~%") err))))
 
 (deftest native-host-output-isolation
   (let ((source (put-text (fresh-path) "true")) (output (fresh-path ".elf"))

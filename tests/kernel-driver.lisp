@@ -1,0 +1,57 @@
+; Test-only Boolean kernel adapter; never loaded by the installed CLI.
+(defpackage #:mognitio.tests.kernel
+  (:use #:cl #:mognitio.diagnostics #:mognitio.source #:mognitio.syntax
+        #:mognitio.frontend #:mognitio.semantic #:mognitio.backend.cl))
+(in-package #:mognitio.tests.kernel)
+
+(defun invocation-error ()
+  (fail 'usage-or-io-failure nil "Expected run <source> or build <source> -o <artifact>"))
+(defun parse-invocation (argv)
+  (unless (and (listp argv) (every #'stringp argv)) (invocation-error))
+  (let ((command (first argv)) (source (second argv)) (output nil))
+    (cond ((and (equal command "run") (= (length argv) 2)) nil)
+          ((and (equal command "build") (= (length argv) 4) (equal (third argv) "-o"))
+           (setf output (fourth argv))
+           (unless (plusp (length output)) (invocation-error)))
+          (t (invocation-error)))
+    (unless (and source (plusp (length source)) (not (char= #\- (char source 0)))) (invocation-error))
+    (values command source output (when output (mognitio.target:linux-amd64)))))
+
+(defun checked-source (path) (mognitio.driver::checked-source path))
+
+(defun run-pipeline (argv stdout)
+  (multiple-value-bind (command source output target) (parse-invocation argv)
+    (cond
+      ((string= command "run")
+       (let* ((checked (checked-source source))
+              (compiled (compile-program checked))
+              (result (execute-program compiled)))
+         (write-line (ecase result (:true "true") (:false "false")) stdout)
+         (finish-output stdout)))
+      (t
+       (mognitio.artifact:validate-paths source output)
+       (let* ((checked (checked-source source))
+              (image (mognitio.backend.native:compile-program checked target)))
+         (mognitio.artifact:publish-image image source output)))))
+  0)
+
+(defun run-cli (argv stdout stderr)
+  (labels ((report-failure (diagnostic code)
+             ;; A broken diagnostic stream must not cause recursive reporting.
+             (handler-case (progn (render-diagnostic diagnostic stderr) code)
+               ((or error storage-condition) () 3))))
+    (handler-case (run-pipeline argv stdout)
+      (mognitio.runtime::program-panic (condition) (mognitio.runtime::write-panic condition stderr))
+      (mognitio.runtime:program-runtime-failure (condition)
+        (mognitio.runtime:write-runtime-failure condition stderr))
+      (source-failure (condition)
+        (report-failure (failure-diagnostic condition) 1))
+      (usage-or-io-failure (condition)
+        (report-failure (failure-diagnostic condition) 2))
+      (internal-failure (condition)
+        (report-failure (failure-diagnostic condition) 3))
+      (storage-condition ()
+        (report-failure (make-diagnostic :phase :internal :message "Compiler storage failure") 3))
+      (error ()
+        (report-failure (make-diagnostic :phase :internal
+                                         :message "Unexpected compiler failure") 3)))))

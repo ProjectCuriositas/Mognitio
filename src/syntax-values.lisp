@@ -2,7 +2,7 @@
 
 (defstruct data-declaration name kind target members span (type-parameters #()))
 (defstruct contract-declaration name methods span)
-(defstruct implementation-declaration target contract methods span)
+(defstruct implementation-declaration name target contract methods span)
 (defstruct named-member name value span)
 (defstruct struct-expression name fields span)
 (defstruct enum-expression name variant arguments parenthesized-p span)
