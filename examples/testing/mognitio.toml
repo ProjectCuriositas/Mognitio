@@ -1,0 +1,3 @@
+[project]
+name = "testing"
+root_namespace = "App"

@@ -54,7 +54,7 @@
     (v06-expect-native source :true '(:stress t :validate t))))
 
 (deftest v09-byte-spans
-  (let* ((source (text-source (format nil "// あ~C~C\"😀\" @" #\Return #\Newline)))
+  (let* ((source (text-source (format nil "// あ~C~C\"😀\" $" #\Return #\Newline)))
          (diag (diagnostic-of (lambda () (lex-source source)))))
     (same :lex (diagnostic-phase diag))
     (same 2 (diagnostic-line diag)) (same 5 (diagnostic-column diag))
@@ -76,7 +76,7 @@
       (same (second case) (diagnostic-start-byte diag))
       (same (third case) (diagnostic-end-byte diag))
       (is (search (format nil "[bytes ~D,~D)" (second case) (third case)) err))))
-  (let ((err (expect-cli (list "run" (namestring (put-text (fresh-path) "@")))
+  (let ((err (expect-cli (list "run" (namestring (put-text (fresh-path) "$")))
                           1 :phase "lex")))
     (is (search "[bytes 0,1)" err))))
 

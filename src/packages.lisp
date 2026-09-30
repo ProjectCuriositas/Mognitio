@@ -13,7 +13,10 @@
            #:span-diagnostic #:fail-at))
 (defpackage #:mognitio.syntax
   (:use #:cl #:mognitio.source)
-  (:export #:program-declarations #:expression-statement-discard-p #:loop-expression-target #:loop-expression-binder
+  (:export #:declaration-attributes #:declaration-span #:walk-ast
+           #:attribute-syntax #:make-attribute-syntax #:attribute-syntax-name #:attribute-syntax-span
+           #:assert-statement #:make-assert-statement #:assert-statement-operand #:assert-statement-keyword-span
+           #:program-declarations #:expression-statement-discard-p #:loop-expression-target #:loop-expression-binder
            #:template-declaration #:template-declaration-name #:template-declaration-parameters #:template-declaration-function #:template-declaration-span #:make-template-declaration
            #:specialization-reference #:specialization-reference-name #:specialization-reference-arguments #:specialization-reference-span #:make-specialization-reference
            #:list-expression #:list-expression-type #:list-expression-elements #:list-expression-span #:make-list-expression
@@ -84,6 +87,8 @@
   (:use #:cl #:mognitio.diagnostics #:mognitio.source #:mognitio.syntax
         #:mognitio.frontend #:mognitio.semantic #:mognitio.backend.cl)
   (:export #:run-cli))
+(defpackage #:mognitio.testing
+  (:use #:cl #:mognitio.diagnostics))
 (defpackage #:mognitio.cli
   (:use #:cl)
   (:export #:main))

@@ -99,6 +99,15 @@
          (fail-at (node-span node) :semantic "Cannot assign immutable or captured binding"))
        (c-context-check (assignment-rhs node) child (local-symbol-type symbol))
        (c-summary node :void (c-normal child) (list child))))
+    (mognitio.syntax::test-stage (c-summary node :void t nil))
+    (assert-statement
+     (let* ((operand (assert-statement-operand node)) (child (c-expression operand)))
+       (when (and (c-normal child) (not (eq (completion-normal-type child) :bool)))
+         (fail-at (node-span operand) :type
+                  (format nil "assert requires Bool; actual ~A"
+                          (diagnostic-type-name (completion-normal-type child) (c-context)))))
+       (c-context-check operand child :bool)
+       (c-summary node :void (c-normal child) (list child))))
     (expression-statement
      (let* ((child (c-expression (expression-statement-expression node))) (normal (completion-normal-type child)))
        (if (expression-statement-discard-p node)
@@ -122,6 +131,7 @@
          (*owner* 0) (*loops* nil) (*template-owner* nil) (*template-edges* (make-hash-table))
          (*scopes* (list (make-hash-table :test #'equal))))
     (vector-push-extend (make-signature :id 0 :result-type (if (mognitio.syntax::program-project program) :void :bool)) (checked-program-signatures *checked*))
+    (check-attribute-targets program)
     (prepare-value-declarations (c-context) program)
     (c-template-signatures program)
     (c-implementations program)
@@ -135,6 +145,7 @@
                       *template-edges* (lambda (span) (fail-at span :semantic "Cyclic template reference")))
     (loop for sig across (checked-program-signatures *checked*) do
       (setf (signature-captures sig) (sort (signature-captures sig) #'< :key #'local-symbol-id)))
+    (check-attribute-types *checked*)
     *checked*))
 (defun checked-string-literals (checked)
   (sort (loop for node being the hash-keys of (checked-program-summaries checked)

@@ -51,6 +51,11 @@
      (let ((symbol (v-reference node (assignment-name node))) (child (assignment-rhs node)))
        (v-check (and (eq :var (local-symbol-mutability symbol)) (= (v-owner) (local-symbol-owner symbol))) "Invalid assignment")
        (v-visit child) (v-exact child (local-symbol-type symbol)) (v-finish node :void (v-normal child) (list child))))
+    (mognitio.syntax::test-stage (v-finish node :void t nil))
+    (assert-statement
+     (let ((child (assert-statement-operand node)))
+       (v-visit child) (v-exact child :bool)
+       (v-finish node :void (v-normal child) (list child))))
     (expression-statement
      (let ((child (expression-statement-expression node)))
        (v-visit child)
@@ -118,6 +123,7 @@
 
 (defun verify-checked-program-internal (checked)
   (v-check (checked-program-p checked) "Expected CheckedProgram")
+  (verify-attributes checked)
   (let* ((context (copy-instantiation-context (checked-program-values checked)))
          (*verification* (make-verification-state :checked checked :context context
                                                    :scopes (list (make-hash-table :test #'equal))))

@@ -133,7 +133,7 @@
             (case (mognitio.ir:instruction-op inst)
               ((:constant :function) (emit :imm-rax (mognitio.ir:instruction-value inst)))
               (:const.text (emit :lea-text (list :text (mognitio.ir:instruction-value inst))))
-              ((:text.length :text.equal :text.not-equal :text.concat :text.slice)
+              ((:test.stage :text.length :text.equal :text.not-equal :text.concat :text.slice)
                (loop for argument in (mognitio.ir:instruction-operands inst) for offset from 0 by 8 do
                  (load-value argument) (emit :store-out offset :rax))
                (emit :call (list :helper (mognitio.ir:instruction-op inst))))
@@ -192,10 +192,14 @@
                (arithmetic inst)))
             (write-location (home (mognitio.ir:instruction-result inst)) :rax)
             (when (member (mognitio.ir:instruction-op inst)
-                          '(:call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
+                          '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
               (push (list :operation (list (mognitio.ir:basic-block-id block) index) (ldiff code start)) sections))))
         (let ((term (mognitio.ir:basic-block-terminator block)))
           (ecase (first term)
+            (:assert-fail
+             (section :assert-fail (list (mognitio.ir:basic-block-id block) :assert-fail)
+               `((:lea-meta (:assertion-site ,(second term))) (:store-out 0 :rax)
+                 (:call (:helper :assertion)) (:ud2))))
             (:panic
              (let ((start code))
                (load-value (second term)) (emit :store-out 0 :rax) (emit :call '(:helper :panic)) (emit :ud2)
@@ -222,7 +226,9 @@
                     (position (first ordered) body)))
             (loop for i in body collect (cons (instruction-opcode i) (instruction-operands i)))))
         (finish-unit (mognitio.ir:ir-function-id function) (list :function (mognitio.ir:ir-function-id function))))
-      (runtime)
+      (if (mognitio.ir::module-test-ordinal module)
+          (dolist (form (mognitio.native.runtime::test-runtime-forms)) (apply #'emit form))
+          (runtime))
       (finish-unit :runtime :print)
       (let* ((required-operations (remove-duplicates
                           (loop for f in (mognitio.ir:module-functions module) append
@@ -239,7 +245,7 @@
              (literals (mognitio.object:make-code-unit :owner :literals :instructions
                          (loop for form in (mognitio.native.runtime:literal-forms (mognitio.ir:module-literal-pool module))
                                collect (make-instruction :opcode (first form) :operands (rest form))))))
-        (mognitio.object:layout-units (append (nreverse units) helpers value-helpers
+        (mognitio.object:layout-units (append (nreverse units) helpers value-helpers (mognitio.native.runtime::verified-test-helper-units) (mognitio.native.runtime::assertion-units module)
           (when (some (lambda (f) (some (lambda (b) (eq :panic (first (mognitio.ir:basic-block-terminator b))))
                                       (mognitio.ir:ir-function-blocks f))) (mognitio.ir:module-functions module))
             (list (mognitio.native.runtime::panic-helper-unit))) (list (mognitio.native.runtime::metadata-unit (mognitio.ir:module-values module)) literals)))))))

@@ -9,6 +9,7 @@
           (typecase node
             (program '(statements root)) (sequence-node '(statements terminal))
             (local-binding '(initializer)) (assignment '(rhs)) (return-statement '(value))
+            (assert-statement '(operand))
             (grouping '(expression)) (expression-statement '(expression))
             (call-expression '(callee arguments)) (method-call '(receiver arguments))
             (unary-expression '(operand)) (binary-expression '(left right))
@@ -75,6 +76,9 @@
          (dependencies (make-array (length signatures) :initial-element nil)))
     (loop for signature across signatures for id from 0 do
       (labels ((add-type (type) (setf (aref sets id) (union (aref sets id) (type-parameters-in type) :test #'equal))))
+        ;; Parent instance identity remains part of the proof even when its
+        ;; generic parameter is absent from this nested function's value types.
+        (mapc #'add-type (signature-lexical-parameters signature))
         (mapc #'add-type (append (list (signature-result-type signature)) (signature-runtime-types signature)
                                 (mapcar #'local-symbol-type (signature-captures signature))))
         (walk-runtime-syntax checked (source-function-root checked id)
