@@ -18,6 +18,8 @@
         (t
          (let* ((kind (car terminal)) (expected (case kind (0 0) (1 5) (otherwise 4))))
            (unless (= code expected) (internal-error "Test terminal disagrees with process status"))
+           (when (= kind 1)
+             (setf (test-case-assertion-site test) (aref (test-case-sites test) (cdr terminal))))
            (setf (test-case-kind test) (car (rassoc kind *event-kinds*))
                  (test-case-state test) (case kind (0 :passed) (1 :failed) (otherwise :errors)))
          (when (eq (test-case-state test) :passed) (setf (test-case-kind test) nil)))))
@@ -83,11 +85,11 @@
     (unwind-protect
          (handler-case (progn (spawn-attempt attempt (test-case-path test))
                               (drain-attempt attempt reader test stderr))
-           (error (c) (setf primary c)))
+           ((or error storage-condition) (c) (setf primary c)))
       (setf (test-case-stage test) (event-reader-stage reader))
       (sync-start attempt test)
       (handler-case (finalize-attempt attempt)
-        (error (c) (if primary (push c *runner-secondary*) (setf primary c))))
+        ((or error storage-condition) (c) (if primary (push c *runner-secondary*) (setf primary c))))
       (when (and primary (eq (test-case-state test) :running)) (setf (test-case-state test) :aborted)))
     (when primary (error primary))))
 
@@ -100,7 +102,9 @@
       (render-diagnostic
         (if (typep condition 'compiler-failure) (failure-diagnostic condition)
             (make-diagnostic :phase (if (= (command-code condition) 3) :internal :io)
-                             :message (if (= (command-code condition) 3) "Test runner failed" "Test runner I/O failed"))) s)))))
+                             :message (cond ((typep condition 'storage-condition) "Test runner storage failure")
+                                            ((= (command-code condition) 3) "Test runner failed")
+                                            (t "Test runner I/O failed")))) s)))))
 (defun suite-exit (cases)
   (cond ((find :abnormal cases :key #'test-case-kind) 6)
         ((find :errors cases :key #'test-case-state) 4)
@@ -121,23 +125,28 @@
                  (test-context test stderr)
                  (runner-hook :before-result-output test)
                  (result-line test stdout)))
-           (error (c) (setf primary c)))
-      (when session (setf cleanup (cleanup-preparation session))))
+           ((or error storage-condition) (c) (setf primary c)))
+      (when session
+        (handler-case
+            (multiple-value-bind (paths failure) (cleanup-preparation session)
+              (setf cleanup paths)
+              (when failure (if primary (push failure *runner-secondary*) (setf primary failure))))
+          ((or error storage-condition) (c) (if primary (push c *runner-secondary*) (setf primary c))))))
     (when cleanup
       (unless primary
         (setf primary (make-condition 'usage-or-io-failure :diagnostic
                        (make-diagnostic :message "Cannot remove test temporary resources")))))
     (flet ((report (thunk)
-             (handler-case (funcall thunk) (error (c) (unless primary (setf primary c))))))
+             (handler-case (funcall thunk) ((or error storage-condition) (c) (unless primary (setf primary c))))))
       (when primary (report (lambda () (report-command primary stderr))))
       (dolist (condition (reverse *runner-secondary*))
-        (report (lambda () (output-text stderr (format nil "mgn: process cleanup also failed; recovery may be incomplete~%"))
+        (report (lambda () (output-text stderr (format nil "mgn: cleanup also failed; recovery may be incomplete~%"))
                            (report-command condition stderr))))
       (dolist (path cleanup)
         (report (lambda () (output-text stderr (format nil "mgn: cleanup incomplete: ~A~%" (one-line path))))))
       (when (and plan (or (null primary) (find-if (lambda (test) (not (eq (test-case-state test) :not-run))) (test-plan-cases plan))))
         (loop for test across (test-plan-cases plan) unless (eq (test-case-state test) :not-run) do
-          (when (eq (test-case-state test) :aborted) (report (lambda () (test-context test stderr))))
+          (unless (test-output-failed stderr) (report (lambda () (test-context test stderr))))
           (unless (test-output-failed stdout) (report (lambda () (result-line test stdout)))))
         (let ((before primary))
           (report (lambda () (runner-hook :before-summary plan)))

@@ -41,13 +41,18 @@
         (one-line (test-case-identity test))))
     (setf (test-case-reported test) t)))
 (defun test-context (test output)
-  (unless (eq (test-case-state test) :passed)
+  (when (and (member (test-case-state test) '(:failed :errors :aborted))
+             (not (test-case-context-reported test)))
     (output-text output
       (with-output-to-string (s)
         (render-diagnostic
           (mognitio.source:span-diagnostic (test-case-span test) :test
             (format nil "~A; kind=~A; stage=~A" (test-case-identity test)
-                    (or (test-case-kind test) (test-case-state test)) (stage-name (test-case-stage test)))) s)))))
+                    (or (test-case-kind test) (test-case-state test)) (stage-name (test-case-stage test)))) s)
+        (when (test-case-assertion-site test)
+          (render-diagnostic (mognitio.source:span-diagnostic (test-case-assertion-site test)
+                               :assertion "assertion failed") s))))
+    (setf (test-case-context-reported test) t)))
 (defun summary-line (cases output)
   (let ((states (loop for test across cases collect (test-case-state test))))
     (when (member :running states) (internal-error "Unresolved test in summary"))

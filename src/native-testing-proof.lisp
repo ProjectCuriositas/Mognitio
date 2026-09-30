@@ -1,5 +1,22 @@
 (in-package #:mognitio.native.runtime)
 
+(defun returning-test-helper-writes (form)
+  ;; Closed, independent description of every admitted opcode, including implicit
+  ;; destinations. Adding an opcode requires specifying its register effects here.
+  (case (first form)
+    ((:mov-reg :load-frame :load-word :lea-base :add-imm :add-reg) (list (second form)))
+    ((:imm-rax :mov-eax :mul) '(:rax))
+    (:imm-rcx '(:rcx))
+    ((:imm-rdx :sub-rdx) '(:rdx))
+    (:mov-edi '(:rdi))
+    (:add-rsi '(:rsi))
+    (:syscall '(:rax :rcx :r11))
+    ((:push-rbp :push-zero :ret) '(:rsp))
+    (:pop-rbp '(:rbp :rsp))
+    (:call '(:rsp :rax :rcx :rdx :rsi :rdi :r8 :r9 :r10 :r11))
+    ((:label :store-frame :store-word :cmp-eintr :jz :jnz :jle :jmp :test :ud2) nil)
+    (otherwise (internal-error "Unsupported effect in returning test helper"))))
+
 (defun verify-returning-test-helper (unit)
   ;; Independent effect/frame check of the actual Machine instructions.
   ;; Neither helper effects nor the register allocator's barrier table are evidence.
@@ -10,23 +27,29 @@
                         (mognitio.object:code-unit-instructions unit)))
          (labels (loop for f in forms when (eq (car f) :label) collect (second f)))
          (returns 0) (calls 0))
-    (unless (and (equal (subseq forms 0 (+ 3 words))
+    (unless (and (>= (length forms) (+ 6 words))
+                 (equal (subseq forms 0 (+ 3 words))
                         (append (list (list :label (list :helper name)) '(:push-rbp) '(:mov-reg :rbp :rsp))
                                 (make-list words :initial-element '(:push-zero)))))
       (internal-error "Invalid returning test helper frame"))
     (loop for tail on forms for f = (first tail) for index from 0 for op = (first f) do
-      (unless (member op '(:label :push-rbp :push-zero :mov-reg :store-frame :load-frame :load-word
-                           :store-word :imm-rax :imm-rcx :imm-rdx :lea-base :add-imm :add-reg :mul
-                           :mov-edi :mov-eax :syscall :cmp-eintr :jz :jnz :jle :jmp :test
-                           :add-rsi :sub-rdx :ud2 :pop-rbp :ret :call))
-        (internal-error "Unsupported effect in returning test helper"))
-      (when (and (member op '(:mov-reg :load-frame :load-word :lea-base :add-imm :add-reg))
-                 (member (second f) '(:rbx :r12 :r13 :r14 :r15)))
-        (internal-error "Returning test helper clobbers a callee save"))
-      (when (and (eq op :mov-reg) (member (second f) '(:rsp :rbp)))
-        (unless (or (and (= index 2) (equal f '(:mov-reg :rbp :rsp)))
-                    (and (equal f '(:mov-reg :rsp :rbp)) (equal (subseq tail 0 3) '((:mov-reg :rsp :rbp) (:pop-rbp) (:ret)))))
-          (internal-error "Invalid helper frame restoration")))
+      (let ((writes (returning-test-helper-writes f)))
+        (when (intersection writes '(:rbx :r12 :r13 :r14 :r15))
+          (internal-error "Returning test helper clobbers a callee save"))
+        (when (intersection writes '(:rbp :rsp))
+          (unless (case op
+                    (:push-rbp (= index 1))
+                    (:push-zero (<= 3 index (+ 2 words)))
+                    (:mov-reg (or (and (= index 2) (equal f '(:mov-reg :rbp :rsp)))
+                                  (and (= index (- (length forms) 3))
+                                       (equal tail '((:mov-reg :rsp :rbp) (:pop-rbp) (:ret))))))
+                    (:pop-rbp (= index (- (length forms) 2)))
+                    (:ret (= index (1- (length forms))))
+                    ;; The only admitted call is the independently checked returning
+                    ;; event helper. Its balanced call/return temporarily changes RSP.
+                    (:call (and (eq name :test.stage) (equal (second f) '(:helper :test.event))
+                                (<= (+ 3 words) index (- (length forms) 4)))))
+            (internal-error "Returning test helper clobbers its frame registers"))))
       (when (member op '(:store-frame :load-frame))
         (let ((offset (if (eq op :store-frame) (second f) (third f))))
           (unless (and (integerp offset) (zerop (mod offset 8)) (<= (- (* 8 words)) offset -8))

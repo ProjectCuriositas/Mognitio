@@ -19,6 +19,7 @@ cases to executable fixtures. Host/process audit details are recorded
 | v011-proofs.lisp | Checked metadata and TestPlan mutations, wrapper proof, R8-R11 stage pressure with native execution, nested generic identity and small-heap capture |
 | v011-runner.lisp | Command interruption accounting, preparation ownership, reap/fd safety, shared initialization, actual signal termination and output failures |
 | v011-transport.lisp | Independent binary records, actual broken event channel, pre-exec action failures, deferred start-commit interruption and EINTR/EPIPE controls |
+| v011-review.lisp | Host storage-condition recovery and cleanup, all-opcode destination preservation, committed failure context and assertion-site recovery without duplicate reporting |
 | v09-source | Strict UTF-8, comments, decimals, identifiers, scalar escapes, byte spans |
 | v09-fixtures, v09-boundaries, v09-frontend | Positive and rejection matrices, type identity, scopes, completion, captures, templates, methods, lists, control |
 | v09-revision | Value-loop joins and exits, arrow field/call resolution, witness evidence, ordinary underscore, host allocation boundary, body-only generic type proof mutations |

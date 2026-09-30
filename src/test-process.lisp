@@ -136,7 +136,8 @@
 
 (defun finalize-attempt (attempt)
   (let ((failure nil))
-    (flet ((protect (thunk) (handler-case (funcall thunk) (error (c) (unless failure (setf failure c))))))
+    (flet ((protect (thunk) (handler-case (funcall thunk)
+                            ((or error storage-condition) (c) (unless failure (setf failure c))))))
       (protect (lambda ()
         (collect-wait attempt)
         (when (eq (attempt-resources-process-state attempt) :owned-unreaped)
