@@ -1,7 +1,7 @@
 (in-package #:mognitio.testing)
 
 (defstruct test-case ordinal declaration identity span sites path (fd -1) created
-  (state :not-run) kind (stage 0) reported)
+  (state :not-run) kind (stage 0) reported context-reported assertion-site)
 (defstruct test-plan project checked cases)
 (defstruct preparation-session name directory-owned directory cases)
 (sb-alien:define-alien-routine ("mkdtemp" raw-mkdtemp) sb-alien:system-area-pointer
@@ -100,9 +100,11 @@
   (runner-hook :suite-prepared session))
 
 (defun cleanup-preparation (session)
-  (let ((failures nil))
+  (let ((failures nil) (first-failure nil))
     (flet ((protect (path thunk)
-             (handler-case (funcall thunk) (error () (push path failures)))))
+             (handler-case (funcall thunk)
+               ((or error storage-condition) (c)
+                (unless first-failure (setf first-failure c)) (push path failures)))))
       (loop for test across (preparation-session-cases session) do
         (protect (test-case-path test) (lambda () (close-test-image test)))
         (when (test-case-created test)
@@ -115,4 +117,4 @@
               (sb-sys:with-pinned-objects (name)
                 (unless (zerop (raw-rmdir (sb-sys:vector-sap name))) (runner-io "Cannot remove test directory"))))
             (setf (preparation-session-directory-owned session) nil)))))
-    (nreverse failures)))
+    (values (nreverse failures) first-failure)))

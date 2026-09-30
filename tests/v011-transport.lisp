@@ -59,7 +59,7 @@
                   (0 t 0 :internal) (31744 nil 0 :io) (0 nil 7 :abnormal)))
     (destructuring-bind (status terminal partial expected) case
       (let ((attempt (mognitio.testing::make-attempt-resources :process-state :reaped :status status))
-            (test (mognitio.testing::make-test-case :state :running))
+            (test (mognitio.testing::make-test-case :state :running :sites (vector (make-span (text-source "assert false;") 0 13))))
             (reader (mognitio.testing::make-event-reader :ordinal 0 :eof t :used partial :terminal (when terminal '(1 . 0)))))
         (case expected
           (:internal (signals internal-failure (mognitio.testing::commit-result attempt reader test)))
