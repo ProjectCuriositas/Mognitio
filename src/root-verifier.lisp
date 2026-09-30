@@ -25,7 +25,7 @@
                              :initial-value (remove (instruction-result node)
                                                     (gethash (list (first key) (1+ (second key))) before)))
                      (ecase (first node)
-                       (:trap nil) ((:return :panic) (list (second node)))
+                       ((:trap :assert-fail) nil) ((:return :panic) (list (second node)))
                        (:branch (adjoin (second node)
                                         (union (gethash (list (third node) 0) before)
                                                (gethash (list (fourth node) 0) before))))

@@ -1,8 +1,8 @@
 (in-package #:mognitio.syntax)
 
-(defstruct data-declaration name kind target members span (type-parameters #()))
-(defstruct contract-declaration name methods span)
-(defstruct implementation-declaration name target contract methods span)
+(defstruct data-declaration (attributes #() :read-only t) (declaration-span nil :read-only t) name kind target members span (type-parameters #()))
+(defstruct contract-declaration (attributes #() :read-only t) (declaration-span nil :read-only t) name methods span)
+(defstruct implementation-declaration (attributes #() :read-only t) (declaration-span nil :read-only t) name target contract methods span)
 (defstruct named-member name value span)
 (defstruct struct-expression name fields span)
 (defstruct enum-expression name variant arguments parenthesized-p span)

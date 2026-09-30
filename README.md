@@ -2,20 +2,22 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-This v0.10.0 source release adds multiple modules within one project.
+The v0.11.0 version branch adds built-in assertions, declaration attributes,
+and native test execution to the project-module language.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
 - [Release validation](verification/v0.10.0-release.md): pinned release checks.
-- [Implementation verification](verification/v0.10.0.md): evidence and limits.
+- [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
+- [Implementation verification](verification/v0.11.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
 
 ## Requirements and commands
 
-The compiler host is Linux with SBCL, ASDF, UIOP, and SB-POSIX.
+The compiler host is Linux amd64 with glibc 2.34+, SBCL, ASDF, UIOP, and SB-POSIX.
 No Quicklisp, external compiler, assembler, or linker is required.
 
 Add the compiler checkout's real `bin` directory to PATH. From the compiler
@@ -33,6 +35,7 @@ From your Mognitio project's directory, use the `mgn` command:
 
 ```sh
 mgn run mognitio.toml
+mgn test mognitio.toml
 mgn build mognitio.toml -o app
 ./app
 ```
@@ -46,10 +49,12 @@ Compiler contributors can invoke the launcher directly from its checkout:
 ```
 
 Normal execution returns silently with exit 0. Build also succeeds silently.
+Test execution prints per-test results and a summary; see the [test guide](examples/testing/README.md).
 The generated Linux amd64 ELF needs no compiler, source, libc, dynamic loader,
 or cache at runtime. Build checks all sources without executing initializers.
 
-The arguments are `run <mognitio.toml>` and `build <mognitio.toml> -o <artifact>`.
+The commands are `run <mognitio.toml>`, `test <mognitio.toml>`,
+and `build <mognitio.toml> -o <artifact>`.
 Relative paths use the caller's directory. The output parent must exist.
 All inputs and future `.mgn` sources are protected against output replacement,
 including aliases through hardlinks and symlinks. Publication uses a temporary

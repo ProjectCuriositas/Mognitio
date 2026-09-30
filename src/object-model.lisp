@@ -11,6 +11,8 @@
 (defun symbol-kind (name)
   (cond
     ((keywordp name) :code)
+    ((and (listp name) (= (length name) 2) (eq (first name) :assertion-site)
+          (typep (second name) '(integer 0 *))) :metadata)
     ((and (listp name) (= (length name) 2) (eq (first name) :text)
           (typep (second name) '(integer 0 *))) :text)
     ((and (listp name) (= (length name) 2) (eq (first name) :runtime)
@@ -23,7 +25,7 @@
           (member (length name) '(2 3))
           (every (lambda (id) (typep id '(integer 0 *))) (rest name))) :metadata)
     ((and (listp name) (= (length name) 2) (eq (first name) :helper)
-          (member (second name) '(:text.length :text.equal :text.not-equal :text.concat :text.slice :panic))) :helper)
+          (member (second name) '(:text.length :text.equal :text.not-equal :text.concat :text.slice :panic :assertion :test.stage :test.event :test.bootstrap :test.terminal))) :helper)
     ((and (listp name)
           (case (first name)
             (:function (and (= 2 (length name)) (typep (second name) '(integer 0 *))))

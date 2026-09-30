@@ -1,5 +1,6 @@
 (in-package #:mognitio.native.runtime)
 
+(defvar *runtime-module* nil)
 (defconstant +root-head+ 0)
 (defconstant +arena-head+ 8)
 (defconstant +page-size+ 16)
@@ -50,8 +51,9 @@
      (:label :auxv) (:load-word :rax :rdx 0) (:test) (:jz :bad-auxv)
      (:cmp-imm :rax 6) (:jz :have-pagesize) (:add-imm :rdx 16) (:jmp :auxv)
      (:label :have-pagesize) (:load-word :rax :rdx 8) (:test) (:jle :bad-auxv))
-   (loop repeat (/ +context-size+ 8) collect '(:push-zero))
+   (loop repeat (/ (+ +context-size+ (if (test-image-p) 48 0)) 8) collect '(:push-zero))
    `((:mov-reg :r15 :rsp) (:store-word :r15 ,+page-size+ :rax)
+     ,@(when (test-image-p) '((:call (:helper :test.bootstrap))))
      (:call (:function 0)) (:jmp :print)
      (:label :bad-auxv) (:mov-edi 3) (:mov-eax 60) (:syscall) (:ud2))))
 

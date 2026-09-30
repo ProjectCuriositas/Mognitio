@@ -32,6 +32,10 @@
     (typecase node
       ((or data-declaration contract-declaration implementation-declaration struct-expression enum-expression field-expression this-expression branch-expression)
        (value-expression-form node checked names functions exits loops))
+      (mognitio.syntax::test-stage *void-value*)
+      (assert-statement
+       `(cl:progn (cl:unless ,(form (assert-statement-operand node))
+                    (mognitio.runtime::raise-assertion ',(node-span node))) ,*void-value*))
       (panic-expression
        (let ((child (panic-expression-block node)))
          (if (checked-normal-type checked child) (list 'mognitio.runtime::raise-panic (form child)) (form child))))

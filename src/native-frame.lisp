@@ -2,14 +2,14 @@
 
 (defstruct layout size temporary root-offset capacity arity)
 (defun max-arity (function)
-  (max (if (some (lambda (block) (eq :panic (first (mognitio.ir:basic-block-terminator block))))
+  (max (if (some (lambda (block) (member (first (mognitio.ir:basic-block-terminator block)) '(:panic :assert-fail)))
                  (mognitio.ir:ir-function-blocks function)) 1 0)
        (ordinary-max-arity function)))
 (defun ordinary-max-arity (function)
   (loop for b in (mognitio.ir:ir-function-blocks function) maximize
     (loop for i in (mognitio.ir:basic-block-instructions b)
           when (member (mognitio.ir:instruction-op i)
-                       '(:call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
+                       '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
           maximize (- (length (mognitio.ir:instruction-operands i))
                       (if (eq (mognitio.ir:instruction-op i) :call.value) 1 0)) into size
           finally (return (or size 0)))))
@@ -100,6 +100,16 @@
                  (internal-error "Incorrect root value home or slot")))
              (when pending (internal-error "Unexpected instruction in root snapshot"))
              (setf sites (remove site sites))))
+          (:assert-fail
+           (let* ((block (find (first key) (mognitio.ir:ir-function-blocks function) :key #'mognitio.ir:basic-block-id))
+                  (term (mognitio.ir:basic-block-terminator block)))
+             (unless (and linked (not unlinked) (eq :assert-fail (first term))
+                          (equal key (list (first key) :assert-fail))
+                          (not (member key operations :test #'equal))
+                          (equal forms `((:lea-meta (:assertion-site ,(second term))) (:store-out 0 :rax)
+                                         (:call (:helper :assertion)) (:ud2))))
+               (internal-error "Invalid assertion terminal call"))
+             (push key operations) (push (+ start 2) calls)))
           (:panic
            (let* ((block (find (first key) (mognitio.ir:ir-function-blocks function) :key #'mognitio.ir:basic-block-id))
                   (term (mognitio.ir:basic-block-terminator block)) (home (gethash (second term) homes)))
@@ -119,7 +129,7 @@
                   (prefix (when (eq (first publication) :publish) (third publication)))
                   (pending (copy-list forms)))
              (unless (and linked (not unlinked)
-                          (member op '(:call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result)))
+                          (member op '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result)))
                (internal-error "Invalid native call section"))
              (when (member :may-allocate (mognitio.ir:instruction-effects inst))
                (unless (and prefix (equal prefix (subseq pending 0 (length prefix))))
@@ -161,12 +171,12 @@
              (loop for form in forms for index from start when (member (first form) '(:call :call-rax)) do (push index calls))))
           (otherwise (internal-error "Invalid frame section")))))
     (let ((expected (append (loop for block in (mognitio.ir:ir-function-blocks function)
-                                     when (eq :panic (first (mognitio.ir:basic-block-terminator block)))
-                                     collect (list (mognitio.ir:basic-block-id block) :panic))
+                                     when (member (first (mognitio.ir:basic-block-terminator block)) '(:panic :assert-fail))
+                                     collect (list (mognitio.ir:basic-block-id block) (first (mognitio.ir:basic-block-terminator block))))
                             (loop for block in (mognitio.ir:ir-function-blocks function) append
                       (loop for i in (mognitio.ir:basic-block-instructions block) for n from 0
                             when (member (mognitio.ir:instruction-op i)
-                                         '(:call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
+                                         '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
                             collect (list (mognitio.ir:basic-block-id block) n))))))
       (unless (and (subsetp expected operations :test #'equal) (subsetp operations expected :test #'equal))
         (internal-error "Missing native call sections")))

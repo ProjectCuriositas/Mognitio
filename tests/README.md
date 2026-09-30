@@ -1,14 +1,24 @@
 # Test coverage
 
-The ASDF `mognitio/tests` system is the current v0.10.0 suite.
+The ASDF `mognitio/tests` system is the current v0.11.0 suite.
 Run it with `sbcl --noinform --script scripts/test.lisp`.
 A failed assertion or unavailable required facility fails the command.
-The summary counts test groups, assertions, and actual child processes.
+The Lisp summary counts test groups, assertions, and processes invoked through
+the general harness. Runner-owned native children and Python-suite processes
+are additional; see the [current record](../verification/v0.11.0.md).
+
+The [test acceptance ledger](../verification/v0.11.0-testing.md) maps all 72
+cases to executable fixtures. Host/process audit details are recorded
+[separately](../verification/v0.11.0-process.md).
 
 ## Current coverage
 
 | Files | Independent observations |
 |---|---|
+| v011-testing.py | Public test CLI, attributes, assertion semantics and positions, discovery, entry independence, input preservation, large raw payloads, actual closed output pipes |
+| v011-proofs.lisp | Checked metadata and TestPlan mutations, wrapper proof, R8-R11 stage pressure with native execution, nested generic identity and small-heap capture |
+| v011-runner.lisp | Command interruption accounting, preparation ownership, reap/fd safety, shared initialization, actual signal termination and output failures |
+| v011-transport.lisp | Independent binary records, actual broken event channel, pre-exec action failures, deferred start-commit interruption and EINTR/EPIPE controls |
 | v09-source | Strict UTF-8, comments, decimals, identifiers, scalar escapes, byte spans |
 | v09-fixtures, v09-boundaries, v09-frontend | Positive and rejection matrices, type identity, scopes, completion, captures, templates, methods, lists, control |
 | v09-revision | Value-loop joins and exits, arrow field/call resolution, witness evidence, ordinary underscore, host allocation boundary, body-only generic type proof mutations |
@@ -53,6 +63,7 @@ Historical validation records preserve their original counts and results.
 | Optional when else, on wildcard/else, untyped payload binding | Required final else for when, exhaustive named on cases, optional typed binder |
 | Slice bounds trap | Result<String,SliceError> with requested bounds and length |
 | Single-source CLI and Boolean output | Manifest project CLI with declaration-only modules and silent Unit main |
+| At-sign always rejected by lexer | At-sign introduces attributes; dollar-sign fixtures retain lexical-rejection coverage |
 | ABI v4 / non-reference Function | ABI v5, closure roots and code pointers, typed List/buffer tracing |
 
 Retained low-level tests were migrated only where source spelling or an explicit

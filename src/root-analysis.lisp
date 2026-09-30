@@ -13,7 +13,7 @@
     (labels ((same-set (a b) (and (subsetp a b) (subsetp b a)))
              (terminal-use (block)
                (let ((term (basic-block-terminator block)))
-                 (unless (member (first term) '(:jump :trap)) (list (second term)))))
+                 (unless (member (first term) '(:jump :trap :assert-fail)) (list (second term)))))
              (edge-live (block successor)
                (let* ((target (gethash successor blocks))
                       (term (basic-block-terminator block))
