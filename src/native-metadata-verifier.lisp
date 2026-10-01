@@ -72,6 +72,11 @@
             for name = (list :text id) do
         (record name (list size 5 (length payload) (mognitio.syntax:text-payload-scalar-count literal)))
         (ensure (equalp payload (subseq bytes (+ (offset name) 32) (+ (offset name) 32 (length payload))))))
+      (loop for site across (mognitio.ir::module-assertion-sites module) for id from 0
+            for payload = (mognitio.runtime::assertion-bytes site (mognitio.ir::module-test-ordinal module))
+            for name = (list :assertion-site id) do
+        (record name (list (length payload) id))
+        (ensure (equalp payload (subseq bytes (+ (offset name) 16) (+ (offset name) 16 (length payload))))))
       (maphash (lambda (name symbol)
                  (when (member (mognitio.object:image-symbol-kind symbol) '(:text :metadata :object))
                    (ensure (gethash name seen)))) symbols))

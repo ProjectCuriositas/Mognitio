@@ -1,9 +1,12 @@
 # Verification
 
-The current implementation record is [v0.10.0](v0.10.0.md).
-The current release validation is [v0.10.0](v0.10.0-release.md).
+The current implementation record is [v0.11.0](v0.11.0.md), with a
+[72-case ledger](v0.11.0-testing.md) and [process evidence](v0.11.0-process.md).
+The [runner review fixes](v0.11.0-review.md) cover host storage recovery,
+helper frame-register preservation, and committed-result diagnostics.
+The current release validation is [v0.11.0](v0.11.0-release.md).
 Run checks from the repository root on a non-root Linux amd64 host with SBCL,
-Python 3, and permission to trace child processes.
+Python 3, glibc 2.34+, and permission to trace child processes.
 
 ```sh
 sbcl --noinform --script scripts/test.lisp
@@ -39,6 +42,7 @@ evidence. Do not include private setup details in public records.
 
 ## Historical records
 
+- [v0.10.0 release](v0.10.0-release.md)
 - [v0.9.0 initial source increment](v0.9.0-progress.md)
 - [v0.8.1 release](v0.8.1-release.md)
 - [v0.8.0 implementation](v0.8.0.md) and [release](v0.8.0-release.md)

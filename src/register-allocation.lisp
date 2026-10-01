@@ -22,7 +22,7 @@
 
 (defun terminator-uses (block)
   (let ((term (mognitio.ir:basic-block-terminator block)))
-    (ecase (first term) ((:return :branch :panic) (list (second term))) (:jump (third term)) (:trap nil))))
+    (ecase (first term) ((:return :branch :panic) (list (second term))) (:jump (third term)) ((:trap :assert-fail) nil))))
 
 (defun set-equal (a b) (and (subsetp a b) (subsetp b a)))
 
@@ -45,7 +45,7 @@
         (incf position)
         (dolist (i (mognitio.ir:basic-block-instructions block))
           (when (member (mognitio.ir:instruction-op i)
-                        '(:call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
+                        '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
             (push (1+ position) barriers))
           (let ((id (mognitio.ir:instruction-result i)))
             (setf (gethash id table) (make-interval :id id :start (+ position 2) :end (+ position 2))))
@@ -104,7 +104,7 @@
           (dolist (inst (mognitio.ir:basic-block-instructions block))
             (event (mognitio.ir:instruction-operands inst) nil)
             (event nil nil (member (mognitio.ir:instruction-op inst)
-                                   '(:call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result)))
+                                   '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result)))
             (event nil (list (mognitio.ir:instruction-result inst))))
           (setf (gethash id lasts) position)
           (event (terminator-uses block) nil)))

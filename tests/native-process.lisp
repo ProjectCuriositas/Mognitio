@@ -74,16 +74,16 @@
                     (#(239 187 191 116 114 117 101) "source")
                     (#(237 160 128) "source") (#(244 144 128 128) "source")
                     (#(239 187 191 239 187 191 116 114 117 101) "source")
-                    (#(64) "lex")))
+                    (#(36) "lex")))
       (let ((source (put-bytes (fresh-path) (first case))))
         (expect-cli (build-args source output) 1 :phase (second case))))
     (dolist (text '("" "true false"
                     "if(true){true}else branch when{(false)=>{true},else=>{false}}"
-                    "branch when{(true)=>{true},else=>{true false}}" "branch when{(false)=>{@},else=>{true}}"))
+                    "branch when{(true)=>{true},else=>{true false}}" "branch when{(false)=>{$},else=>{true}}"))
       (let ((source (put-text (fresh-path) text)))
         (expect-cli (build-args source output) 1
-                    :phase (cond ((find #\@ text) "lex") ((string= text "") "type") (t "parse")))))
-    (let ((source (put-text (fresh-path) (format nil "branch when{(true)=>{true},else=>{~%@}}"))))
+                    :phase (cond ((find #\$ text) "lex") ((string= text "") "type") (t "parse")))))
+    (let ((source (put-text (fresh-path) (format nil "branch when{(true)=>{true},else=>{~%$}}"))))
       (is (search ":2:1: lex:" (expect-cli (build-args source output) 1))))))
 
 (deftest n11-n14-n29-paths-publication
@@ -182,7 +182,7 @@
         (if existing (same "keep" (uiop:read-file-string output))
             (is (not (probe-file output))))
         (same nil (temporary-images))))
-    (put-text source "@")
+    (put-text source "$")
     (let ((calls 0))
       (replacing (mognitio.backend.native:compile-program
                   (lambda (&rest args) (declare (ignore args)) (incf calls)))
@@ -306,7 +306,7 @@
   (let ((source (put-text (fresh-path) "true")) (output (fresh-path ".out")))
     (dolist (existing '(nil t))
       (when existing (put-text output "keep"))
-      (dolist (text '("@" "true false"))
+      (dolist (text '("$" "true false"))
         (put-text source text)
         (expect-cli (build-args source output) 1)
         (if existing (same "keep" (uiop:read-file-string output))

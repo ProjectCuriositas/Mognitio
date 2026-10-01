@@ -1,0 +1,17 @@
+namespace App;
+
+let add: Function(Int, Int): Int = function(a: Int, b: Int): Int {
+    a + b
+};
+
+@test
+let addition: Function(): Unit = function(): Unit {
+    assert add(2, 3) == 5;
+};
+
+@test
+let identity: Function(): Unit = function(): Unit {
+    assert add(42, 0) == 42;
+};
+
+let main: Function(): Unit = function(): Unit { unit };

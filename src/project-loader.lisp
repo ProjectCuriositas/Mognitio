@@ -1,8 +1,8 @@
 (in-package #:mognitio.project)
 
-(defstruct project manifest root name namespace name-span modules entry inputs order)
+(defstruct project manifest manifest-source (entry-policy :normal) root name namespace name-span modules entry inputs order)
 (defstruct source-module path source namespace tokens imports declarations program names dependencies)
-(defstruct module-declaration module name kind public token node key)
+(defstruct module-declaration module name kind public token node key attributes prefix-span)
 (defstruct module-import namespace name alias span target)
 
 (defun escaped-path (bytes)
@@ -23,7 +23,7 @@
        (string= suffix name :start2 (- (length name) (length suffix)))))
 (defun file-id (stat) (cons (sb-posix:stat-dev stat) (sb-posix:stat-ino stat)))
 
-(defun load-project (manifest)
+(defun load-project (manifest &key (entry-policy :normal))
   (handler-case
       (let* ((path (mognitio.artifact::native-path manifest))
              (stat (sb-posix:lstat path))
@@ -79,9 +79,9 @@
               (walk (raw-string (utf8 (concatenate 'string root "src"))) "src"))
             (setf modules (sort modules #'string< :key #'source-module-path))
             (let ((entry (find (format nil "src/~A.mgn" name) modules :key #'source-module-path :test #'equal)))
-              (unless entry (fail-at name-span :manifest "Entry source is missing" 'usage-or-io-failure))
+              (when (and (eq entry-policy :normal) (null entry)) (fail-at name-span :manifest "Entry source is missing" 'usage-or-io-failure))
               (make-project :manifest path :root root :name name :namespace namespace :name-span name-span
-                            :modules modules :entry entry :inputs inputs)))))
+                            :modules modules :entry entry :inputs inputs :entry-policy entry-policy :manifest-source source)))))
     (sb-posix:syscall-error () (input-error manifest "Cannot discover project inputs"))
     (file-error () (input-error manifest "Cannot access project"))))
 
