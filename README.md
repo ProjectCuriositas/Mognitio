@@ -2,14 +2,14 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-The v0.11.0 version branch adds built-in assertions, declaration attributes,
+The v0.11.0 release adds built-in assertions, declaration attributes,
 and native test execution to the project-module language.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
-- [Release validation](verification/v0.10.0-release.md): pinned release checks.
+- [Release validation](verification/v0.11.0-release.md): pinned release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [Implementation verification](verification/v0.11.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
@@ -119,13 +119,17 @@ Invalid indexing and String slicing return `Result` values.
 
 | Exit | Meaning |
 |---|---|
-| 0 | Successful run or build |
+| 0 | Successful run, build, or test suite (including zero tests) |
 | 1 | Source, lexical, parse, name, or type error |
 | 2 | Invocation, manifest, input path, or file I/O error |
 | 3 | Internal compiler, execution, or bootstrap failure |
 | 4 | Detected runtime failure or panic |
+| 5 | Assertion failure |
+| 6 | Abnormal termination of a started test |
 
-Runtime failures leave stdout empty. Panic writes `panic: ` followed by the
+Normal run/native runtime failures leave stdout empty. Test execution writes
+results and summary to stdout; see the [test guide](examples/testing/README.md)
+for failure precedence and command interruption. Panic writes `panic: ` followed by the
 message bytes and a newline. Other detected failures use `runtime error: ` and
 a fixed description. Static diagnostics include source location and UTF-8 byte
 ranges. Paths are escaped to distinguish invalid bytes, newlines, and backslashes.
