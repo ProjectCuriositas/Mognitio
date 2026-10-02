@@ -2,6 +2,8 @@
 
 The current implementation record is [v0.12.0](v0.12.0.md), with its
 [public acceptance ledger](v0.12.0-conformance.md) and [internal gates](v0.12.0-internals.md).
+The [v0.12 review corrections](v0.12.0-review.md) cover repeated stdin consumption
+and primary failure preservation across diagnostic and signal cleanup paths.
 The retained v0.11 [72-case ledger](v0.11.0-testing.md) and
 [process evidence](v0.11.0-process.md) describe the inherited runner.
 The [runner review fixes](v0.11.0-review.md) cover host storage recovery,
