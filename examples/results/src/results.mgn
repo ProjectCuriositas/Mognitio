@@ -1,5 +1,5 @@
 namespace App;
-let main: Function(): Unit = function(): Unit {
+let main: Function(List<String>): Int = function(args: List<String>): Int {
 let prefix: Function(String): Result<String, SliceError> =
     function(text: String): Result<String, SliceError> {
         let first: String = try text->slice(0, 1);
@@ -8,4 +8,4 @@ let prefix: Function(String): Result<String, SliceError> =
 branch when { (branch on prefix("hello") {
     Result<String, SliceError>::Ok(text: String) => text == "h!",
     Result<String, SliceError>::Err => false,
-}) == true => unit, else => panic {"fixture mismatch"} } };
+}) == true => 0, else => panic {"fixture mismatch"} } };

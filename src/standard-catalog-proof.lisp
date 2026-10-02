@@ -1,0 +1,51 @@
+(in-package #:mognitio.project)
+
+(defun verify-standard-shapes (catalog)
+  (let* ((program (standard-catalog-program catalog)) (source (program-source program))
+         (types (program-declarations program)) (bindings (program-statements program)))
+    (labels ((check (ok) (unless ok (internal-error "Invalid closed standard catalog shape")))
+             (shape (type)
+               (typecase type
+                 (function-type-syntax
+                  (list :function (map 'list #'shape (function-type-syntax-parameters type))
+                        (shape (function-type-syntax-result type))))
+                 (type-syntax
+                  (let* ((token (type-syntax-name type)) (name (raw-name token)))
+                    (check (and (eq (span-source (token-span token)) source)
+                                (equal (mognitio.syntax::token-resolved-name token)
+                                       (unless (member name *predeclared* :test #'equal)
+                                         (concatenate 'string "standard:Std\\Io#" name)))))
+                    (cons name (map 'list #'shape (type-syntax-arguments type)))))
+                 (token
+                  (let ((name (raw-name type)))
+                    (check (and (eq (span-source (token-span type)) source)
+                                (equal (mognitio.syntax::token-resolved-name type)
+                                       (unless (member name *predeclared* :test #'equal)
+                                         (concatenate 'string "standard:Std\\Io#" name)))))
+                    (list name)))
+                 (t (internal-error "Invalid catalog type syntax")))))
+      (loop for node across types for index from 0 do
+        (check (and (zerop (length (data-declaration-type-parameters node)))
+                    (null (data-declaration-target node))
+                    (eq (data-declaration-kind node) (if (= index 2) :struct :enum))))
+        (check
+          (equal (map 'list (lambda (member)
+                            (cons (raw-name (named-member-name member))
+                              (if (= index 2) (shape (named-member-value member))
+                                  (progn (check (null (named-member-value member))) nil))))
+                      (data-declaration-members node))
+            (nth index '((("ReadTextFile") ("WriteTextFile") ("ReadStdin") ("WriteStdout") ("WriteStderr"))
+                         (("InvalidPath") ("InvalidEncoding") ("NotFound") ("PermissionDenied")
+                          ("UnsupportedTarget") ("BrokenPipe") ("ResourceExhausted") ("Other"))
+                         (("operation" "IoOperation") ("kind" "IoErrorKind") ("subject" "String")))))))
+      (loop for binding across bindings for index from 0
+            for function = (local-binding-initializer binding)
+            for arguments = (nth index '((("String")) (("String") ("String")) nil (("String")) (("String"))))
+            for result = (list "Result" (list (if (member index '(0 2)) "String" "Unit")) '("IoError")) do
+        (check (and (eq (local-binding-mutability binding) :let)
+                    (equal (shape (local-binding-annotation binding)) (list :function arguments result))
+                    (zerop (length (function-expression-type-parameters function)))
+                    (equal (map 'list (lambda (p) (shape (parameter-type p))) (function-expression-parameters function)) arguments)
+                    (equal (shape (function-expression-result-type function)) result)
+                    (equal (shape (mognitio.syntax::io-expression-result-type (function-expression-body function))) result)))))
+    t))

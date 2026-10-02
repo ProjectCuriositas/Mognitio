@@ -9,4 +9,22 @@ if [ ! -r "$root/scripts/cli-entry.lisp" ]; then
     printf '%s\n' 'mgn: internal: Compiler bootstrap failed' >&2
     exit 3
 fi
-exec sbcl --noinform --script "$root/scripts/cli-entry.lisp" "$@"
+# Preserve stdin separately: the pipe carries argv bytes, never application input.
+# printf is a shell builtin; quoting preserves empty and non-UTF-8 arguments.
+if ( : 9<&0 ) 2>&-; then
+    exec 9<&0
+    mgn_stdin_open=yes
+else
+    mgn_stdin_open=no
+fi
+mgn_launch() {
+    if [ "$mgn_stdin_open" = yes ]; then
+        exec sbcl --noinform --script "$root/scripts/cli-entry.lisp" --mognitio-argv-fd=3 3<&0 0<&9 9<&-
+    else
+        exec sbcl --noinform --script "$root/scripts/cli-entry.lisp" --mognitio-argv-fd=3 --mognitio-stdin-closed 3<&0 0</dev/null
+    fi
+}
+{
+    printf '%s\000' "$#"
+    for argument do printf '%s\000' "$argument"; done
+} | mgn_launch

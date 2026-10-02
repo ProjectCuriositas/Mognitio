@@ -1,9 +1,9 @@
 namespace App;
-let main: Function(): Unit = function(): Unit {
+let main: Function(List<String>): Int = function(args: List<String>): Int {
 let magnitude :Function(Int):Int= function(value: Int): Int {
     branch when{(value < 0)=>{ return -value; },else=>{ value }}
 };
 let twice :Function(Int):Int= function(value: Int): Int {
     value * 2
 };
-branch when { (twice(magnitude(-6)) == 12) == true => unit, else => panic {"fixture mismatch"} } };
+branch when { (twice(magnitude(-6)) == 12) == true => 0, else => panic {"fixture mismatch"} } };

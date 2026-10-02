@@ -1,5 +1,5 @@
 namespace App;
-let main: Function(): Unit = function(): Unit {
+let main: Function(List<String>): Int = function(args: List<String>): Int {
 let add :Function(Int,Int):Int= function(a: Int, b: Int): Int { a + b };
 let subtract :Function(Int,Int):Int= function(a: Int, b: Int): Int { a - b };
 var count: Int = 0;
@@ -8,4 +8,4 @@ loop while (count < 4) {
     total = total + (branch when{(count < 2)=>{ add },else=>{ subtract }})(10, count);
     count = count + 1;
 };
-branch when { (total == 36) == true => unit, else => panic {"fixture mismatch"} } };
+branch when { (total == 36) == true => 0, else => panic {"fixture mismatch"} } };

@@ -65,6 +65,8 @@
   (typecase node
     (boolean-literal (c-summary node :bool t nil))
     (void-literal (c-summary node :void t nil))
+    (mognitio.syntax::io-expression (c-io-expression node))
+    (mognitio.syntax::runtime-arguments (c-summary node '(:list :string) t nil))
     (integer-literal
      (setf (gethash node (checked-program-literals *checked*)) (c-literal node))
      (c-summary node :int t nil))
@@ -130,7 +132,8 @@
                    :values (make-value-context) :node-owners (make-hash-table :test #'eq)))
          (*owner* 0) (*loops* nil) (*template-owner* nil) (*template-edges* (make-hash-table))
          (*scopes* (list (make-hash-table :test #'equal))))
-    (vector-push-extend (make-signature :id 0 :result-type (if (mognitio.syntax::program-project program) :void :bool)) (checked-program-signatures *checked*))
+    (vector-push-extend (make-signature :id 0 :result-type (if (mognitio.syntax::program-project program)
+                  (if (eq (mognitio.syntax::program-entry-policy program) :normal) :int :void) :bool)) (checked-program-signatures *checked*))
     (check-attribute-targets program)
     (prepare-value-declarations (c-context) program)
     (c-template-signatures program)
