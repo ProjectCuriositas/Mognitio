@@ -67,3 +67,28 @@
           (v11-driver (project-fixture (list (cons "app.mgn" (format nil "namespace App;~A~A@test let check:Function():Unit=function():Unit{discard readDirectory(~S);unit};" *v12-imports* *v13-imports* root)))))
         (same 4 code) (is (search "ERROR allocation-failed" out)) (is (search "allocation failure" err))
         (is (not (search "Native child detected" err)))))))
+
+(deftest v013-host-internal-driver-and-version-pair
+  (let ((root (v13-directory)))
+    (dolist (phase '(:scan :close))
+      (let ((before (v11-fd-snapshot))
+            (mognitio.io::*directory-fault-hook* (lambda (at) (when (eq phase at) -9))))
+        (multiple-value-bind (out err code) (v12-driver (v13-manifest (format nil "discard readDirectory(~S);0" root)))
+          (same "" out) (same 3 code) (is (search "internal" err)))
+        (same before (v11-fd-snapshot)))))
+  ;; An independent v2 reader boundary rejects the real v3 child's first ready
+  ;; record. The opposite direction is the v2 child fixture above, not a claim
+  ;; that a second installed compiler build was used.
+  (let ((original (fdefinition 'mognitio.testing::accept-event)) (attempt nil) (seen nil))
+    (replacing (mognitio.testing::accept-event
+      (lambda (reader)
+        (let ((bytes (mognitio.testing::event-reader-buffer reader)))
+          (setf seen (aref bytes 4))
+          (unless (and (= (aref bytes 4) 2) (= (aref bytes 5) 0))
+            (internal-error "Independent v2 reader rejects this ready version")))
+        (funcall original reader)))
+      (multiple-value-bind (out err code)
+          (v11-driver (v11-manifest "unit" 1) (lambda (point object) (when (eq point :before-spawn) (setf attempt object))))
+        (same 3 code) (same "" out) (same 3 seen) (is (search "v2 reader rejects" err))
+        (same nil (mognitio.testing::attempt-resources-execution-delegated attempt))))
+    (v11-assert-released attempt)))
