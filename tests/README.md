@@ -21,6 +21,7 @@ cases to executable fixtures. Host/process audit details are recorded
 | v013-host.lisp, v013-native.lisp | Host resource/error paths, native growth/sorting with forced collection and kept values |
 | v013-failures.lisp, v013-records.lisp | Phase-specific faults, malformed raw records, first-observation ties, close/map failure priority, ownership corruption, each value/subject allocation and old/new map cleanup |
 | v013-runner.lisp, v013-proofs.lisp | Actual directory internal faults, private status/version adversaries, parent ledger/cleanup, nominal/Core/frame/root/terminal and encoded-header mutations |
+| v013-review.lisp | Actual mmap ENOMEM/EINVAL across all scratch acquisitions and growth, cleanup-before-diagnostic trace oracle, initializer/body runner outcomes, independent latch control-flow mutations in both profiles |
 | v012-review.py, v012-review.lisp | Repeated stdin after invalid UTF-8, broken startup diagnostics, test source errors plus signal restoration failure, and ordinary nonzero status |
 | v012-entry.py | Raw argument bytes, order, empty/literal values, strict UTF-8, entry types and application status |
 | v012-io.py, v012-files.py | CL/native exact I/O bytes, invalid paths, file modes/ACLs, symlinks/hardlinks, chunk boundaries, real SIGXFSZ and broken pipes |
