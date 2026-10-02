@@ -6,7 +6,22 @@
   (when (and (attempt-resources-execution-delegated attempt) (eq (test-case-state test) :not-run))
     (setf (test-case-state test) :running)))
 
+(defun classify-child-command (attempt reader test)
+  (when (and (eq (attempt-resources-process-state attempt) :reaped) (event-reader-eof reader))
+    (let ((status (attempt-resources-status attempt)))
+      (when (zerop (logand status 127))
+        (case (ash status -8)
+          (#.+internal-child-status+
+           (let ((message (if (event-reader-terminal reader)
+                              "Native internal failure contradicts a terminal event"
+                              "Native child detected an internal runtime inconsistency")))
+             (internal-error (if (eq (test-case-state test) :not-run)
+                                 (format nil "~A; ~A; stage=~A" message (test-case-identity test)
+                                         (stage-name (event-reader-stage reader))) message))))
+          (#.+transport-child-status+ (runner-io "Test report transport failed")))))))
+
 (defun commit-result (attempt reader test)
+  (classify-child-command attempt reader test)
   (when (and (eq (attempt-resources-process-state attempt) :reaped)
              (event-reader-eof reader) (eq (test-case-state test) :running))
     (let* ((status (attempt-resources-status attempt)) (signal (logand status 127))
@@ -75,7 +90,8 @@
             ;; the first drain. Re-drain them after observing diagnostic data,
             ;; without waiting for EOF (which could deadlock a full pipe).
             (applications) (output-bytes stderr buffer count)))
-        (when (and (event-reader-ready reader) (not (attempt-resources-execution-delegated attempt)))
+        (when (and (event-reader-ready reader) (not (attempt-resources-execution-delegated attempt))
+                   (not (eq (attempt-resources-process-state attempt) :reaped)) (not (event-reader-eof reader)))
           (runner-hook :before-delegation attempt)
           (when (delegate-start attempt) (sync-start attempt test) (close-owned-fd attempt 7)))
         (when (and (eq (attempt-resources-process-state attempt) :reaped) (event-reader-eof reader)

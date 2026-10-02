@@ -2,6 +2,9 @@
 
 ;; Private wire enums. The record size is independent of all received fields.
 (defconstant +record-size+ 40)
+(defconstant +internal-child-status+ 123)
+(defconstant +transport-child-status+ 124)
+(defconstant +protocol-version+ 3)
 (defparameter *event-tags* '((:ready . 1) (:stage . 2) (:terminal . 3)))
 (defparameter *event-stages* '((:not-started . 0) (:initialization . 1) (:body . 2)))
 (defparameter *event-kinds*
@@ -18,7 +21,7 @@
 (defun accept-event (reader)
   (let* ((bytes (event-reader-buffer reader)) (tag (word-at bytes 6 2))
          (stage (word-at bytes 24 4)) (kind (word-at bytes 28 4)) (site (word-at bytes 32 8)))
-    (unless (and (= (word-at bytes 0 4) #x544e474d) (= (word-at bytes 4 2) 2)
+    (unless (and (= (word-at bytes 0 4) #x544e474d) (= (word-at bytes 4 2) +protocol-version+)
                  (= (word-at bytes 8 8) (event-reader-ordinal reader))
                  (= (word-at bytes 16 8) (event-reader-sequence reader))
                  (not (event-reader-terminal reader)))

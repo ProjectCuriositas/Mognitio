@@ -1,0 +1,77 @@
+namespace App;
+
+use Std\Io\{IoError, DirectoryEntry, DirectoryEntryKind,
+    joinPath, readDirectory, createDirectory,
+    readTextFile, writeTextFile, writeStderr};
+
+type WorkItem = product {
+    input: String;
+    output: String;
+};
+
+let convertTree: Function(String, String): Result<Unit, IoError> =
+    function(inputRoot: String, outputRoot: String): Result<Unit, IoError> {
+        var queue: List<WorkItem> = List<WorkItem>[
+            WorkItem { input: inputRoot, output: outputRoot, }
+        ];
+        var cursor: Int = 0;
+        loop while (cursor < queue->length()) {
+            let work: WorkItem = branch on queue->at(cursor) {
+                Result<WorkItem, IndexError>::Ok(value: WorkItem) => value,
+                Result<WorkItem, IndexError>::Err => panic { "checked queue index" },
+            };
+            let entries: List<DirectoryEntry> = try readDirectory(work->input);
+            try createDirectory(work->output);
+            loop over (entries as entry: DirectoryEntry) {
+                branch on entry->kind {
+                    DirectoryEntryKind::File => {
+                        let source: String = try joinPath(work->input, entry->name);
+                        let target: String = try joinPath(work->output, entry->name);
+                        let text: String = try readTextFile(source);
+                        try writeTextFile(target, "# Converted\n" + text);
+                        unit
+                    },
+                    DirectoryEntryKind::Directory => {
+                        let childInput: String = try joinPath(work->input, entry->name);
+                        let childOutput: String = try joinPath(work->output, entry->name);
+                        queue = queue->append(WorkItem {
+                            input: childInput, output: childOutput,
+                        });
+                        unit
+                    },
+                    DirectoryEntryKind::Symlink => unit,
+                    DirectoryEntryKind::Other => unit,
+                };
+                unit
+            };
+            cursor = cursor + 1;
+            unit
+        };
+        Result<Unit, IoError>::Ok(unit)
+    };
+
+let main: Function(List<String>): Int = function(args: List<String>): Int {
+    branch when {
+        args->length() == 2 => {
+            let input: String = branch on args->at(0) {
+                Result<String, IndexError>::Ok(value: String) => value,
+                Result<String, IndexError>::Err => panic { "checked argument count" },
+            };
+            let output: String = branch on args->at(1) {
+                Result<String, IndexError>::Ok(value: String) => value,
+                Result<String, IndexError>::Err => panic { "checked argument count" },
+            };
+            branch on convertTree(input, output) {
+                Result<Unit, IoError>::Ok => 0,
+                Result<Unit, IoError>::Err => {
+                    discard writeStderr("conversion failed\n");
+                    1
+                },
+            }
+        },
+        else => {
+            discard writeStderr("usage: convert-tree INPUT OUTPUT\n");
+            2
+        },
+    }
+};

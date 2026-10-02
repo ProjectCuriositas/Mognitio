@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix="mognitio-host-io-") as directory:
     (base / "bad.txt").write_bytes(b"\xed\xa0\x80")
     os.mkfifo(base / "fifo")
     for path, kind in [("", "InvalidPath"), ("bad.txt", "InvalidEncoding"), ("absent", "NotFound"), (".", "UnsupportedTarget"), ("fifo", "UnsupportedTarget")]:
-        operations = ",".join(f"IoOperation::{name} => {'true' if name == 'ReadTextFile' else 'false'}" for name in ["ReadTextFile", "WriteTextFile", "ReadStdin", "WriteStdout", "WriteStderr"])
+        operations = ",".join(f"IoOperation::{name} => {'true' if name == 'ReadTextFile' else 'false'}" for name in ["ReadTextFile", "WriteTextFile", "ReadStdin", "WriteStdout", "WriteStderr", "JoinPath", "ReadDirectory", "CreateDirectory"])
         kinds = ",".join(f"IoErrorKind::{name} => {'true' if name == kind else 'false'}" for name in ["InvalidPath", "InvalidEncoding", "NotFound", "PermissionDenied", "UnsupportedTarget", "BrokenPipe", "ResourceExhausted", "Other"])
         check(f'''assert branch on readTextFile("{path}") {{
             Result<String,IoError>::Ok => false,

@@ -17,7 +17,7 @@
     ((and (listp name) (= (length name) 2) (eq (first name) :text)
           (typep (second name) '(integer 0 *))) :text)
     ((and (listp name) (= (length name) 2) (eq (first name) :runtime)
-          (member (second name) '(:allocate :allocate-block :collect :find-free :physical-size :sum :validate :utf8.count :utf8.feed :arguments :io.signals :io.map :io.close :io.cleanup :io.cleanup-all :io.errno))) :helper)
+          (member (second name) '(:allocate :allocate-block :collect :find-free :physical-size :sum :validate :utf8.count :utf8.feed :arguments :io.signals :io.map :io.close :io.cleanup :io.cleanup-all :io.errno :directory.errno :directory.cleanup :directory.compare :directory.name-compare :directory.sift :directory.sort :directory.internal))) :helper)
     ((and (listp name) (= (length name) 2) (eq (first name) :helper)
           (consp (second name)) (member (first (second name)) '(:io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result))) :helper)
     ((and (listp name) (= 3 (length name)) (eq :static-object (first name)) (member (second name) '(:list :buffer :closure))) :object)
