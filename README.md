@@ -2,14 +2,14 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-The v0.12.0 increment adds runtime arguments, explicit exit status, UTF-8 file
+The v0.12.0 release adds runtime arguments, explicit exit status, UTF-8 file
 and standard-stream I/O, and separate application output in native tests.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
-- [Release validation](verification/v0.11.0-release.md): pinned release checks.
+- [Release validation](verification/v0.12.0-release.md): pinned release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [File converter](examples/file-converter/README.md): arguments and text I/O.
 - [Implementation verification](verification/v0.12.0.md): evidence and limits.
