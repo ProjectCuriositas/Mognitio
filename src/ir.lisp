@@ -5,6 +5,7 @@
 
 (defun operation-effects (op)
   (case op
+    (:io.call '(:external-effect :may-allocate :may-fail :call-barrier))
     ((:call :call.value :call.interface :closure.call :closure.make :list.append :list.at :list.buffer :text.slice.result :struct.make :enum.make :interface.pack :text.concat :text.slice) '(:may-allocate :may-fail :call-barrier))
     (:test.stage '(:may-fail :call-barrier))
     ((:text.length :text.equal :text.not-equal) '(:call-barrier))
@@ -21,7 +22,7 @@
 (defstruct module test-ordinal (assertion-sites #()) functions (entry 0) span (values (mognitio.semantic::make-value-context)) (literal-pool (vector (make-text-payload :octets (make-array 0 :element-type '(unsigned-byte 8)) :scalar-count 0))))
 (defparameter *value-operations* '(:struct.make :enum.make :struct.field :enum.tag :enum.payload :interface.pack :call.interface))
 (defparameter *operations*
-  '((:test.stage 0 :test-stage nil) (:constant 0 :literal nil) (:function 0 :function nil) (:neg 1 :int t) (:add 2 :int t)
+  '((:runtime.argv 0 :runtime-argv nil) (:test.stage 0 :test-stage nil) (:constant 0 :literal nil) (:function 0 :function nil) (:neg 1 :int t) (:add 2 :int t)
     (:sub 2 :int t) (:mul 2 :int t) (:div 2 :int t) (:rem 2 :int t)
     (:eq 2 :equal nil) (:ne 2 :equal nil)
     (:lt 2 :comparison nil) (:le 2 :comparison nil)
@@ -93,6 +94,16 @@
                   (jump-context (assoc (loop-info-id (checked-control checked node)) *loop-contexts*) block env)
                   (values nil nil nil))
                  (void-literal (values (emit-value block :void :constant (node-span node) :value 0) block env))
+                 (mognitio.syntax::io-expression
+                  (let ((operands nil))
+                    (loop for argument across (mognitio.syntax::io-expression-arguments node) do
+                      (multiple-value-bind (value end updated) (lower argument block env)
+                        (unless end (return-from lower-raw (values nil nil nil)))
+                        (push value operands) (setf block end env updated)))
+                    (values (emit-value block (checked-normal-type checked node) :io.call (node-span node)
+                              :value (mognitio.syntax::io-expression-operation node) :operands (nreverse operands)) block env)))
+                 (mognitio.syntax::runtime-arguments
+                  (values (emit-value block '(:list :string) :runtime.argv (node-span node)) block env))
                  (mognitio.syntax::test-stage
                   (values (emit-value block :void :test.stage (node-span node)) block env))
                  (assert-statement
@@ -284,6 +295,12 @@
                  (unless found (internal-error "Unregistered text literal")) id)))
       (register (make-text-payload :octets (make-array 0 :element-type '(unsigned-byte 8)) :scalar-count 0))
       (dolist (node (checked-string-literals checked)) (register (string-literal-payload node)))
+      (when (find-if (lambda (signature)
+                       (let ((declaration (signature-declaration signature)))
+                         (and declaration (typep (function-expression-body declaration) 'mognitio.syntax::io-expression))))
+                     (checked-program-signatures checked))
+        (dolist (name '("stdin" "stdout" "stderr"))
+          (register (make-text-payload :octets (sb-ext:string-to-octets name :external-format :utf-8) :scalar-count (length name)))))
       (make-module :test-ordinal *test-ordinal* :functions (map 'list (lambda (signature) (lower-function checked signature #'literal-id))
                                     (checked-program-signatures checked))
                    :assertion-sites *assertion-sites* :literal-pool (coerce pool 'simple-vector) :values (checked-program-values checked)
@@ -393,6 +410,8 @@
                  (:text-literal (and (eq result :string)
                                      (typep (instruction-value i) '(integer 0 *))
                                      (< (instruction-value i) (length pool))))
+                 (:runtime-argv (and (equal result '(:list :string)) (null types) (null (instruction-value i))
+                                     (zerop (ir-function-id function)) (eq (ir-function-result-type function) :int)))
                  (:test-stage (and (eq result :void) (null types) (null (instruction-value i))))
                  (:text-length (and (eq result :int) (equal types '(:string))))
                  (:text-equality (and (eq result :bool) (equal types '(:string :string))))
@@ -453,9 +472,13 @@
         (setf (gethash id ids) function)))
     (verify-core-types (module-values module) ids)
     (dolist (function (module-functions module)) (verify-function function ids edges (module-literal-pool module) (module-values module) (module-assertion-sites module)))
+    (let ((loads (loop for function in (module-functions module) sum
+                   (loop for block in (ir-function-blocks function) sum
+                     (count :runtime.argv (basic-block-instructions block) :key #'instruction-op)))))
+      (unless (<= loads 1) (internal-error "Duplicated argument handoff")))
     (let ((entry (gethash 0 ids)))
       (unless (and entry (null (ir-function-parameter-types entry))
-                   (member (ir-function-result-type entry) '(:bool :void)))
+                   (member (ir-function-result-type entry) '(:bool :void :int)))
         (internal-error "Invalid entry signature"))))
   module)
 

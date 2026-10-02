@@ -14,4 +14,4 @@ let identity: Function(): Unit = function(): Unit {
     assert add(42, 0) == 42;
 };
 
-let main: Function(): Unit = function(): Unit { unit };
+let main: Function(List<String>): Int = function(args: List<String>): Int { 0 };

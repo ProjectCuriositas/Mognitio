@@ -9,7 +9,7 @@
   (loop for b in (mognitio.ir:ir-function-blocks function) maximize
     (loop for i in (mognitio.ir:basic-block-instructions b)
           when (member (mognitio.ir:instruction-op i)
-                       '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
+                       '(:io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
           maximize (- (length (mognitio.ir:instruction-operands i))
                       (if (eq (mognitio.ir:instruction-op i) :call.value) 1 0)) into size
           finally (return (or size 0)))))
@@ -51,7 +51,7 @@
   (let* ((header (layout-root-offset layout)) (capacity (layout-capacity layout))
          (sites (copy-list (mognitio.roots:root-plan-sites roots))) (reserved nil) (linked nil) (unlinked nil)
          (homes (mognitio.regalloc:allocation-locations allocation))
-         (operations nil) (calls nil) (link-end nil) (unlink-start nil))
+         (operations nil) (argument-writes nil) (calls nil) (link-end nil) (unlink-start nil))
     (dolist (section sections)
       (destructuring-bind (kind key forms start) section
         (unless (and (typep start '(integer 0 *))
@@ -82,6 +82,19 @@
                         (equal forms `((:load-frame :rcx ,header) (:store-word :r15 0 :rcx))))
              (internal-error "Incorrect root frame unlink or return clobber"))
            (setf unlinked t unlink-start start))
+          (:arguments
+           (let* ((block (find (first key) (mognitio.ir:ir-function-blocks function) :key #'mognitio.ir:basic-block-id))
+                  (instruction (nth (second key) (mognitio.ir:basic-block-instructions block)))
+                  (home (gethash (mognitio.ir:instruction-result instruction) homes)))
+             (unless (and linked (not unlinked) (null argument-writes)
+                          (zerop (mognitio.ir:ir-function-id function))
+                          (eq (mognitio.ir:instruction-op instruction) :runtime.argv)
+                          (equal forms `((:load-word :rax :r15 264) (:imm-rcx 0)
+                                         (:store-word :r15 256 :rcx) (:store-word :r15 264 :rcx)
+                                         (:load-word :rcx :r15 248) (:store-frame ,header :rcx)))
+                          (equal (nth (+ start 6) body) (if (integerp home) (list :store-frame home :rax) (list :mov-reg home :rax))))
+               (internal-error "Invalid argument root handoff"))
+             (setf argument-writes (list (+ start 2) (+ start 3))) (push key operations)))
           (:publish
            (let* ((site (find key sites :test #'equal
                              :key (lambda (s) (list (mognitio.roots:root-site-block-id s)
@@ -129,7 +142,7 @@
                   (prefix (when (eq (first publication) :publish) (third publication)))
                   (pending (copy-list forms)))
              (unless (and linked (not unlinked)
-                          (member op '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result)))
+                          (member op '(:io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result)))
                (internal-error "Invalid native call section"))
              (when (member :may-allocate (mognitio.ir:instruction-effects inst))
                (unless (and prefix (equal prefix (subseq pending 0 (length prefix))))
@@ -159,7 +172,7 @@
                    (expected-targets (case op
                                        (:call (list (list :function (mognitio.ir:instruction-value inst))))
                                        ((:call.interface :closure.call) '(:indirect))
-                                       ((:struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result) (list (mognitio.native.runtime::value-helper-name inst)))
+                                       ((:io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result) (list (mognitio.native.runtime::value-helper-name inst)))
                                        (:call.value (mapcar (lambda (id) (list :function id)) (second (mognitio.ir:instruction-value inst))))
                                        (otherwise (list (list :helper op))))))
                (unless (equal actual-targets expected-targets) (internal-error "Unexpected native call target")))
@@ -176,7 +189,7 @@
                             (loop for block in (mognitio.ir:ir-function-blocks function) append
                       (loop for i in (mognitio.ir:basic-block-instructions block) for n from 0
                             when (member (mognitio.ir:instruction-op i)
-                                         '(:test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
+                                         '(:runtime.argv :io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
                             collect (list (mognitio.ir:basic-block-id block) n))))))
       (unless (and (subsetp expected operations :test #'equal) (subsetp operations expected :test #'equal))
         (internal-error "Missing native call sections")))
@@ -199,7 +212,7 @@
                                        :imm-reg :add-reg :sub-reg :and-imm :or-imm :shr-imm))
                  (eq (second form) :r15)) (internal-error "Function clobbers runtime context register"))
       (when (and (member (first form) '(:store-word :store-byte)) (eq (second form) :r15)
-                 (not (member index (list (1- link-end) (1+ unlink-start)))))
+                 (not (member index (append argument-writes (list (1- link-end) (1+ unlink-start))))))
         (internal-error "Unexpected runtime context write")))
     (unless (and reserved linked unlinked (null sites)) (internal-error "Missing frame transition or root snapshot")))
   sections)

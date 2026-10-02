@@ -9,4 +9,10 @@ if [ ! -r "$root/scripts/cli-entry.lisp" ]; then
     printf '%s\n' 'mgn: internal: Compiler bootstrap failed' >&2
     exit 3
 fi
-exec sbcl --noinform --script "$root/scripts/cli-entry.lisp" "$@"
+# Preserve stdin separately: the pipe carries argv bytes, never application input.
+# printf is a shell builtin; quoting preserves empty and non-UTF-8 arguments.
+exec 9<&0
+{
+    printf '%s\000' "$#"
+    for argument do printf '%s\000' "$argument"; done
+} | sbcl --noinform --script "$root/scripts/cli-entry.lisp" --mognitio-argv-fd=3 3<&0 0<&9 9<&-

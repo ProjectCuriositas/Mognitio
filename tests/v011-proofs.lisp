@@ -111,7 +111,7 @@
 
 (deftest v011-template-assertions-and-lifetime
   (let ((manifest (project-fixture
-    '(("app.mgn" . "namespace App;template make<T>=function(value:T):Function():Unit{function():Unit{assert true;}};@test let check:Function():Unit=make<Int>(42);let main:Function():Unit=check;")))))
+    '(("app.mgn" . "namespace App;template make<T>=function(value:T):Function():Unit{function():Unit{assert true;}};@test let check:Function():Unit=make<Int>(42);let main:Function(List<String>):Int=function(args:List<String>):Int{check();0};")))))
     (expect-project manifest '(:stress t :validate t))
     (multiple-value-bind (out err code) (v11-driver manifest)
       (same 0 code) (same "" err) (is (search "passed=1" out))))

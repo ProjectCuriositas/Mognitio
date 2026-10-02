@@ -15,6 +15,8 @@
 (defstruct loop-expression (target nil :read-only t) (binder nil :read-only t) (body nil :read-only t) (condition nil :read-only t) (span nil :read-only t))
 (defstruct break-statement (value nil :read-only t) (span nil :read-only t))
 (defstruct continue-statement (span nil :read-only t))
+(defstruct io-expression operation arguments result-type span)
+(defstruct runtime-arguments (span nil :read-only t))
 (defstruct void-literal (span nil :read-only t))
 (defstruct expression-statement (discard-p nil :read-only t) (expression nil :read-only t) (span nil :read-only t))
 (defstruct boolean-literal (value nil :read-only t) (span nil :read-only t))
@@ -38,6 +40,8 @@
   (typecase node
     (program (make-span (program-source node) 0 (length (source-text (program-source node)))))
     (test-stage (test-stage-span node))
+    (runtime-arguments (runtime-arguments-span node))
+    (io-expression (io-expression-span node))
     (assert-statement (assert-statement-span node))
     (attribute-syntax (attribute-syntax-span node))
     (template-declaration (template-declaration-span node))

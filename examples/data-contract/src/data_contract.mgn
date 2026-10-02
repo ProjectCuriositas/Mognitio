@@ -5,11 +5,11 @@ contract Named { name(self: Self): String; }
 witness ItemNamed = Item implements Named {
     name(item: Self): String { item->text }
 }
-let main: Function(): Unit = function(): Unit {
+let main: Function(List<String>): Int = function(args: List<String>): Int {
 let render: Function(Named): String = function(value: Named): String {
     value->name()
 };
 branch when { (branch on State::Ready(Item { text: "example" }) {
     State::Empty => false,
     State::Ready(item: Item) => render(Named(item)) == "example",
-}) == true => unit, else => panic {"fixture mismatch"} } };
+}) == true => 0, else => panic {"fixture mismatch"} } };

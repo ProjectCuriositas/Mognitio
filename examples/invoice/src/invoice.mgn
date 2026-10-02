@@ -1,6 +1,6 @@
 namespace App;
-let main: Function(): Unit = function(): Unit {
+let main: Function(List<String>): Int = function(args: List<String>): Int {
 let unitPrice: Int = 120;
 var count: Int = 2;
 count = count + 1;
-branch when { (count * unitPrice == 360) == true => unit, else => panic {"fixture mismatch"} } };
+branch when { (count * unitPrice == 360) == true => 0, else => panic {"fixture mismatch"} } };

@@ -10,6 +10,7 @@
             (program '(statements root)) (sequence-node '(statements terminal))
             (local-binding '(initializer)) (assignment '(rhs)) (return-statement '(value))
             (assert-statement '(operand))
+            (mognitio.syntax::io-expression '(arguments))
             (grouping '(expression)) (expression-statement '(expression))
             (call-expression '(callee arguments)) (method-call '(receiver arguments))
             (unary-expression '(operand)) (binary-expression '(left right))

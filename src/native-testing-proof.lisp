@@ -55,7 +55,7 @@
           (unless (and (integerp offset) (zerop (mod offset 8)) (<= (- (* 8 words)) offset -8))
             (internal-error "Helper stack access escapes its frame"))))
       (when (eq op :store-word)
-        (unless (equal f (list :store-word :r15 (if (eq name :test.stage) 240 248) :rax))
+        (unless (equal f (list :store-word :r15 (if (eq name :test.stage) 288 296) :rax))
           (internal-error "Unexpected helper context write")))
       (when (and (member op '(:push-rbp :push-zero)) (>= index (+ 3 words)))
         (internal-error "Unbalanced helper stack"))

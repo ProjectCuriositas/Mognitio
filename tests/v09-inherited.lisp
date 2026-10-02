@@ -1,7 +1,7 @@
 (in-package #:mognitio.tests)
 
 (deftest v06-native-encoding-and-literals
-  (same :mognitio-internal-v5 (mognitio.target:target-abi (mognitio.target:linux-amd64)))
+  (same :mognitio-internal-v6 (mognitio.target:target-abi (mognitio.target:linux-amd64)))
   (dolist (pair '(((:load-word :rax :r15 0) "498b8700000000")
                   ((:store-word :r15 0 :rax) "49898700000000")
                   ((:lea-base :rax :rbp -40) "488d85d8ffffff")

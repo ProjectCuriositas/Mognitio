@@ -1,18 +1,5 @@
 (in-package #:mognitio.driver)
 
-(defun invocation-error ()
-  (fail 'usage-or-io-failure nil "Expected test <mognitio.toml>, run <mognitio.toml> or build <mognitio.toml> -o <artifact>"))
-(defun parse-invocation (argv)
-  (unless (and (listp argv) (every #'stringp argv)) (invocation-error))
-  (let ((command (first argv)) (source (second argv)) (output nil))
-    (cond ((and (member command '("run" "test") :test #'equal) (= (length argv) 2)) nil)
-          ((and (equal command "build") (= (length argv) 4) (equal (third argv) "-o"))
-           (setf output (fourth argv))
-           (unless (plusp (length output)) (invocation-error)))
-          (t (invocation-error)))
-    (unless (and source (plusp (length source)) (not (char= #\- (char source 0)))) (invocation-error))
-    (values command source output (when output (mognitio.target:linux-amd64)))))
-
 (defun checked-source (path)
   (let* ((source (read-source path))
          (tokens (lex-source source))
@@ -23,30 +10,35 @@
   (check-program (mognitio.project::project-program (mognitio.project::resolve-project project))))
 
 (defun run-pipeline (argv stdout &optional (stderr *error-output*))
-  (multiple-value-bind (command manifest output target) (parse-invocation argv)
+  (multiple-value-bind (command manifest output target arguments) (parse-invocation argv)
     (when (string= command "test")
-      (return-from run-pipeline (mognitio.testing::run-tests manifest stdout stderr)))
+      (return-from run-pipeline
+        (let ((code (mognitio.testing::run-tests manifest stdout stderr))) (values code (member code '(2 3))))))
     (let ((project (mognitio.project::load-project manifest)))
       (when output (mognitio.project::validate-project-output project output))
       (let ((checked (checked-project project)))
         (if (string= command "run")
-            (execute-program (compile-program checked))
+            (let* ((compiled (compile-program checked))
+                   (mognitio.runtime::*arguments* (mognitio.runtime::decode-arguments arguments))
+                   (mognitio.io::*input* *standard-input*) (mognitio.io::*output* stdout)
+                   (mognitio.io::*error-output-stream* stderr))
+              (return-from run-pipeline (mognitio.runtime::application-status (execute-program compiled))))
             (let* ((image (mognitio.backend.native:compile-program checked target))
                    (mognitio.artifact::*project-validation*
                      (lambda () (mognitio.project::validate-project-output project output))))
               (mognitio.artifact:publish-image image manifest output))))))
   0)
 
-(defun run-cli (argv stdout stderr)
+(defun run-cli-guarded (argv stdout stderr)
   (labels ((report-failure (diagnostic code)
              ;; A broken diagnostic stream must not cause recursive reporting.
-             (handler-case (progn (render-diagnostic diagnostic stderr) code)
-               ((or error storage-condition) () 3))))
+             (handler-case (progn (render-diagnostic diagnostic stderr) (values code t))
+               ((or error storage-condition) () (values 3 t)))))
     (handler-case (run-pipeline argv stdout stderr)
-      (mognitio.runtime::program-assertion (condition) (mognitio.runtime::write-assertion condition stderr))
-      (mognitio.runtime::program-panic (condition) (mognitio.runtime::write-panic condition stderr))
+      (mognitio.runtime::program-assertion (condition) (values (mognitio.runtime::write-assertion condition stderr) t))
+      (mognitio.runtime::program-panic (condition) (values (mognitio.runtime::write-panic condition stderr) t))
       (mognitio.runtime:program-runtime-failure (condition)
-        (mognitio.runtime:write-runtime-failure condition stderr))
+        (values (mognitio.runtime:write-runtime-failure condition stderr) t))
       (source-failure (condition)
         (report-failure (failure-diagnostic condition) 1))
       (usage-or-io-failure (condition)
@@ -58,3 +50,13 @@
       (error ()
         (report-failure (make-diagnostic :phase :internal
                                          :message "Unexpected compiler failure") 3)))))
+
+(defun run-cli (argv stdout stderr)
+  (let ((mognitio.io::*signal-secondary* nil))
+    (handler-case
+      (mognitio.io::call-with-io-signals (lambda () (run-cli-guarded argv stdout stderr)))
+    ((or error storage-condition) ()
+      ;; Guard setup/restore is an internal command boundary. Reporting is best
+      ;; effort and never replaces this status or re-enters the failed guard.
+      (ignore-errors (write-line "mgn: internal: I/O signal guard failure" stderr) (finish-output stderr))
+      3))))

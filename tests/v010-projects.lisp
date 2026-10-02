@@ -15,11 +15,11 @@
 
 (defun project-oracle (text &optional (expected "true"))
   ;; Preserve the old expression oracle, but execute it through the current
-  ;; declaration-only module and Unit entry contract.
+  ;; declaration-only module and argument/status entry contract.
   (let ((program (parse-text text)))
     (labels ((fragment (node)
                (let ((span (node-span node))) (subseq text (span-start span) (span-end span)))))
-      (format nil "namespace App;~%~{~A~%~}let main: Function(): Unit = function(): Unit {~%~{~A~%~}branch when { (~A) == ~A => unit, else => panic {\"fixture mismatch\"} } };~%"
+      (format nil "namespace App;~%~{~A~%~}let main: Function(List<String>): Int = function(args: List<String>): Int {~%~{~A~%~}branch when { (~A) == ~A => 0, else => panic {\"fixture mismatch\"} } };~%"
               (map 'list #'fragment (program-declarations program))
               (map 'list #'fragment (program-statements program))
               (fragment (program-root program)) expected))))
@@ -29,7 +29,7 @@
          (mognitio.native.runtime::*test-options* options)
          (path (put-bytes (fresh-path ".elf")
                          (mognitio.backend.native:compile-program checked (mognitio.target:linux-amd64)))))
-    (same :unit (execute-program (compile-program checked)))
+    (same 0 (execute-program (compile-program checked)))
     (sb-posix:chmod (namestring path) #o700)
     (multiple-value-bind (out err code) (process-result (list (namestring path)))
       (same 0 code) (same "" out) (same "" err))))
@@ -48,7 +48,7 @@
 (deftest v010-project-proof-mutations
   (dolist (mutation '(:identity :public :import :alias :dependency :order :module :plan :resolved :entry :source-order))
     (let* ((manifest (project-fixture
-                       '(("app.mgn" . "namespace App; use App\\{value}; let main: Function(): Unit = function(): Unit { discard value; unit };")
+                       '(("app.mgn" . "namespace App; use App\\{value}; let main: Function(List<String>): Int = function(args: List<String>): Int { discard value; 0 };")
                          ("lib.mgn" . "namespace App; public let value: Int = 42; let other:Int=0;"))))
            (checked (project-checked manifest)) (program (checked-program-program checked))
            (project (mognitio.syntax::program-project program))
@@ -70,13 +70,13 @@
         (:source-order (let ((statements (program-statements (mognitio.project::source-module-program lib))))
                          (rotatef (aref statements 0) (aref statements 1)))))
       (signals internal-failure (verify-checked-program checked))))
-  (let ((checked (project-checked (project-fixture '(("app.mgn" . "namespace App; let main:Function():Unit=function():Unit{unit};"))))))
+  (let ((checked (project-checked (project-fixture '(("app.mgn" . "namespace App; let main:Function(List<String>): Int=function(args: List<String>): Int{0};"))))))
     (replacing (mognitio.project::resolve-project (lambda (&rest args) (declare (ignore args)) (error "Resolver called")))
       (is (verify-checked-program checked)))))
 
 (deftest v010-special-files-before-reader
   (dolist (kind '(:fifo :socket))
-    (let* ((manifest (project-fixture '(("app.mgn" . "namespace App; let main:Function():Unit=function():Unit{unit};"))))
+    (let* ((manifest (project-fixture '(("app.mgn" . "namespace App; let main:Function(List<String>): Int=function(args: List<String>): Int{0};"))))
            (root (uiop:pathname-directory-pathname manifest))
            (path (merge-pathnames "src/special.mgn" root))
            (original (fdefinition 'mognitio.source::read-octets)) (called nil))
@@ -90,7 +90,7 @@
       (is (not called)))))
 
 (deftest v010-publication-faults
-  (let* ((manifest (project-fixture '(("app.mgn" . "namespace App; let main:Function():Unit=function():Unit{unit};"))))
+  (let* ((manifest (project-fixture '(("app.mgn" . "namespace App; let main:Function(List<String>): Int=function(args: List<String>): Int{0};"))))
          (source (merge-pathnames "src/app.mgn" (uiop:pathname-directory-pathname manifest)))
          (before (read-bytes source)) (output (fresh-path ".elf")))
     (dolist (name '(mognitio.ir:lower-program mognitio.ir:verify-module mognitio.machine:lower-module
@@ -111,7 +111,7 @@
 
 (deftest v010-cross-module-lifetime
   (let ((manifest (project-fixture
-                    '(("app.mgn" . "namespace App; use App\\{left,right,readLeft}; let main:Function():Unit=function():Unit{var i:Int=0;loop while(i<800){discard List<String>[\"dead\"+\"!\"];i=i+1;};branch when{left->read()==\"left!\"&&right->read()==\"right!\"&&readLeft()==\"left!\"=>unit,else=>panic{\"lifetime\"}}};")
+                    '(("app.mgn" . "namespace App; use App\\{left,right,readLeft}; let main:Function(List<String>): Int=function(args: List<String>): Int{var i:Int=0;loop while(i<800){discard List<String>[\"dead\"+\"!\"];i=i+1;};branch when{left->read()==\"left!\"&&right->read()==\"right!\"&&readLeft()==\"left!\"=> 0,else=>panic{\"lifetime\"}}};")
                       ("contract.mgn" . "namespace App; public contract Read{read(self:Self):String;}")
                       ("left.mgn" . "namespace App; use App\\{Read}; type Hidden=product{text:String;}; witness Proof=Hidden implements Read{read(self:Self):String{self->text}} let text:String=\"left\"+\"!\"; public let left:Read=Read(Hidden{text:text}); public let readLeft:Function():String=function():String{text};")
                       ("right.mgn" . "namespace App; use App\\{Read}; type Hidden=product{text:String;}; witness Proof=Hidden implements Read{read(self:Self):String{self->text}} public let right:Read=Read(Hidden{text:\"right\"+\"!\"});")))))
@@ -123,7 +123,7 @@
   ;; verifier to reject it. Visibility uses a shared walker; the source type
   ;; records and module provenance are verified separately.
   (let* ((manifest (project-fixture
-                     '(("app.mgn" . "namespace App;let main:Function():Unit=function():Unit{unit};")
+                     '(("app.mgn" . "namespace App;let main:Function(List<String>): Int=function(args: List<String>): Int{0};")
                        ("lib.mgn" . "namespace App;type Hidden<T>=product{value:T;};public alias Exposed<T>=Hidden<T>;"))))
          (checked (replacing (mognitio.project::check-public-signatures
                                (lambda (program) (declare (ignore program)) nil))

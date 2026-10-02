@@ -1,6 +1,6 @@
 (in-package #:mognitio.source)
 
-(defstruct source path octets text byte-offsets lines columns)
+(defstruct source (origin :user) path octets text byte-offsets lines columns)
 (defstruct (span (:constructor %make-span (source start end)))
   (source nil :read-only t) (start 0 :read-only t) (end 0 :read-only t))
 

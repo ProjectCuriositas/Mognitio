@@ -59,3 +59,19 @@
     (output-text output (format nil "tests: total=~D passed=~D failed=~D errors=~D aborted=~D not_run=~D~%"
       (length cases) (count :passed states) (count :failed states) (count :errors states)
       (count :aborted states) (count :not-run states)))))
+
+(defun output-application (test stream output bytes count)
+  ;; Escape bytes, not scalars: reads and partial writes may split UTF-8.
+  ;; Every bounded chunk carries provenance and cannot impersonate a result.
+  (output-text output
+    (with-output-to-string (s)
+      (format s "output ~A ~A: \"" (one-line (test-case-identity test)) stream)
+      (dotimes (index count)
+        (let ((byte (aref bytes index)))
+          (case byte
+            (0 (write-string "\\0" s)) (9 (write-string "\\t" s))
+            (10 (write-string "\\n" s)) (13 (write-string "\\r" s))
+            (34 (write-string "\\\"" s)) (92 (write-string "\\\\" s))
+            (otherwise (if (<= 32 byte 126) (write-char (code-char byte) s)
+                           (format s "\\x~2,'0X" byte))))))
+      (write-char #\" s) (terpri s))))

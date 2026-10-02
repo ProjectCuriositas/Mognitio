@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory(prefix="mgn-project-tests-") as tmp:
             path.write_bytes(value if isinstance(value, bytes) else value.encode())
         return root
 
-    empty = "namespace App; let main: Function(): Unit = function(): Unit { unit };"
+    empty = "namespace App; let main: Function(List<String>): Int = function(args: List<String>): Int { 0 };"
     def pair(files, code=0, err=None):
         root = project(files)
         command([CLI, "run", root / "mognitio.toml"], code, err)
@@ -55,43 +55,43 @@ with tempfile.TemporaryDirectory(prefix="mgn-project-tests-") as tmp:
         return root
 
     pair({"app.mgn": empty})
-    pair({"app.mgn": 'namespace App; use App\\Lib\\{answer as value,}; let main: Function(): Unit = function(): Unit { branch when { value == 42 => unit, else => panic { "wrong" } } };',
+    pair({"app.mgn": 'namespace App; use App\\Lib\\{answer as value,}; let main: Function(List<String>): Int = function(args: List<String>): Int { branch when { value == 42 => 0, else => panic { "wrong" } } };',
           "Lib/data.mgn": "namespace App\\Lib; public let answer: Int = 42;"})
-    pair({"app.mgn": 'namespace App; use App\\{make}; let main: Function(): Unit = make();',
-          "factory.mgn": "namespace App; public let make: Function(): Function(): Unit = function(): Function(): Unit { function(): Unit { unit } };"})
+    pair({"app.mgn": 'namespace App; use App\\{make}; let main: Function(List<String>): Int = make();',
+          "factory.mgn": "namespace App; public let make: Function(): Function(List<String>): Int = function(): Function(List<String>): Int { function(args: List<String>): Int { 0 } };"})
     pair({"app.mgn": empty, "unused.mgn": 'namespace App; let stop: Int = panic { "unused" };'})
-    pair({"app.mgn": 'namespace App; use App\\{Stop}; let main: Function(): Unit = function(): Unit { panic { "main" } };',
+    pair({"app.mgn": 'namespace App; use App\\{Stop}; let main: Function(List<String>): Int = function(args: List<String>): Int { panic { "main" } };',
           "stop.mgn": 'namespace App; public alias Stop = Int; let stop: Int = panic { "init" };'}, 4, "panic: init")
     pair({"app.mgn": empty, "bad.mgn": 'namespace App; let stop: Int = panic { "init" }; let later: Int = 0;'}, 1, "Unreachable")
     pair({"app.mgn": empty, "bad.mgn": "namespace Other; public alias X = Int;"}, 1, "Namespace")
-    pair({"app.mgn": 'namespace App; use App\\{Hidden}; let main: Function(): Unit = function(): Unit { unit };',
+    pair({"app.mgn": 'namespace App; use App\\{Hidden}; let main: Function(List<String>): Int = function(args: List<String>): Int { 0 };',
           "hidden.mgn": 'namespace App; alias Hidden = Int;'}, 1, "Import")
-    pair({"app.mgn": 'namespace App; use App\\{X as A, X as B}; let main: Function(): Unit = function(): Unit { unit };',
+    pair({"app.mgn": 'namespace App; use App\\{X as A, X as B}; let main: Function(List<String>): Int = function(args: List<String>): Int { 0 };',
           "x.mgn": "namespace App; public alias X = Int;"}, 1, "Duplicate")
-    pair({"app.mgn": 'namespace App; use App\\{X}; public alias X = Int; let main: Function(): Unit = function(): Unit { unit };'}, 1, "Import")
+    pair({"app.mgn": 'namespace App; use App\\{X}; public alias X = Int; let main: Function(List<String>): Int = function(args: List<String>): Int { 0 };'}, 1, "Import")
     pair({"app.mgn": empty, "one.mgn": "namespace App; public alias X = Int;",
           "two.mgn": "namespace App; public alias X = Bool;"}, 1, "Previous declaration")
     pair({"app.mgn": empty, "one.mgn": "namespace App; use App\\{B}; public alias A = Int;",
           "two.mgn": "namespace App; use App\\{A}; public alias B = Int;"}, 1, "Cyclic")
     pair({"app.mgn": "namespace App;"}, 1, "main")
-    pair({"app.mgn": "namespace App; var main: Function(): Unit = function(): Unit { unit };"}, 1, "main")
-    pair({"app.mgn": "namespace App; let main: Function(): Bool = function(): Bool { true };"}, 1, "Function(): Unit")
+    pair({"app.mgn": "namespace App; var main: Function(List<String>): Int = function(args: List<String>): Int { 0 };"}, 1, "main")
+    pair({"app.mgn": "namespace App; let main: Function(): Bool = function(): Bool { true };"}, 1, "Function(List<String>): Int")
     pair({"app.mgn": empty + " true"}, 1, "tail")
-    pair({"app.mgn": "namespace App; let main: Function(): Unit = function(): Unit { discard later; unit }; let later: Int = 1;"}, 1, "visible")
+    pair({"app.mgn": "namespace App; let main: Function(List<String>): Int = function(args: List<String>): Int { discard later; 0 }; let later: Int = 1;"}, 1, "visible")
     pair({"app.mgn": empty, "leak.mgn": "namespace App; type Hidden = product { value: Int; }; public alias Leak = Hidden;"}, 1, "private")
-    pair({"app.mgn": 'namespace App; use App\\{Box, id}; let main: Function(): Unit = function(): Unit { let b: Box<Int> = Box<Int> { value: id<Int>(42) }; branch when { b->value == 42 => unit, else => panic { "generic" } } };',
+    pair({"app.mgn": 'namespace App; use App\\{Box, id}; let main: Function(List<String>): Int = function(args: List<String>): Int { let b: Box<Int> = Box<Int> { value: id<Int>(42) }; branch when { b->value == 42 => 0, else => panic { "generic" } } };',
           "lib.mgn": "namespace App; public type Box<T> = product { value: T; }; public template id<T> = function(value: T): T { value };"})
-    pair({"app.mgn": 'namespace App; use App\\{User, Printable, UserPrintable}; let main: Function(): Unit = function(): Unit { let p: Printable = Printable(User { value: 7 }); branch when { p->read() == 7 => unit, else => panic { "witness" } } };',
+    pair({"app.mgn": 'namespace App; use App\\{User, Printable, UserPrintable}; let main: Function(List<String>): Int = function(args: List<String>): Int { let p: Printable = Printable(User { value: 7 }); branch when { p->read() == 7 => 0, else => panic { "witness" } } };',
           "lib.mgn": 'namespace App; public type User = product { value: Int; }; public contract Printable { read(self: Self): Int; } public witness UserPrintable = User implements Printable { read(self: Self): Int { self->value } }'})
-    pair({"app.mgn": 'namespace App; use App\\{User, Printable}; let main: Function(): Unit = function(): Unit { let p: Printable = Printable(User { value: 7 }); unit };',
+    pair({"app.mgn": 'namespace App; use App\\{User, Printable}; let main: Function(List<String>): Int = function(args: List<String>): Int { let p: Printable = Printable(User { value: 7 }); 0 };',
           "lib.mgn": 'namespace App; public type User = product { value: Int; }; public contract Printable { read(self: Self): Int; } public witness UserPrintable = User implements Printable { read(self: Self): Int { self->value } }'}, 1, "evidence")
-    pair({"app.mgn": 'namespace App; use App\\{left, right}; let main: Function(): Unit = function(): Unit { branch when { left->read() == 1 && right->read() == 2 => unit, else => panic { "identity" } } };',
+    pair({"app.mgn": 'namespace App; use App\\{left, right}; let main: Function(List<String>): Int = function(args: List<String>): Int { branch when { left->read() == 1 && right->read() == 2 => 0, else => panic { "identity" } } };',
           "contract.mgn": 'namespace App; public contract Read { read(self: Self): Int; }',
           "left.mgn": 'namespace App; use App\\{Read}; type Hidden = product { value: Int; }; witness Proof = Hidden implements Read { read(self: Self): Int { self->value } } public let left: Read = Read(Hidden { value: 1 });',
           "right.mgn": 'namespace App; use App\\{Read}; type Hidden = product { value: Int; }; witness Proof = Hidden implements Read { read(self: Self): Int { self->value } } public let right: Read = Read(Hidden { value: 2 });'})
 
-    pair({"app.mgn": 'namespace App; alias Entry = Function(): Unit; public let main: Entry = function(): Unit { unit };'})
-    for body in ["public var n: Int = 1;", "public use App\\{X};", "use App\\X;", "use App\\*;", "use App\\{};", "namespace Other;", "let main:Function():Unit=function():Unit{unit}; use App\\{X};"]:
+    pair({"app.mgn": 'namespace App; alias Entry = Function(List<String>): Int; public let main: Entry = function(args: List<String>): Int { 0 };'})
+    for body in ["public var n: Int = 1;", "public use App\\{X};", "use App\\X;", "use App\\*;", "use App\\{};", "namespace Other;", "let main:Function(List<String>): Int=function(args: List<String>): Int{0}; use App\\{X};"]:
         pair({"app.mgn": "namespace App; " + body}, 1)
     pair({"app.mgn": 'namespace App; use App\\{entry as main};',
           "lib.mgn": 'namespace App; public let entry:Function():Unit=function():Unit{unit};'}, 1, "main")
@@ -102,24 +102,24 @@ with tempfile.TemporaryDirectory(prefix="mgn-project-tests-") as tmp:
                  "public alias Items<T> = List<Hidden>;",
                  "public contract C { get(self:Self):Hidden; }"]:
         pair({"app.mgn": empty, "lib.mgn": "namespace App; type Hidden=product{value:Int;}; " + leak}, 1, "private")
-    pair({"app.mgn": 'namespace App; use App\\{id, Box as Other}; let main:Function():Unit=function():Unit{let b:Other<Int>=id<Int>(41);branch when{b->value==42=>unit,else=>panic{"definition"}}};',
+    pair({"app.mgn": 'namespace App; use App\\{id, Box as Other}; let main:Function(List<String>): Int=function(args: List<String>): Int{let b:Other<Int>=id<Int>(41);branch when{b->value==42=> 0,else=>panic{"definition"}}};',
           "lib.mgn": 'namespace App; public type Box<T>=product{value:Int;}; template add<T>=function(value:Int):Box<T>{Box<T>{value:value+1}}; public template id<T>=function(value:Int):Box<T>{add<T>(value)};'})
-    pair({"app.mgn": 'namespace App; use App\\{num}; template bad<T>=function():Int{num}; let main:Function():Unit=function():Unit{unit};',
+    pair({"app.mgn": 'namespace App; use App\\{num}; template bad<T>=function():Int{num}; let main:Function(List<String>): Int=function(args: List<String>): Int{0};',
           "lib.mgn": 'namespace App; public let num:Int=42;'}, 1)
-    pair({"app.mgn": 'namespace App; use App\\{C, Proof}; let main:Function():Unit=function():Unit{discard Proof;unit};',
+    pair({"app.mgn": 'namespace App; use App\\{C, Proof}; let main:Function(List<String>): Int=function(args: List<String>): Int{discard Proof;0};',
           "lib.mgn": 'namespace App; public contract C{read(self:Self):Int;}public witness Proof = Int implements C{read(self:Self):Int{self}}'}, 1)
     pair({"app.mgn": empty,
           "c.mgn": 'namespace App; public contract C{read(self:Self):Int;}',
           "a.mgn": 'namespace App; use App\\{C}; witness A = Int implements C{read(self:Self):Int{self}}',
           "b.mgn": 'namespace App; use App\\{C}; witness B = Int implements C{read(self:Self):Int{self}}'}, 1)
-    pair({"app.mgn": 'namespace App; use App\\{B,A}; let main:Function():Unit=function():Unit{panic{"main"}};',
+    pair({"app.mgn": 'namespace App; use App\\{B,A}; let main:Function(List<String>): Int=function(args: List<String>): Int{panic{"main"}};',
           "a.mgn": 'namespace App; public alias A=Int; let stop:Int=panic{"a first"};',
           "b.mgn": 'namespace App; public alias B=Int; let stop:Int=panic{"b first"};'}, 4, "a first")
-    pair({"app.mgn": 'namespace App; use App\\{Value, again}; let main:Function():Unit=function():Unit{branch when{Value==again=>unit,else=>panic{"shared"}}};',
+    pair({"app.mgn": 'namespace App; use App\\{Value, again}; let main:Function(List<String>): Int=function(args: List<String>): Int{branch when{Value==again=> 0,else=>panic{"shared"}}};',
           "data.mgn": 'namespace App; public let Value:Int=42;',
           "alias.mgn": 'namespace App; use App\\{Value}; public let again:Int=Value;'})
     # Stable strings, symbols, images and standalone execution across roots/caches.
-    files = {"app.mgn": 'namespace App; use App\\{left,right}; let main:Function():Unit=function():Unit{branch when{left=="left"&&right=="right"=>unit,else=>panic{"strings"}}};',
+    files = {"app.mgn": 'namespace App; use App\\{left,right}; let main:Function(List<String>): Int=function(args: List<String>): Int{branch when{left=="left"&&right=="right"=> 0,else=>panic{"strings"}}};',
              "a.mgn": 'namespace App; public let left:String="left";',
              "日本語.mgn": 'namespace App; public let right:String="right";'}
     images = []
@@ -135,18 +135,18 @@ with tempfile.TemporaryDirectory(prefix="mgn-project-tests-") as tmp:
     assert all(image == images[0] for image in images)
 
 
-    pair({"app.mgn": 'namespace App; use App\\A\\{Value as Left}; use App\\B\\{Value as Right}; let main:Function():Unit=function():Unit{branch when{Left==1&&Right==2=>unit,else=>panic{"alias"}}};',
+    pair({"app.mgn": 'namespace App; use App\\A\\{Value as Left}; use App\\B\\{Value as Right}; let main:Function(List<String>): Int=function(args: List<String>): Int{branch when{Left==1&&Right==2=> 0,else=>panic{"alias"}}};',
           "A/value.mgn": 'namespace App\\A; public let Value:Int=1;',
           "B/value.mgn": 'namespace App\\B; public let Value:Int=2;'})
     pair({"app.mgn": empty, "bad.mgn": 'namespace App; let num:Int=true;'}, 1, "type:")
     pair({"app.mgn": 'namespace App; let main:Function(Int):Unit=function(n:Int):Unit{unit};'}, 1, "type:")
     pair({"app.mgn": 'namespace App; template main<T>=function():Unit{unit};'}, 1, "semantic:")
-    pair({"app.mgn": 'namespace App; let value:C=C(42); contract C{read(self:Self):Int;} witness Proof=Int implements C{read(self:Self):Int{self}} let main:Function():Unit=function():Unit{branch when{value->read()==42=>unit,else=>panic{"forward"}}};'})
-    pair({"app.mgn": 'namespace App; let implement:Int=1;let against:Int=2;let private:Int=3;let main:Function():Unit=function():Unit{discard implement+against+private;unit};'})
+    pair({"app.mgn": 'namespace App; let value:C=C(42); contract C{read(self:Self):Int;} witness Proof=Int implements C{read(self:Self):Int{self}} let main:Function(List<String>): Int=function(args: List<String>): Int{branch when{value->read()==42=> 0,else=>panic{"forward"}}};'})
+    pair({"app.mgn": 'namespace App; let implement:Int=1;let against:Int=2;let private:Int=3;let main:Function(List<String>): Int=function(args: List<String>): Int{discard implement+against+private;0};'})
     for body in ['use \\App\\{X};', 'use App\\{X,{Y}};', 'use witness X;', 'use App\\{X}', 'use App\\{X};let X:Int=1;']:
-        pair({"app.mgn": 'namespace App; ' + body + ' let main:Function():Unit=function():Unit{unit};',
+        pair({"app.mgn": 'namespace App; ' + body + ' let main:Function(List<String>): Int=function(args: List<String>): Int{0};',
               "lib.mgn": 'namespace App; public alias X=Int;'}, 1)
-    pair({"app.mgn": 'namespace App;use App\\{X,Y};let main:Function():Unit=function():Unit{let x:X=Y{n:42};discard x;unit};',
+    pair({"app.mgn": 'namespace App;use App\\{X,Y};let main:Function(List<String>): Int=function(args: List<String>): Int{let x:X=Y{n:42};discard x;0};',
           "lib.mgn": 'namespace App;public type X=product{n:Int;};public alias Y=X;'})
     # Caller-visible output aliases must preserve every physical input.
     root = project({"app.mgn": empty, "unused.mgn": "namespace App;"})
@@ -180,10 +180,10 @@ with tempfile.TemporaryDirectory(prefix="mgn-project-tests-") as tmp:
         pair({"app.mgn": empty,
               "lib.mgn": "namespace App; type Hidden<T> = product { value: T; }; " + declaration},
              1, "semantic: Public signature exposes a private type")
-    pair({"app.mgn": 'namespace App; use App\\{Exposed,make}; let main:Function():Unit=function():Unit{let result:Exposed<Int>=make<Int>(42);discard result->value;unit};',
+    pair({"app.mgn": 'namespace App; use App\\{Exposed,make}; let main:Function(List<String>): Int=function(args: List<String>): Int{let result:Exposed<Int>=make<Int>(42);discard result->value;0};',
           "lib.mgn": 'namespace App; type Hidden<T>=product{value:T;}; public alias Exposed<T>=Hidden<T>; public template make<T>=function(value:T):Exposed<T>{Hidden<T>{value:value}};'},
          1, "semantic: Public signature exposes a private type")
-    pair({"app.mgn": 'namespace App; use App\\{Exposed,make}; let main:Function():Unit=function():Unit{let result:Exposed<Int>=make<Int>(42);discard result->value;unit};',
+    pair({"app.mgn": 'namespace App; use App\\{Exposed,make}; let main:Function(List<String>): Int=function(args: List<String>): Int{let result:Exposed<Int>=make<Int>(42);discard result->value;0};',
           "lib.mgn": 'namespace App; public type Box<T>=product{value:T;}; alias Local<T>=Box<T>; public alias Exposed<T>=Local<T>; public template make<T>=function(value:T):Exposed<T>{Box<T>{value:value}};'})
 
     # Directories are traversed before source suffix classification. Empty

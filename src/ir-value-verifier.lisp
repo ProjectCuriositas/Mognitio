@@ -1,6 +1,6 @@
 (in-package #:mognitio.ir)
 
-(defparameter *value-operations* '(:struct.make :enum.make :struct.field :enum.tag :enum.payload :interface.pack :call.interface
+(defparameter *value-operations* '(:io.call :struct.make :enum.make :struct.field :enum.tag :enum.payload :interface.pack :call.interface
     :closure.make :closure.env.get :closure.call :list.empty :list.length :list.append :list.at :list.buffer :buffer.length :buffer.get :text.slice.result))
 
 (defun verify-core-types (context functions)
@@ -128,6 +128,7 @@
                                  (and tag constant (eq :enum.tag (instruction-op tag)) (equal (list subject) (instruction-operands tag))
                                       (eq :constant (instruction-op constant)) (eql variant (instruction-value constant)))))))))))
       (case op
+        (:io.call (verify-io-instruction instruction types context caller functions))
         (:closure.make
          (let ((target (gethash data functions)))
            (and target (plusp data) (null (ir-function-method target))

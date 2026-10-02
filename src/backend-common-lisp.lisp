@@ -32,7 +32,19 @@
     (typecase node
       ((or data-declaration contract-declaration implementation-declaration struct-expression enum-expression field-expression this-expression branch-expression)
        (value-expression-form node checked names functions exits loops))
+      (mognitio.syntax::io-expression
+       (ordered (coerce (mognitio.syntax::io-expression-arguments node) 'list)
+         (lambda (args)
+           (let* ((context (checked-program-values checked)) (result (checked-normal-type checked node))
+                  (error-type (second (mognitio.semantic::canonical-result-arguments context result)))
+                  (fields (type-info-fields (context-type context error-type))))
+             (list 'mognitio.io::invoke (mognitio.syntax::io-expression-operation node) (cons 'cl:list args)
+                   (list 'cl:quote result) (list 'cl:quote error-type)
+                   (list 'cl:quote (cdr (assoc "operation" fields :test #'string=)))
+                   (list 'cl:quote (cdr (assoc "kind" fields :test #'string=))))))))
       (mognitio.syntax::test-stage *void-value*)
+      (mognitio.syntax::runtime-arguments '(cl:prog1 mognitio.runtime::*arguments*
+          (cl:setf mognitio.runtime::*arguments* mognitio.value::*empty-list*)))
       (assert-statement
        `(cl:progn (cl:unless ,(form (assert-statement-operand node))
                     (mognitio.runtime::raise-assertion ',(node-span node))) ,*void-value*))
@@ -215,7 +227,8 @@
    (compiled-program-span compiled)
    (lambda ()
      (let ((result (funcall (compiled-program-function compiled))))
-       (cond ((and (eq (compiled-program-result-type compiled) :void) (eq result *void-value*)) :unit)
+       (cond ((and (eq (compiled-program-result-type compiled) :int) (mognitio.integer:in-range-p result)) result)
+             ((and (eq (compiled-program-result-type compiled) :void) (eq result *void-value*)) :unit)
              ((and (eq (compiled-program-result-type compiled) :bool) (eq result t)) :true)
              ((and (eq (compiled-program-result-type compiled) :bool) (eq result nil)) :false)
              (t (fail-at (compiled-program-span compiled) :internal

@@ -39,6 +39,8 @@ def test(root, code=0, total=1, passed=None, failed=0, errors=0, contains=(), id
 
 
 def declaration(name="check", body="assert true;", prefix="@test "):
+    if name == "main" and prefix == "":
+        return f"let main: Function(List<String>): Int = function(args: List<String>): Int {{ {body if body != 'unit' else ''} 0 }};"
     return f"{prefix}let {name}: Function(): Unit = function(): Unit {{ {body} }};"
 
 

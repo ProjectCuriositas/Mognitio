@@ -1,0 +1,125 @@
+(in-package #:mognitio.project)
+
+(defstruct standard-catalog program declarations)
+
+(defun standard-namespace-p (name)
+  (equal "Std" (first (namespace-parts name))))
+(defun standard-key (name) (concatenate 'string "standard:Std\\Io#" name))
+
+(defun make-io-catalog ()
+  ;; This compiler-owned source identity is diagnostic provenance, never a file
+  ;; in project discovery or initialization ordering.
+  (let* ((text "public type IoOperation = sum { ReadTextFile; WriteTextFile; ReadStdin; WriteStdout; WriteStderr; };
+public type IoErrorKind = sum { InvalidPath; InvalidEncoding; NotFound; PermissionDenied; UnsupportedTarget; BrokenPipe; ResourceExhausted; Other; };
+public type IoError = product { operation: IoOperation; kind: IoErrorKind; subject: String; };
+public let readTextFile: Function(String): Result<String,IoError> = function(path:String): Result<String,IoError> { panic { \"compiler body\" } };
+public let writeTextFile: Function(String,String): Result<Unit,IoError> = function(path:String,text:String): Result<Unit,IoError> { panic { \"compiler body\" } };
+public let readStdin: Function(): Result<String,IoError> = function(): Result<String,IoError> { panic { \"compiler body\" } };
+public let writeStdout: Function(String): Result<Unit,IoError> = function(text:String): Result<Unit,IoError> { panic { \"compiler body\" } };
+public let writeStderr: Function(String): Result<Unit,IoError> = function(text:String): Result<Unit,IoError> { panic { \"compiler body\" } };")
+         (source (decode-source "standard:Std\\Io@0.12.0" (utf8 text)))
+         (program (mognitio.frontend:parse-program source (mognitio.frontend:lex-source source)))
+         (declarations nil))
+    (setf (mognitio.source::source-origin source) :standard)
+    (loop for binding across (program-statements program)
+          for index from 0 for operation in '(:read-file :write-file :read-stdin :write-stdout :write-stderr) do
+      (let* ((function (local-binding-initializer binding))
+             (body (mognitio.syntax::make-io-expression :operation operation
+                     :arguments (map 'vector (lambda (p) (make-variable-reference :name (parameter-name p) :span (node-span p)))
+                                     (function-expression-parameters function))
+                     :result-type (function-expression-result-type function) :span (node-span function))))
+        (setf (aref (program-statements program) index)
+              (mognitio.semantic::rebuild-syntax-node binding
+                (list (cons 'mognitio.syntax::initializer
+                  (mognitio.semantic::rebuild-syntax-node function (list (cons 'mognitio.syntax::body body)))))))))
+    (dolist (node (append (coerce (program-declarations program) 'list) (coerce (program-statements program) 'list)))
+      (let* ((token (if (typep node 'local-binding) (local-binding-name node) (mognitio.semantic::declaration-name node)))
+             (name (raw-name token)))
+        (push (make-module-declaration :origin :standard :name name :kind (if (typep node 'local-binding) :let :type)
+                                      :public t :token token :node node :key (standard-key name)) declarations)))
+    (syntax-walk program
+      (lambda (token)
+        (let ((name (raw-name token)))
+          (unless (member name *predeclared* :test #'equal)
+            (setf (mognitio.syntax::token-resolved-name token) (standard-key name))))))
+    (make-standard-catalog :program program :declarations (nreverse declarations))))
+
+(defun standard-exports (project)
+  (let ((table (make-hash-table :test #'equal)))
+    (dolist (decl (standard-catalog-declarations (project-standard project)))
+      (setf (gethash (cons "Std\\Io" (module-declaration-name decl)) table) decl))
+    table))
+
+(defun standard-declarations (project)
+  (coerce (program-declarations (standard-catalog-program (project-standard project))) 'list))
+(defun standard-prelude (project)
+  (coerce (program-statements (standard-catalog-program (project-standard project))) 'list))
+
+(defun verify-standard-catalog (project)
+  ;; Check the supplied records against the closed language surface, without
+  ;; rerunning the catalog producer or accepting its cached exports as evidence.
+  (let* ((catalog (project-standard project)) (program (standard-catalog-program catalog))
+         (source (program-source program)) (decls (standard-catalog-declarations catalog)))
+    (flet ((check (ok) (unless ok (internal-error "Invalid standard catalog provenance or body"))))
+      (check (and (eq (mognitio.source::source-origin source) :standard)
+                  (equal (source-path source) "standard:Std\\Io@0.12.0")
+                  (null (program-root program)) (= (length decls) 8)
+                  (= (length (program-declarations program)) 3) (= (length (program-statements program)) 5)))
+      (loop for decl in decls for name in '("IoOperation" "IoErrorKind" "IoError" "readTextFile" "writeTextFile" "readStdin" "writeStdout" "writeStderr")
+            for index from 0 for node = (module-declaration-node decl) do
+        (check (and (eq (module-declaration-origin decl) :standard) (null (module-declaration-module decl))
+                    (module-declaration-public decl) (equal name (module-declaration-name decl))
+                    (equal (module-declaration-key decl) (concatenate 'string "standard:Std\\Io#" name))
+                    (eq (span-source (node-span node)) source)
+                    (eq node (if (< index 3) (aref (program-declarations program) index)
+                                 (aref (program-statements program) (- index 3))))))
+        (if (< index 3)
+            (check (and (eq (module-declaration-kind decl) :type) (typep node 'data-declaration)))
+            (let* ((function (local-binding-initializer node)) (body (function-expression-body function))
+                   (parameters (function-expression-parameters function)))
+              (check (and (eq (module-declaration-kind decl) :let) (typep body 'mognitio.syntax::io-expression)
+                          (eq (mognitio.syntax::io-expression-operation body)
+                              (nth (- index 3) '(:read-file :write-file :read-stdin :write-stdout :write-stderr)))
+                          (= (length parameters) (nth (- index 3) '(1 2 0 1 1)))
+                          (= (length parameters) (length (mognitio.syntax::io-expression-arguments body)))))
+              (loop for parameter across parameters for argument across (mognitio.syntax::io-expression-arguments body) do
+                (check (and (typep argument 'variable-reference) (eq (variable-reference-name argument) (parameter-name parameter))))))))))
+  (verify-standard-shapes (project-standard project))
+  t)
+
+(in-package #:mognitio.semantic)
+
+(defun io-signature (context operation)
+  (let* ((error-type (gethash "standard:Std\\Io#IoError" (value-context-names context)))
+         (read-p (member operation '(:read-file :read-stdin)))
+         (arguments (ecase operation (:read-file '(:string)) (:write-file '(:string :string))
+                       (:read-stdin nil) ((:write-stdout :write-stderr) '(:string)))))
+    (unless (nominal-type-p error-type :struct) (internal-error "Missing standard IoError identity"))
+    (values arguments (if read-p :string :void) error-type)))
+
+(defun c-io-expression (node)
+  (let* ((operation (mognitio.syntax::io-expression-operation node))
+         (args (coerce (mognitio.syntax::io-expression-arguments node) 'list))
+         (children (mapcar #'c-expression args))
+         (result (resolve-type-token (c-context) (mognitio.syntax::io-expression-result-type node))))
+    (multiple-value-bind (parameters success error-type) (io-signature (c-context) operation)
+      (unless (and (= (length parameters) (length args))
+                   (equal (canonical-result-arguments (c-context) result) (list success error-type)))
+        (internal-error "Invalid standard I/O signature"))
+      (loop for arg in args for child in children for type in parameters do (c-context-check arg child type))
+      (c-operation node operation args parameters result)
+      (c-summary node result (every #'c-normal children) children))))
+
+(defun v-io-expression (node)
+  (let* ((args (coerce (mognitio.syntax::io-expression-arguments node) 'list))
+         (operation (mognitio.syntax::io-expression-operation node))
+         (result (v-resolve (mognitio.syntax::io-expression-result-type node)))
+         (info (checked-operation (v-program) node)))
+    (mapc #'v-visit args)
+    (multiple-value-bind (parameters success error-type) (io-signature (v-context) operation)
+      (v-check (and (= (length args) (length parameters)) (equal (canonical-result-arguments (v-context) result) (list success error-type))
+                    (eq (operation-info-kind info) operation) (equal (operation-info-operands info) args)
+                    (equal (operation-info-parameter-types info) parameters) (equal (operation-info-result-type info) result))
+               "Invalid I/O body proof")
+      (loop for arg in args for type in parameters do (v-exact arg type))
+      (v-finish node result (every #'v-normal args) args))))
