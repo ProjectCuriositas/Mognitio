@@ -2,6 +2,12 @@
 
 (defun command ()
   (let ((arguments (uiop:command-line-arguments)))
+    (when (equal arguments '("--mognitio-argv-fd=3" "--mognitio-stdin-closed"))
+      ;; The launcher reserves descriptor 0 through SBCL bootstrap so its script
+      ;; reader cannot reuse the absent application stdin. Release that temporary
+      ;; reservation before project execution, restoring the original closed state.
+      (sb-posix:close 0)
+      (setf arguments '("--mognitio-argv-fd=3")))
     (when (equal arguments '("--mognitio-argv-fd=3"))
       (handler-case
           (with-open-stream (stream (sb-sys:make-fd-stream 3 :input t :element-type '(unsigned-byte 8)))

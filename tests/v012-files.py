@@ -144,4 +144,18 @@ with tempfile.TemporaryDirectory(prefix="mgn-v012-files-") as temporary:
             assert p.returncode == 0, (p.returncode, p.stderr)
             checks += 1
 
+    for operation, endpoint, value_type in [("writeStdout(\"X\")",1,"Unit"),("writeStderr(\"X\")",2,"Unit"),("readStdin()",0,"String")]:
+        build(f'assert branch on {operation}{{Result<{value_type},IoError>::Ok=>false,Result<{value_type},IoError>::Err(e:IoError)=>branch on e->kind{{'+",".join(f"IoErrorKind::{kind}=>{'true' if kind=='Other' else 'false'}" for kind in KINDS)+'}};0')
+        for command in commands():
+            process(command, preexec_fn=lambda:os.close(endpoint))
+    build('panic{"primary"}')
+    # Runtime diagnostics may be partial, but must retain exit 4 under SIGXFSZ.
+    for command in commands():
+        output=fixture()/"diagnostic"
+        with output.open("wb") as stream:
+            p=subprocess.run(command,stdout=subprocess.PIPE,stderr=stream,preexec_fn=limit_one,timeout=30)
+        assert p.returncode==4 and p.stdout==b"",(p.returncode,p.stdout)
+        assert output.read_bytes()==b"p"
+        checks+=1
+
 print(f"v0.12 filesystem/signal checks={checks} failures=0")

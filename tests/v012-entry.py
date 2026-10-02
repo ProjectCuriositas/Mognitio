@@ -1,5 +1,6 @@
 """Public entry/argument observations, independent of compiler helper tables."""
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -61,5 +62,16 @@ with tempfile.TemporaryDirectory(prefix="mognitio-entry-") as area:
         run([MGN, *command], code=2)
     source.write_text("namespace App; this is invalid;\n")
     run([os.fsencode(MGN), b"run", os.fsencode(manifest), b"--", b"\xff"], code=1)
+
+    program("assert args->length()==0;0")
+    # Real pipe EOF after a partial writer and an actual directory-read error.
+    transport=["sh","-c",'exec 3<&0; exec "$1" --noinform --script "$2" --mognitio-argv-fd=3 0</dev/null',
+               "transport",shutil.which("sbcl"),ROOT/"scripts/cli-entry.lisp"]
+    raw=b"2\0run\0"+os.fsencode(manifest)+b"\0"
+    run(transport, input=raw,err=b"")
+    run(transport, input=raw[:-1],code=2,err=b"mgn: Invalid argument transport\n")
+    run(["sh","-c",'exec 3<"$1"; exec "$2" --noinform --script "$3" --mognitio-argv-fd=3',
+         "transport",base,shutil.which("sbcl"),ROOT/"scripts/cli-entry.lisp"],
+        code=2,err=b"mgn: Invalid argument transport\n")
 
 print(f"v0.12 entry checks={checks} failures=0")
