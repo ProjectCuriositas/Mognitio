@@ -22,9 +22,10 @@
 
 (defun io-map-unit ()
   (runtime-unit :io.map
+    (append (when (option :directory-fail-map) '((:jmp :allocation-failed)))
     '((:load-word :rsi :rsp 8) (:imm-reg :rdi 0) (:imm-rdx 3)
       (:imm-reg :r10 34) (:imm-reg :r8 -1) (:imm-reg :r9 0)
-      (:mov-eax 9) (:syscall) (:cmp-imm :rax -4095) (:jae :allocation-failed) (:ret))))
+      (:mov-eax 9) (:syscall) (:cmp-imm :rax -4095) (:jae :allocation-failed) (:ret)))))
 
 (defun io-close-unit ()
   (runtime-unit :io.close
@@ -44,7 +45,15 @@
           `((:load-frame :rdx -8) (:load-word :rdi :rdx ,(first pair))
             (:cmp-imm :rdi 0) (:jz ,next) (:load-word :rsi :rdx ,(second pair))
             (:imm-rax 0) (:store-word :rdx ,(first pair) :rax)
-            (:mov-eax 11) (:syscall) (:test) (:jz ,next)
+            (:cmp-imm :rsi 0) (:jle ,(intern (format nil "CLEANUP-BAD-~D" index) :keyword))
+            (:mov-reg :rax :rdi) (:and-imm :rax 4095) (:test) (:jnz ,(intern (format nil "CLEANUP-BAD-~D" index) :keyword))
+            (:cmp-imm :rdi 0) (:jl ,(intern (format nil "CLEANUP-BAD-~D" index) :keyword))
+            (:mov-eax 11) (:syscall)
+            ,@(when (option :directory-cleanup-fault) `((:imm-rax ,(option :directory-cleanup-fault))))
+            (:test) (:jz ,next)
+            (:jmp ,(intern (format nil "CLEANUP-ERROR-~D" index) :keyword))
+            (:label ,(intern (format nil "CLEANUP-BAD-~D" index) :keyword)) (:imm-rax -22)
+            (:label ,(intern (format nil "CLEANUP-ERROR-~D" index) :keyword))
             (:load-frame :rcx -16) (:test-rcx) (:jnz ,next) (:store-frame -16 :rax)
             (:label ,next))))
       '((:load-frame :rax -16)) (helper-return))))
@@ -53,8 +62,16 @@
   (runtime-unit :io.cleanup-all
     (append (helper-frame 2)
       `((:label :next) (:load-word :rax :r15 ,+cleanup-head+) (:test) (:jz :done)
-        (:load-word :rcx :rax 0) (:store-word :r15 ,+cleanup-head+ :rcx)
-        (:store-out 0 :rax) (:call (:runtime :io.cleanup)) (:jmp :next) (:label :done))
+        ;; A primary language failure must not follow a malformed/cyclic chain.
+        ;; Records are aligned stack objects ordered toward the initial stack.
+        (:mov-reg :rdx :rax) (:and-imm :rdx 7) (:cmp-imm :rdx 0) (:jnz :corrupt)
+        (:cmp-reg :rax :rbp) (:jbe :corrupt) (:load-word :r8 :r15 ,+initial-stack+)
+        (:add-imm :r8 -64) (:cmp-reg :rax :r8) (:ja :corrupt)
+        (:load-word :rcx :rax 0) (:test-rcx) (:jz :pop)
+        (:cmp-reg :rcx :rax) (:jbe :corrupt) (:cmp-reg :rcx :r8) (:ja :corrupt)
+        (:label :pop) (:store-word :r15 ,+cleanup-head+ :rcx)
+        (:store-out 0 :rax) (:call (:runtime :io.cleanup)) (:jmp :next)
+        (:label :corrupt) (:imm-rax 0) (:store-word :r15 ,+cleanup-head+ :rax) (:label :done))
       (helper-return))))
 
 (defun io-errno-unit ()
@@ -71,4 +88,5 @@
   (append (list (io-signal-unit))
           (when (io-image-p)
             (append (unless (argument-image-p) (list (utf8-feed-unit) (utf8-count-unit)))
-                    (list (io-map-unit) (io-close-unit) (io-cleanup-unit) (io-cleanup-all-unit) (io-errno-unit))))))
+                    (list (io-map-unit) (io-close-unit) (io-cleanup-unit) (io-cleanup-all-unit) (io-errno-unit))
+                    (directory-runtime-units)))))

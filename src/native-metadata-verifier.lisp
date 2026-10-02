@@ -27,6 +27,20 @@
                    (:list (pushnew type lists :test #'equal) (note (second type)))
                    (:buffer (note (list :list (second type))))
                    (:function (mapc #'note (second type)) (note (third type)))))))
+      ;; Independently pinned private wire v3. Inspect encoded immediates in each
+      ;; helper region, not the producer's event-header or shared constants.
+      (when (mognitio.ir::module-test-ordinal module)
+        (dolist (entry '((:test.bootstrap #x00010003544e474d #x00020003544e474d)
+                         (:test.stage #x00020003544e474d) (:test.terminal #x00030003544e474d)))
+          (let* ((start (offset (list :helper (first entry))))
+                 (end (loop for symbol being the hash-values of symbols
+                            for at = (mognitio.object:image-symbol-offset symbol)
+                            when (and (> at start) (member (mognitio.object:image-symbol-kind symbol) '(:helper :function)))
+                            minimize at into bound finally (return (if (and bound (> bound start)) bound (length bytes))))))
+            (dolist (word (rest entry))
+              (let ((expected (coerce (append '(72 184)
+                                      (loop for i below 8 collect (ldb (byte 8 (* i 8)) word))) 'vector)))
+                (ensure (search expected bytes :start2 start :end2 end)))))))
       ;; Independently pinned v6 layout; neither builder rows nor offsets are
       ;; trusted as the oracle. Each field has size, classification and zero state.
       (let* ((test-p (mognitio.ir::module-test-ordinal module))

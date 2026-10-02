@@ -4,7 +4,7 @@
 ;; All helpers are nonallocating. Returning helpers preserve the native callee saves.
 (defun test-image-p () (and *runtime-module* (mognitio.ir::module-test-ordinal *runtime-module*)))
 (defun event-header (tag)
-  (+ #x544e474d (ash 2 32) (ash (mognitio.testing::event-number mognitio.testing::*event-tags* tag) 48)))
+  (+ #x544e474d (ash mognitio.testing::+protocol-version+ 32) (ash (mognitio.testing::event-number mognitio.testing::*event-tags* tag) 48)))
 (defun event-call (tag kind &optional (site -1))
   `((:imm-rax ,(event-header tag)) (:imm-rcx ,kind) (:imm-rdx ,site) (:call (:helper :test.event))))
 

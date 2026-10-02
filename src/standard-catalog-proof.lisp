@@ -27,21 +27,23 @@
       (loop for node across types for index from 0 do
         (check (and (zerop (length (data-declaration-type-parameters node)))
                     (null (data-declaration-target node))
-                    (eq (data-declaration-kind node) (if (= index 2) :struct :enum))))
+                    (eq (data-declaration-kind node) (if (member index '(2 4)) :struct :enum))))
         (check
           (equal (map 'list (lambda (member)
                             (cons (raw-name (named-member-name member))
-                              (if (= index 2) (shape (named-member-value member))
+                              (if (member index '(2 4)) (shape (named-member-value member))
                                   (progn (check (null (named-member-value member))) nil))))
                       (data-declaration-members node))
-            (nth index '((("ReadTextFile") ("WriteTextFile") ("ReadStdin") ("WriteStdout") ("WriteStderr"))
+            (nth index '((("ReadTextFile") ("WriteTextFile") ("ReadStdin") ("WriteStdout") ("WriteStderr") ("JoinPath") ("ReadDirectory") ("CreateDirectory"))
                          (("InvalidPath") ("InvalidEncoding") ("NotFound") ("PermissionDenied")
                           ("UnsupportedTarget") ("BrokenPipe") ("ResourceExhausted") ("Other"))
-                         (("operation" "IoOperation") ("kind" "IoErrorKind") ("subject" "String")))))))
+                         (("operation" "IoOperation") ("kind" "IoErrorKind") ("subject" "String"))
+                         (("File") ("Directory") ("Symlink") ("Other"))
+                         (("name" "String") ("kind" "DirectoryEntryKind")))))))
       (loop for binding across bindings for index from 0
             for function = (local-binding-initializer binding)
-            for arguments = (nth index '((("String")) (("String") ("String")) nil (("String")) (("String"))))
-            for result = (list "Result" (list (if (member index '(0 2)) "String" "Unit")) '("IoError")) do
+            for arguments = (nth index '((("String")) (("String") ("String")) nil (("String")) (("String")) (("String") ("String")) (("String")) (("String"))))
+            for result = (list "Result" (case index ((0 2 5) '("String")) (6 '("List" ("DirectoryEntry"))) (otherwise '("Unit"))) '("IoError")) do
         (check (and (eq (local-binding-mutability binding) :let)
                     (equal (shape (local-binding-annotation binding)) (list :function arguments result))
                     (zerop (length (function-expression-type-parameters function)))

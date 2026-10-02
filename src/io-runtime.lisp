@@ -119,7 +119,9 @@
     (if (zerop count) mognitio.text::*empty*
         (mognitio.text::allocate-text (length bytes) count (lambda (out) (replace out bytes))))))
 
-(defun invoke (operation arguments result-type error-type operation-type kind-type)
+(defun invoke (operation arguments result-type error-type operation-type kind-type &optional entry-type entry-kind)
+  (when (member operation '(:join-path :read-directory :create-directory))
+    (return-from invoke (invoke-directory operation arguments result-type error-type operation-type kind-type entry-type entry-kind)))
   (handler-case
       (let* ((*operation-secondary* nil) (number (position operation '(:read-file :write-file :read-stdin :write-stdout :write-stderr)))
              (subject (if (< number 2) (first arguments)
