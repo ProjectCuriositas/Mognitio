@@ -54,3 +54,43 @@
                      (when (eq mode :restore) (internal-error "Restore report failure"))))
         (multiple-value-bind (out err code) (v12-driver (v12-manifest body))
           (same 3 code) (same "" out) (is (search "guard failure" err)))))))
+
+(deftest v012-short-read-chunks-preserve-consumption
+  (let* ((input (put-bytes (fresh-path ".input")
+                  (concatenate '(vector (unsigned-byte 8))
+                    (make-array 4096 :initial-element 65) #(255) (make-array 20000 :initial-element 66))))
+         (manifest (v12-manifest
+           "assert branch on readStdin(){Result<String,IoError>::Ok=>false,Result<String,IoError>::Err=>true};
+            branch on readStdin(){Result<String,IoError>::Ok(s:String)=>{discard writeStdout(s);0},Result<String,IoError>::Err=>9}"))
+         (expected (make-string 19999 :initial-element #\B))
+         (reader (fdefinition 'mognitio.io::read-chunk)) (first t))
+    ;; Actually consume two bytes on the first read, then use the ordinary read
+    ;; policy. No fake return value leaves the kernel position unchanged.
+    (replacing (mognitio.io::read-chunk
+                 (lambda (fd bytes)
+                   (if first
+                       (let ((small (make-array 2 :element-type '(unsigned-byte 8))))
+                         (setf first nil)
+                         (prog1 (funcall reader fd small) (replace bytes small)))
+                       (funcall reader fd bytes))))
+      (with-open-file (in input :element-type '(unsigned-byte 8))
+        (let ((*standard-input* in))
+          (multiple-value-bind (out err code) (v12-driver manifest)
+            (same 0 code) (same "" err) (same (length expected) (length out)) (is (string= expected out))))))
+    (let ((emitter (fdefinition 'mognitio.native.runtime::io-read-forms)))
+      (replacing (mognitio.native.runtime::io-read-forms
+                   (lambda ()
+                     (loop for tail on (funcall emitter) for form = (first tail) append
+                       (if (and (equal form '(:mov-eax 0)) (equal (second tail) '(:syscall)))
+                           ;; Stdin does not use the stat buffer; this test-only
+                           ;; word records whether this helper has read before.
+                           (append '((:load-frame :rax -200) (:test) (:jnz :test-full-read)
+                                     (:imm-rax 1) (:store-frame -200 :rax) (:mov-edx 2)
+                                     (:label :test-full-read)) (list form))
+                           (list form)))))
+        (let ((image (v12-native manifest)))
+          (incf *processes*)
+          (multiple-value-bind (out err code)
+              (uiop:run-program (list (namestring image)) :input input :output :string
+                                :error-output :string :ignore-error-status t)
+            (same 0 code) (same "" err) (same (length expected) (length out)) (is (string= expected out))))))))
