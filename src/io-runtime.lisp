@@ -43,7 +43,12 @@
         (unless (mognitio.runtime::utf8-feed state buffer count) (reject 1))
         (when (>= (+ (length result) count) array-dimension-limit)
           (mognitio.runtime:runtime-error :allocation-failed))
-        (dotimes (index count) (vector-push-extend (aref buffer index) result))))))
+        (when (> (+ (length result) count) (array-total-size result))
+          (let ((capacity (max 4096 (array-total-size result))))
+            (loop while (< capacity (+ (length result) count)) do
+              (setf capacity (min (1- array-dimension-limit) (* capacity 2))))
+            (setf result (adjust-array result capacity))))
+        (dotimes (index count) (vector-push (aref buffer index) result))))))
 (defun write-all (fd bytes)
   (let ((offset 0))
     (loop while (< offset (length bytes)) do
