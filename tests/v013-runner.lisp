@@ -76,6 +76,13 @@
         (multiple-value-bind (out err code) (v12-driver (v13-manifest (format nil "discard readDirectory(~S);0" root)))
           (same "" out) (same 3 code) (is (search "internal" err)))
         (same before (v11-fd-snapshot)))))
+  (let ((root (v13-directory)) (before (v11-fd-snapshot))
+        (mognitio.io::*operation-hook* (lambda (stage &rest args) (declare (ignore args))
+          (when (eq stage :directory-opened) (error 'v11-injected-storage))))
+        (mognitio.io::*directory-fault-hook* (lambda (phase) (when (eq phase :close) -9))))
+    (multiple-value-bind (out err code) (v12-driver (v13-manifest (format nil "discard readDirectory(~S);0" root)))
+      (same "" out) (same 4 code) (is (search "allocation failure" err)))
+    (same before (v11-fd-snapshot)))
   ;; An independent v2 reader boundary rejects the real v3 child's first ready
   ;; record. The opposite direction is the v2 child fixture above, not a claim
   ;; that a second installed compiler build was used.
