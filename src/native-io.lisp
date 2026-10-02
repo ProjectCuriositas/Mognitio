@@ -45,6 +45,8 @@
       (:mov-eax 11) (:syscall) (:test) (:js :os-error)
       (:label :capacity) (:load-frame :rdi -160) (:load-frame :rsi -112) (:load-frame :rax -136)
       (:add-reg :rsi :rax) (:load-frame :rdx -104) (:sub-reg :rdx :rax)
+      ;; Staging growth must not increase the bytes consumed before a decode error.
+      (:cmp-imm :rdx 4096) (:jbe :read-chunk) (:mov-edx 4096) (:label :read-chunk)
       (:mov-eax 0) (:syscall) (:cmp-eintr) (:jz :read) (:test) (:js :os-error) (:jz :eof)
       (:store-frame -176 :rax) (:store-out 8 :rax)
       (:load-frame :rax -112) (:load-frame :rcx -136) (:add-reg :rax :rcx) (:store-out 0 :rax)
