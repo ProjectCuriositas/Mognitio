@@ -1,11 +1,11 @@
 # Test coverage
 
-The ASDF `mognitio/tests` system is the current v0.12.0 suite.
+The ASDF `mognitio/tests` system is the current v0.13.0 suite.
 Run it with `sbcl --noinform --script scripts/test.lisp`.
 A failed assertion or unavailable required facility fails the command.
 The Lisp summary counts test groups, assertions, and processes invoked through
 the general harness. Runner-owned native children and Python-suite processes
-are additional; see the [current record](../verification/v0.12.0.md).
+are additional; see the [current record](../verification/v0.13.0.md).
 
 The retained [test acceptance ledger](../verification/v0.11.0-testing.md) maps all 72
 cases to executable fixtures. Host/process audit details are recorded
@@ -15,6 +15,12 @@ cases to executable fixtures. Host/process audit details are recorded
 
 | Files | Independent observations |
 |---|---|
+| v013-directory.py, v013-integration.py | Same host/native lexical paths, names/kinds/order, raw invalid UTF-8, links, permission failures, Function storage, try, static rejection, initialization and shared filesystem |
+| v013-inheritance.py | Separate-process umask, default ACL, setgid and a distinct supplementary parent GID, unchanged metadata and syscall policy |
+| v013-reference.py | Explicit breadth-first traversal, exact bytes, rerun, all later failure phases, language assertions and source-absent native execution |
+| v013-host.lisp, v013-native.lisp | Host resource/error paths, native growth/sorting with forced collection and kept values |
+| v013-failures.lisp, v013-records.lisp | Phase-specific faults, malformed raw records, first-observation ties, close/map failure priority, ownership corruption, each value/subject allocation and old/new map cleanup |
+| v013-runner.lisp, v013-proofs.lisp | Actual directory internal faults, private status/version adversaries, parent ledger/cleanup, nominal/Core/frame/root/terminal and encoded-header mutations |
 | v012-review.py, v012-review.lisp | Repeated stdin after invalid UTF-8, broken startup diagnostics, test source errors plus signal restoration failure, and ordinary nonzero status |
 | v012-entry.py | Raw argument bytes, order, empty/literal values, strict UTF-8, entry types and application status |
 | v012-io.py, v012-files.py | CL/native exact I/O bytes, invalid paths, file modes/ACLs, symlinks/hardlinks, chunk boundaries, real SIGXFSZ and broken pipes |

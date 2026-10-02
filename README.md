@@ -2,8 +2,9 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-The v0.12.0 release adds runtime arguments, explicit exit status, UTF-8 file
-and standard-stream I/O, and separate application output in native tests.
+The v0.13.0 implementation adds lexical path joining, directory enumeration
+and single-level directory creation. It extends the v0.12.0 arguments and text-I/O
+release; version-branch implementation is separate from publishing a release.
 
 ## Start here
 
@@ -12,7 +13,8 @@ and standard-stream I/O, and separate application output in native tests.
 - [Release validation](verification/v0.12.0-release.md): pinned release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [File converter](examples/file-converter/README.md): arguments and text I/O.
-- [Implementation verification](verification/v0.12.0.md): evidence and limits.
+- [Directory converter](examples/directory-converter/README.md): explicit tree traversal.
+- [Implementation verification](verification/v0.13.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
 
@@ -130,6 +132,27 @@ Import ordinary functions explicitly from `Std\Io`: `readTextFile`,
 Expected I/O errors are values; discarding an Err does not change exit status.
 See the [converter guide](examples/file-converter/README.md) for signatures,
 error fields, resource behavior, and runnable examples.
+
+The directory functions are ordinary imported Function values too:
+
+| Function | Result |
+|---|---|
+| `joinPath(base: String, relative: String)` | `Result<String, IoError>` |
+| `readDirectory(path: String)` | `Result<List<DirectoryEntry>, IoError>` |
+| `createDirectory(path: String)` | `Result<Unit, IoError>` |
+
+`DirectoryEntry` has `name: String` and `kind: DirectoryEntryKind`. The kind is
+`File`, `Directory`, `Symlink` or `Other`. Enumeration returns direct children in
+Unicode scalar order, with no partial list on failure. Root links are resolved
+normally; child links are classified without following them. Creation accepts an
+existing directory and creates one missing level, subject to the OS umask/ACL.
+
+`joinPath` is lexical: it preserves dot components, slash spelling and Unicode.
+It does not access the filesystem or establish a containment boundary. Directory
+operations append `JoinPath`, `ReadDirectory` and `CreateDirectory` to
+`IoOperation`; an exhaustive match must include all eight variants.
+See the [directory example](examples/directory-converter/README.md) for traversal,
+output assumptions and failure behavior.
 
 ## Results and failures
 
