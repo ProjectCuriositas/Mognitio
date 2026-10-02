@@ -4,7 +4,7 @@
   ;; Private compiler controls use per-invocation counters, never source, argv,
   ;; environment, or mutable process-wide state in the generated image.
   (let* ((faults (remove-if-not (lambda (fault) (eq phase (first fault))) (option :directory-faults)))
-         (slot (- -640 (* 8 (position phase '(:open :scan :child-stat :mkdir :create-stat :root-stat :close :unmap))))))
+         (slot (- -640 (* 8 (position phase '(:open :scan :child-stat :mkdir :create-stat :root-stat :close :unmap :map))))))
     (if (null faults) syscall
         (append `((:load-frame :r9 ,slot) (:add-imm :r9 1) (:store-frame ,slot :r9))
           (when (eq phase :close) (append syscall `((:load-frame :r9 ,slot))))
@@ -69,10 +69,22 @@
         (:add-imm :rdi 1) (:label :right) (:load-frame :rsi -16) (:load-word :rcx :rsi 16) (:add-imm :rsi 32))
       (copy-forms :right-copy))))
 
+(defun directory-map-forms (prefix)
+  (scoped-forms prefix
+    (append
+      (if (option :directory-fail-map) '((:imm-rax -12))
+          (directory-fault-forms :map '((:call (:runtime :directory.map)))))
+      '((:cmp-imm :rax -22) (:jz :internal)
+        (:cmp-imm :rax -4095) (:jae :allocation-failed)
+        (:test) (:jle :internal)
+        (:mov-reg :rdx :rax) (:and-imm :rdx 4095) (:cmp-imm :rdx 0) (:jnz :internal)))))
+
 (defun directory-path-map-forms ()
   (append (directory-validate-path-forms :path -8 nil)
     '((:load-frame :rax -8) (:load-word :rax :rax 16) (:add-imm :rax 1) (:jo :allocation-failed)
-      (:store-frame -216 :rax) (:store-out 0 :rax) (:call (:runtime :io.map)) (:store-frame -224 :rax)
+      (:store-frame -216 :rax) (:store-out 0 :rax))
+    (directory-map-forms :path-map)
+    '((:store-frame -224 :rax)
       (:mov-reg :rdi :rax) (:load-frame :rsi -8) (:load-word :rcx :rsi 16) (:add-imm :rsi 32))
     (copy-forms :path-copy) '((:imm-rax 0) (:store-byte :rdi 0 :rax))))
 
@@ -106,8 +118,9 @@
         (:imm-rax 0) (:store-frame ,current :rax) (:store-frame ,size :rcx))
       (when (eq prefix (option :directory-fail-growth-before))
         `((:load-frame :rax ,old) (:test) (:jnz :allocation-failed)))
-      `((:load-frame :rcx ,size)
-        (:store-out 0 :rcx) (:call (:runtime :io.map)) (:store-frame ,current :rax)
+      `((:load-frame :rcx ,size) (:store-out 0 :rcx))
+      (directory-map-forms :grow-map)
+      `((:store-frame ,current :rax)
         ,@(when (eq prefix (option :directory-fail-growth-after))
             `((:load-frame :rcx ,old) (:test-rcx) (:jnz :allocation-failed)))
         (:load-frame :rsi ,old) (:cmp-imm :rsi 0) (:jz :ready)

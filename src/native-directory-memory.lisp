@@ -2,6 +2,14 @@
 
 ;; Directory scratch uses the existing 64-byte ownership ABI. Raw helpers never
 ;; allocate managed objects; all addresses live in ordinary frame homes at calls.
+(defun directory-map-unit ()
+  ;; Return the raw syscall result to the owning operation. It must classify an
+  ;; impossible argument failure before selecting cleanup and a terminal path.
+  (runtime-unit :directory.map
+    '((:load-word :rsi :rsp 8) (:imm-reg :rdi 0) (:imm-rdx 3)
+      (:imm-reg :r10 34) (:imm-reg :r8 -1) (:imm-reg :r9 0)
+      (:mov-eax 9) (:syscall) (:ret))))
+
 (defun directory-errno-unit ()
   (runtime-unit :directory.errno
     (append
@@ -113,5 +121,5 @@
           (:mov-eax 60) (:syscall) (:ud2))))))
 
 (defun directory-runtime-units ()
-  (list (directory-errno-unit) (directory-cleanup-unit) (directory-compare-unit) (directory-compare-unit t)
+  (list (directory-map-unit) (directory-errno-unit) (directory-cleanup-unit) (directory-compare-unit) (directory-compare-unit t)
         (directory-sift-unit) (directory-sort-unit) (directory-internal-unit)))
