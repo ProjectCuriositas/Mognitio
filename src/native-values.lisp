@@ -30,10 +30,11 @@
       (dolist (block (mognitio.ir:ir-function-blocks function))
         (dolist (inst (mognitio.ir:basic-block-instructions block))
           (let ((op (mognitio.ir:instruction-op inst)) (name (value-helper-name inst)))
-            (when (and (member op '(:struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result))
+            (when (and (member op '(:io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result))
                        (not (member name seen :test #'equal)))
               (push name seen)
               (push (case op
+                      (:io.call (io-operation-unit inst context))
                       (:list.append (list-append-unit inst)) (:list.at (list-at-unit inst context))
                       (:list.buffer (list-buffer-unit inst)) (:text.slice.result (slice-result-unit inst context))
                       (t (constructor-unit inst))) units))))))

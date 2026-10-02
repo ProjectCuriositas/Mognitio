@@ -2,7 +2,7 @@ namespace App;
 template reader<T> = function(value: T): Function(): T {
     function(): T { value }
 };
-let main: Function(): Unit = function(): Unit {
+let main: Function(List<String>): Int = function(args: List<String>): Int {
 var readers: List<Function(): Int> = List<Function(): Int>[];
 loop over (List<Int>[1, 2, 3] as value: Int) {
     readers = readers->append(reader<Int>(value));
@@ -11,4 +11,4 @@ var total: Int = 0;
 loop over (readers as read: Function(): Int) {
     total = total + read();
 };
-branch when { (total == 6) == true => unit, else => panic {"fixture mismatch"} } };
+branch when { (total == 6) == true => 0, else => panic {"fixture mismatch"} } };

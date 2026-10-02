@@ -1,13 +1,13 @@
 # Test coverage
 
-The ASDF `mognitio/tests` system is the current v0.11.0 suite.
+The ASDF `mognitio/tests` system is the current v0.12.0 suite.
 Run it with `sbcl --noinform --script scripts/test.lisp`.
 A failed assertion or unavailable required facility fails the command.
 The Lisp summary counts test groups, assertions, and processes invoked through
 the general harness. Runner-owned native children and Python-suite processes
-are additional; see the [current record](../verification/v0.11.0.md).
+are additional; see the [current record](../verification/v0.12.0.md).
 
-The [test acceptance ledger](../verification/v0.11.0-testing.md) maps all 72
+The retained [test acceptance ledger](../verification/v0.11.0-testing.md) maps all 72
 cases to executable fixtures. Host/process audit details are recorded
 [separately](../verification/v0.11.0-process.md).
 
@@ -15,6 +15,13 @@ cases to executable fixtures. Host/process audit details are recorded
 
 | Files | Independent observations |
 |---|---|
+| v012-entry.py | Raw argument bytes, order, empty/literal values, strict UTF-8, entry types and application status |
+| v012-io.py, v012-files.py | CL/native exact I/O bytes, invalid paths, file modes/ACLs, symlinks/hardlinks, chunk boundaries, real SIGXFSZ and broken pipes |
+| v012-execution.py | Ordinary function values and evaluation order, initialization dependencies, repeated test instances, large escaped output and private diagnostics |
+| v012-reference.py | Distributed converter success/failure cases, language tests, changed data and source-absent native execution |
+| v012-proofs.lisp | Catalog/Core/machine/context mutations, resource cleanup paths, encoded ABI metadata and incremental UTF-8 state |
+| v012-host.lisp | Complete signal-action restoration, guard/close/storage failures, partial transfers, allocation cleanup, protocol framing and all five pipe acquisitions |
+| v012-native.lisp | Real syscall faults and traces, close precedence, cleanup before allocation failure, small-heap GC, real child/runner file limits and signal bootstrap failures |
 | v011-testing.py | Public test CLI, attributes, assertion semantics and positions, discovery, entry independence, input preservation, large raw payloads, actual closed output pipes |
 | v011-proofs.lisp | Checked metadata and TestPlan mutations, wrapper proof, R8-R11 stage pressure with native execution, nested generic identity and small-heap capture |
 | v011-runner.lisp | Command interruption accounting, preparation ownership, reap/fd safety, shared initialization, actual signal termination and output failures |
@@ -33,8 +40,8 @@ cases to executable fixtures. Host/process audit details are recorded
 | generated, native-generated | Independent Boolean-tree evaluator, deterministic cold/warm and relocated builds |
 | native-ir, native-process | Internal kernel SSA/encoder/ELF checks, kernel invocation, path handling, phase stopping, faults, output isolation, standalone execution |
 | v04-allocation, v05-core | Parallel copies, spills, large frames, loop phi/backedge liveness, alternative block orders |
-| v09-examples | Every distributed project through public run and native paths; asserts the catalog is nonempty |
-| v010-projects.lisp | Unit main migration of the language matrix, cross-module GC stress, independent project proof mutations, reader and publication faults, symbolic signature proof rejection |
+| v09-examples | Silent examples through public run/native; the converter uses v012-reference.py |
+| v010-projects.lisp | Current argument/status entry migration of the language matrix, cross-module GC stress, independent project proof mutations, reader and publication faults, symbolic signature proof rejection |
 | v010-projects.py | Public project CLI grammar, manifests, imports, visibility, identities, initialization, path boundaries, deterministic relocated images, symbolic generic visibility, directory classification, PATH invocation and standalone execution |
 
 The short frontend command is `sbcl --noinform --script scripts/test-v09-frontend.lisp`.
@@ -63,9 +70,9 @@ Historical validation records preserve their original counts and results.
 | Dot projection, implement/against evidence spelling, forbidden standalone underscore | Arrow member selection, witness/implements, ordinary underscore names |
 | Optional when else, on wildcard/else, untyped payload binding | Required final else for when, exhaustive named on cases, optional typed binder |
 | Slice bounds trap | Result<String,SliceError> with requested bounds and length |
-| Single-source CLI and Boolean output | Manifest project CLI with declaration-only modules and silent Unit main |
+| Single-source CLI and Boolean output | Manifest project CLI with declaration-only modules and explicit argument/status main |
 | At-sign always rejected by lexer | At-sign introduces attributes; dollar-sign fixtures retain lexical-rejection coverage |
-| ABI v4 / non-reference Function | ABI v5, closure roots and code pointers, typed List/buffer tracing |
+| ABI v4 / non-reference Function | ABI v6 context, closure roots and code pointers, typed List/buffer tracing |
 
 Retained low-level tests were migrated only where source spelling or an explicit
 oracle changed. `v09-inherited.lisp` preserves original test names for
@@ -86,7 +93,8 @@ replacement, and power-loss durability are not certified by these fixtures.
 `v010-projects.py` runs automatically after the Lisp suite. Its process checks
 are reported separately from the Lisp test/assertion/process counts.
 The current positive language matrix and all distributed examples execute through
-project loading, module checking, Unit main, and both backends.
+project loading, module checking, the current Int entry, and both backends. The converter
+uses a separate fixture with explicit argument, cwd and file expectations.
 
 `kernel-driver.lisp`, `kernel-entry.lisp`, and `kernel-cli` are test-only adapters.
 They preserve independent Boolean-tree, writer-syscall, ABI, and fault oracles

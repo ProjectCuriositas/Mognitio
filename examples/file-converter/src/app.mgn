@@ -1,0 +1,63 @@
+namespace App;
+
+use Std\Io\{IoError, readTextFile, writeTextFile, writeStdout, writeStderr};
+
+let convert: Function(String, String): Result<Unit, IoError> =
+    function(input: String, output: String): Result<Unit, IoError> {
+        let text: String = try readTextFile(input);
+        try writeTextFile(output, "# Converted\n" + text);
+        Result<Unit, IoError>::Ok(unit)
+    };
+
+let main: Function(List<String>): Int = function(args: List<String>): Int {
+    branch when {
+        args->length() == 2 => {
+            let input: String = branch on args->at(0) {
+                Result<String, IndexError>::Ok(value: String) => value,
+                Result<String, IndexError>::Err => panic { "checked argument count" },
+            };
+            let output: String = branch on args->at(1) {
+                Result<String, IndexError>::Ok(value: String) => value,
+                Result<String, IndexError>::Err => panic { "checked argument count" },
+            };
+            branch on convert(input, output) {
+                Result<Unit, IoError>::Ok => branch on writeStdout("converted\n") {
+                    Result<Unit, IoError>::Ok => 0,
+                    Result<Unit, IoError>::Err => 1,
+                },
+                Result<Unit, IoError>::Err => {
+                    discard writeStderr("conversion failed\n");
+                    1
+                },
+            }
+        },
+        else => {
+            discard writeStderr("usage: convert INPUT OUTPUT\n");
+            2
+        },
+    }
+};
+
+@test
+let convertsText: Function(): Unit = function(): Unit {
+    branch on convert("fixtures/input.txt", "fixtures/output.txt") {
+        Result<Unit, IoError>::Ok => unit,
+        Result<Unit, IoError>::Err => { assert false; unit },
+    };
+    branch on readTextFile("fixtures/output.txt") {
+        Result<String, IoError>::Ok(text: String) => {
+            assert text == "# Converted\nhello";
+            unit
+        },
+        Result<String, IoError>::Err => { assert false; unit },
+    };
+    unit
+};
+
+@test
+let missingInput: Function(): Unit = function(): Unit {
+    assert branch on readTextFile("fixtures/missing.txt") {
+        Result<String, IoError>::Ok => false,
+        Result<String, IoError>::Err => true,
+    };
+};

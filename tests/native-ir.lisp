@@ -88,7 +88,7 @@
   (signals internal-failure (mognitio.amd64:little-endian (expt 2 64) 8))
   ;; The OS adapter aligns the stack, clears RBP, and calls the entry function.
   (let ((code (mognitio.amd64:encode (mognitio.machine:lower-module (native-ir "true")))))
-    (same (hex-bytes "4889e24883e4f04831ed") (subseq code 0 10))))
+    (same (hex-bytes "4989e04889e24883e4f04831ed") (subseq code 0 13))))
 
 
 
@@ -106,7 +106,7 @@
     (is (< (image-integer image 24 8)
            (+ (image-integer image 80 8) (image-integer image 104 8))))
     (same 0 (mod (image-integer image 80 8) (image-integer image 112 8)))
-    (same (hex-bytes "4889e24883e4f04831ed") (subseq image 128 138))))
+    (same (hex-bytes "4989e04889e24883e4f04831ed") (subseq image 128 141))))
 
 (deftest v04-function-core-boundary
   (let* ((module (native-ir "true"))

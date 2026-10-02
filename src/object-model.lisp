@@ -10,15 +10,16 @@
 
 (defun symbol-kind (name)
   (cond
+    ((equal name '(:runtime-context 6)) :metadata)
     ((keywordp name) :code)
     ((and (listp name) (= (length name) 2) (eq (first name) :assertion-site)
           (typep (second name) '(integer 0 *))) :metadata)
     ((and (listp name) (= (length name) 2) (eq (first name) :text)
           (typep (second name) '(integer 0 *))) :text)
     ((and (listp name) (= (length name) 2) (eq (first name) :runtime)
-          (member (second name) '(:allocate :allocate-block :collect :find-free :physical-size :sum :validate))) :helper)
+          (member (second name) '(:allocate :allocate-block :collect :find-free :physical-size :sum :validate :utf8.count :utf8.feed :arguments :io.signals :io.map :io.close :io.cleanup :io.cleanup-all :io.errno))) :helper)
     ((and (listp name) (= (length name) 2) (eq (first name) :helper)
-          (consp (second name)) (member (first (second name)) '(:struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result))) :helper)
+          (consp (second name)) (member (first (second name)) '(:io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result))) :helper)
     ((and (listp name) (= 3 (length name)) (eq :static-object (first name)) (member (second name) '(:list :buffer :closure))) :object)
     ((and (listp name) (= 2 (length name)) (eq :layout (first name)) (consp (second name))) :metadata)
     ((and (listp name) (member (first name) '(:descriptor :method-table))
@@ -34,7 +35,7 @@
                   (every (lambda (id) (typep id '(integer 0 *))) (rest name))))))
      (if (eq (first name) :function) :function :code))
     ((and (listp name) (= 2 (length name)) (eq (first name) :data)
-          (member (second name) '(:true :false :overflow :division-by-zero :remainder-by-zero :string-index-out-of-bounds :string-size-overflow :list-length-overflow :allocation-failed))) :data)
+          (member (second name) '(:true :false :overflow :division-by-zero :remainder-by-zero :string-index-out-of-bounds :string-size-overflow :list-length-overflow :allocation-failed :invalid-exit-status :invalid-argument))) :data)
     (t (internal-error "Invalid image symbol"))))
 
 (defun layout-units (units)

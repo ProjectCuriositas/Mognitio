@@ -1,8 +1,8 @@
 (in-package #:mognitio.project)
 
-(defstruct project manifest manifest-source (entry-policy :normal) root name namespace name-span modules entry inputs order)
+(defstruct project standard manifest manifest-source (entry-policy :normal) root name namespace name-span modules entry inputs order)
 (defstruct source-module path source namespace tokens imports declarations program names dependencies)
-(defstruct module-declaration module name kind public token node key attributes prefix-span)
+(defstruct module-declaration (origin :user) module name kind public token node key attributes prefix-span)
 (defstruct module-import namespace name alias span target)
 
 (defun escaped-path (bytes)
@@ -39,7 +39,7 @@
           (multiple-value-bind (name namespace name-span) (manifest-values source)
             (unless (and (plusp (length name)) (char<= #\a (char name 0) #\z)
                          (every (lambda (c) (or (char<= #\a c #\z) (char<= #\0 c #\9) (eql c #\_))) name)
-                         (namespace-parts namespace))
+                         (namespace-parts namespace) (not (standard-namespace-p namespace)))
               (input-error manifest "Invalid project name or root namespace"))
             (labels
                 ((walk (raw relative)

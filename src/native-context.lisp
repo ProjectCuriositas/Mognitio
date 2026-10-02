@@ -19,7 +19,16 @@
 (defconstant +trace+ 112)
 (defconstant +peak-live+ 184)
 (defconstant +peak-roots+ 192)
-(defconstant +context-size+ 240)
+(defparameter +initial-stack+ (context-field-offset :initial-stack))
+(defparameter +argument-root+ (context-field-offset :argument-root))
+(defparameter +arguments+ (context-field-offset :arguments))
+(defparameter +cleanup-head+ (context-field-offset :cleanup-head))
+(defparameter +context-size+ (runtime-context-layout-size (build-runtime-context-layout nil)))
+
+(defun argument-image-p ()
+  (and *runtime-module*
+       (eq :int (mognitio.ir:ir-function-result-type
+                  (find 0 (mognitio.ir:module-functions *runtime-module*) :key #'mognitio.ir:ir-function-id)))))
 
 (defun option (key &optional default) (getf *test-options* key default))
 (defun bump (offset &optional (amount 1))
@@ -45,14 +54,22 @@
 (defun entry-forms ()
   ;; Read the initial stack before reserving fresh, aligned context storage.
   (append
-   '((:mov-reg :rdx :rsp) (:align-stack) (:clear-frame) (:add-imm :rdx 8)
+   '((:mov-reg :r8 :rsp) (:mov-reg :rdx :rsp) (:align-stack) (:clear-frame) (:add-imm :rdx 8)
      (:label :skip-argv) (:load-word :rax :rdx 0) (:add-imm :rdx 8) (:test) (:jnz :skip-argv)
      (:label :skip-env) (:load-word :rax :rdx 0) (:add-imm :rdx 8) (:test) (:jnz :skip-env)
      (:label :auxv) (:load-word :rax :rdx 0) (:test) (:jz :bad-auxv)
      (:cmp-imm :rax 6) (:jz :have-pagesize) (:add-imm :rdx 16) (:jmp :auxv)
      (:label :have-pagesize) (:load-word :rax :rdx 8) (:test) (:jle :bad-auxv))
-   (loop repeat (/ (+ +context-size+ (if (test-image-p) 48 0)) 8) collect '(:push-zero))
+   (loop repeat (/ (runtime-context-layout-size (build-runtime-context-layout (test-image-p))) 8) collect '(:push-zero))
    `((:mov-reg :r15 :rsp) (:store-word :r15 ,+page-size+ :rax)
+     (:store-word :r15 ,+initial-stack+ :r8)
+     (:call (:runtime :io.signals))
+     (:imm-rax ,(if (test-image-p) 1 0)) (:store-word :r15 ,(context-field-offset :report-mode) :rax)
+     ,@(when (argument-image-p)
+         `((:lea-object ,(static-name :list '(:list :string))) (:store-word :r15 ,+arguments+ :rax)
+           (:imm-rax 1) (:store-word :r15 ,(+ +argument-root+ 8) :rax)
+           (:lea-base :rax :r15 ,+argument-root+) (:store-word :r15 ,+root-head+ :rax)
+           (:call (:runtime :arguments))))
      ,@(when (test-image-p) '((:call (:helper :test.bootstrap))))
      (:call (:function 0)) (:jmp :print)
      (:label :bad-auxv) (:mov-edi 3) (:mov-eax 60) (:syscall) (:ud2))))

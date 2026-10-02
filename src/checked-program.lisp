@@ -5,6 +5,8 @@
     (boolean-literal
      (v-check (member (boolean-literal-value node) '(:true :false)) "Invalid Bool literal") (v-finish node :bool t nil))
     (void-literal (v-finish node :void t nil))
+    (mognitio.syntax::io-expression (v-io-expression node))
+    (mognitio.syntax::runtime-arguments (v-finish node '(:list :string) t nil))
     (integer-literal
      (let ((value (parse-integer (token-text (integer-literal-token node)))))
        (v-check (and (<= 0 value mognitio.integer:+maximum+) (= value (checked-literal (v-program) node))) "Invalid Int literal"))
@@ -131,7 +133,8 @@
     (setf (value-context-declarations context) (copy-type-names (value-context-declarations (checked-program-values checked)))
           (value-context-function-templates context) (copy-type-names (value-context-function-templates (checked-program-values checked))))
     (v-check (and (plusp (length signatures)) (null (signature-declaration (aref signatures 0)))
-                  (eq (if (mognitio.syntax::program-project program) :void :bool) (signature-result-type (aref signatures 0)))) "Invalid entry")
+                  (eq (if (mognitio.syntax::program-project program)
+                  (if (eq (mognitio.syntax::program-entry-policy program) :normal) :int :void) :bool) (signature-result-type (aref signatures 0)))) "Invalid entry")
     (verify-source-type-records program)
     (loop for declaration across (program-declarations program) do
       (typecase declaration

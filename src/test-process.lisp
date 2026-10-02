@@ -34,7 +34,7 @@
   (fds sb-alien:system-area-pointer) (count sb-alien:unsigned-long) (timeout sb-alien:int))
 
 (defstruct attempt-resources (pid 0) (process-state :absent) status execution-delegated
-  (fds (make-array 8 :element-type 'fixnum :initial-element -1))
+  (fds (make-array 10 :element-type 'fixnum :initial-element -1))
   (gate-byte (make-array 1 :element-type '(unsigned-byte 8) :initial-element 1)))
 (defvar *runner-hook* nil)
 (defun runner-hook (point &optional object) (when *runner-hook* (funcall *runner-hook* point object)))
@@ -69,9 +69,9 @@
           (when (or (minusp copy) (minusp closed)) (runner-io "Cannot relocate test pipe")))))))
 
 (defun spawn-attempt (attempt path)
-  (dotimes (n 4) (acquire-pipe attempt (* 2 n))) ; stdout, stderr, event, gate
+  (dotimes (n 5) (acquire-pipe attempt (* 2 n))) ; stdout, stderr, event, gate, diagnostic
   (let ((fds (attempt-resources-fds attempt)))
-    (dolist (i '(0 2 4 7))
+    (dolist (i '(0 2 4 7 8))
       (when (minusp (raw-fcntl (aref fds i) sb-posix:f-setfl sb-posix:o-nonblock))
         (runner-io "Cannot configure test pipe")))
     (sb-alien:with-alien ((actions (array sb-alien:unsigned-long 10))
@@ -86,9 +86,9 @@
         (unwind-protect
              (progn
                (check-action (actions-open a 0 "/dev/null" sb-posix:o-rdonly 0))
-               (loop for source in '(1 3 5 6) for target from 1 do
+               (loop for source in '(1 3 5 6 9) for target from 1 do
                  (check-action (actions-dup a (aref fds source) target)))
-               (check-action (actions-closefrom a 5))
+               (check-action (actions-closefrom a 6))
                (runner-hook :before-spawn attempt)
                (sb-sys:with-pinned-objects (name)
                  (let ((np (sb-sys:vector-sap name)) (result -1))
@@ -102,7 +102,7 @@
                    (unless (zerop result) (runner-io "Cannot execute test image")))))
           (actions-destroy a))))
     (runner-hook :after-spawn attempt)
-    (dolist (i '(1 3 5 6)) (close-owned-fd attempt i))))
+    (dolist (i '(1 3 5 6 9)) (close-owned-fd attempt i))))
 
 (defun delegate-start (attempt)
   (when (attempt-resources-execution-delegated attempt) (return-from delegate-start t))
@@ -146,7 +146,7 @@
               (runner-io "Cannot stop test process")))
           (loop repeat 16 until (collect-wait attempt t))
           (unless (eq (attempt-resources-process-state attempt) :reaped) (runner-io "Test process reap is unconfirmed")))))
-      (dotimes (i 8) (protect (lambda () (close-owned-fd attempt i)))))
+      (dotimes (i 10) (protect (lambda () (close-owned-fd attempt i)))))
     (when failure (error failure))))
 
 (sb-alien:define-alien-routine ("signal" raw-signal) sb-alien:unsigned-long

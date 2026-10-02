@@ -1,11 +1,11 @@
 namespace App;
 use App\Domain\{Page, Printable, PagePrintable, makePage};
 
-let main: Function(): Unit = function(): Unit {
+let main: Function(List<String>): Int = function(args: List<String>): Int {
     let page: Page = makePage("Multiple modules");
     let printable: Printable = Printable(page);
     branch when {
-        printable->text() == "Multiple modules" => unit,
+        printable->text() == "Multiple modules" => 0,
         else => panic { "Unexpected page text" }
     }
 };

@@ -18,7 +18,7 @@
 (defun accept-event (reader)
   (let* ((bytes (event-reader-buffer reader)) (tag (word-at bytes 6 2))
          (stage (word-at bytes 24 4)) (kind (word-at bytes 28 4)) (site (word-at bytes 32 8)))
-    (unless (and (= (word-at bytes 0 4) #x544e474d) (= (word-at bytes 4 2) 1)
+    (unless (and (= (word-at bytes 0 4) #x544e474d) (= (word-at bytes 4 2) 2)
                  (= (word-at bytes 8 8) (event-reader-ordinal reader))
                  (= (word-at bytes 16 8) (event-reader-sequence reader))
                  (not (event-reader-terminal reader)))

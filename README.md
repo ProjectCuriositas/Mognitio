@@ -2,8 +2,8 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-The v0.11.0 release adds built-in assertions, declaration attributes,
-and native test execution to the project-module language.
+The v0.12.0 increment adds runtime arguments, explicit exit status, UTF-8 file
+and standard-stream I/O, and separate application output in native tests.
 
 ## Start here
 
@@ -11,7 +11,8 @@ and native test execution to the project-module language.
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
 - [Release validation](verification/v0.11.0-release.md): pinned release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
-- [Implementation verification](verification/v0.11.0.md): evidence and limits.
+- [File converter](examples/file-converter/README.md): arguments and text I/O.
+- [Implementation verification](verification/v0.12.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
 
@@ -48,12 +49,13 @@ Compiler contributors can invoke the launcher directly from its checkout:
 ./example
 ```
 
-Normal execution returns silently with exit 0. Build also succeeds silently.
+Normal execution returns the main function's status without printing its result.
+Build succeeds silently. Application I/O is explicit.
 Test execution prints per-test results and a summary; see the [test guide](examples/testing/README.md).
 The generated Linux amd64 ELF needs no compiler, source, libc, dynamic loader,
 or cache at runtime. Build checks all sources without executing initializers.
 
-The commands are `run <mognitio.toml>`, `test <mognitio.toml>`,
+The commands are `run <mognitio.toml> [-- arguments...]`, `test <mognitio.toml>`,
 and `build <mognitio.toml> -o <artifact>`.
 Relative paths use the caller's directory. The output parent must exist.
 All inputs and future `.mgn` sources are protected against output replacement,
@@ -74,17 +76,17 @@ root_namespace = "App"
 The entry is `src/app.mgn`. Every source is one module, with a namespace matching
 the root namespace plus its directories. Multiple files can share a namespace.
 All modules contain declarations only. The entry declares its own immutable
-`main` binding of type `Function(): Unit`:
+`main` binding of type `Function(List<String>): Int`:
 
 ```mgn
 namespace App;
 use App\Domain\{Page, Printable, PagePrintable, makePage};
 
-let main: Function(): Unit = function(): Unit {
+let main: Function(List<String>): Int = function(args: List<String>): Int {
     let page: Page = makePage("Multiple modules");
     let printable: Printable = Printable(page);
     branch when {
-        printable->text() == "Multiple modules" => unit,
+        printable->text() == "Multiple modules" => 0,
         else => panic { "Unexpected page text" }
     }
 };
@@ -115,19 +117,35 @@ structural work, indexing is linear, and a complete traversal prepares one
 forward buffer in linear time. Allocator, GC, and loop body costs are separate.
 Invalid indexing and String slicing return `Result` values.
 
+## Arguments and I/O
+
+The main function receives arguments after `--` for `run`, or after the executable
+name for native programs. Empty strings and a second `--` remain literal data.
+Every argument must be valid UTF-8 before any user initializer executes. The
+returned Int must be 0 through 255; another value is a runtime failure.
+
+Import ordinary functions explicitly from `Std\Io`: `readTextFile`,
+`writeTextFile`, `readStdin`, `writeStdout`, and `writeStderr`. They return
+`Result<String, IoError>` for reads or `Result<Unit, IoError>` for writes.
+Expected I/O errors are values; discarding an Err does not change exit status.
+See the [converter guide](examples/file-converter/README.md) for signatures,
+error fields, resource behavior, and runnable examples.
+
 ## Results and failures
 
 | Exit | Meaning |
 |---|---|
-| 0 | Successful run, build, or test suite (including zero tests) |
+| 0 | Successful build or test suite (including zero tests) |
 | 1 | Source, lexical, parse, name, or type error |
-| 2 | Invocation, manifest, input path, or file I/O error |
+| 2 | Compiler/runner I/O, invocation, manifest, or argument startup error |
 | 3 | Internal compiler, execution, or bootstrap failure |
 | 4 | Detected runtime failure or panic |
 | 5 | Assertion failure |
 | 6 | Abnormal termination of a started test |
 
-Normal run/native runtime failures leave stdout empty. Test execution writes
+The table describes compiler/runner and language failure classifications. A
+normal application may explicitly return any status from 0 through 255.
+Application stdout/stderr emitted before a failure remains visible. Test execution writes
 results and summary to stdout; see the [test guide](examples/testing/README.md)
 for failure precedence and command interruption. Panic writes `panic: ` followed by the
 message bytes and a newline. Other detected failures use `runtime error: ` and
@@ -139,8 +157,8 @@ entries must be regular files; FIFOs, sockets, and devices are rejected before
 reading. An empty directory named `ignored.mgn` is not a source input. If it
 contains a source, its directory name must satisfy the namespace identifier rules.
 
-Before v1.0.0, backwards compatibility is not guaranteed. The old single-source
-CLI and `bin/mognitio` command are removed. Package registries, external
+Before v1.0.0, backwards compatibility is not guaranteed. The old Unit main, single-source
+CLI, and `bin/mognitio` command are removed. Package registries, external
 dependencies, and separate compilation are outside this version's scope.
 
 ## Test
@@ -151,6 +169,6 @@ git diff --check
 sha256sum -c verification/SHA256SUMS
 ```
 
-The full suite requires a non-root Linux amd64 host, Python 3, and permission
-to trace its own child processes. Test allocation and collection controls are
+The full suite requires a non-root Linux amd64 host, Python 3, `strace`, the
+`getfacl`/`setfacl` utilities, and permission to trace its own child processes. Test allocation and collection controls are
 internal bindings, with no public CLI or environment-variable switches.
