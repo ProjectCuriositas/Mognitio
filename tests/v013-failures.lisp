@@ -1,0 +1,140 @@
+(in-package #:mognitio.tests)
+
+(defun v13-operation-arms (expected)
+  (format nil "~{~A~^,~}"
+    (loop for name in '("ReadTextFile" "WriteTextFile" "ReadStdin" "WriteStdout" "WriteStderr" "JoinPath" "ReadDirectory" "CreateDirectory")
+          collect (format nil "IoOperation::~A=>~A" name (if (equal expected name) "true" "false")))))
+(defun v13-error-body (call success operation kind subject)
+  (format nil "branch on ~A{Result<~A,IoError>::Ok=>1,Result<~A,IoError>::Err(error:IoError)=>{assert error->subject==~S;assert branch on error->operation{~A};branch on error->kind{~A}}}"
+          call success success subject (v13-operation-arms operation) (v13-kind-arms kind)))
+(defun v13-trace (image &optional injection)
+  (let ((trace (fresh-path ".trace")))
+    (multiple-value-bind (out err code)
+        (process-result (append (list "strace" "-qq" "-s" "80" "-e"
+                                      "trace=openat,getdents64,newfstatat,mkdirat,close,mmap,munmap,write,exit" "-o" (namestring trace))
+                                (when injection (list "-e" (concatenate 'string "inject=" injection))) (list (namestring image))))
+      (values out err code (uiop:read-file-string trace)))))
+
+(deftest v013-native-phase-faults
+  (let ((root (v13-directory)))
+    (put-text (pathname (concatenate 'string root "/child")) "x")
+    (dolist (case '((:scan -9) (:scan -20) (:scan -14) (:scan -22) (:scan -5000)
+                    (:child-stat -9) (:child-stat -22) (:close -9) (:close 1)))
+      (destructuring-bind (phase status) case
+        (let ((image (v12-native (v13-manifest (format nil "discard readDirectory(~S);0" root))
+                                (list :directory-faults (list (list phase 1 status))))))
+          (multiple-value-bind (out err code trace) (v13-trace image)
+            (same 3 code) (same "" out) (is (search "internal error" err))
+            (let ((close (search "close(3)" trace)) (unmap (search "munmap(" trace)) (report (search "write(2," trace)))
+              (is (and close unmap report (< close report) (< unmap report)))
+              (same 1 (count-if (lambda (line) (search "close(3)" line)) (uiop:split-string trace :separator '(#\Newline)))))))))
+    (dolist (case '((:scan -13 "PermissionDenied" nil) (:child-stat -2 "NotFound" t)
+                    (:child-stat -13 "PermissionDenied" t) (:close -5 "Other" nil)
+                    (:close -12 "ResourceExhausted" nil)))
+      (destructuring-bind (phase status kind child-p) case
+        (same 0 (v13-native-code
+          (v13-error-body (format nil "readDirectory(~S)" root) "List<DirectoryEntry>" "ReadDirectory" kind
+                         (if child-p (concatenate 'string root "/child") root)) ""
+          (list :directory-faults (list (list phase 1 status)))))))
+    (same 0 (v13-native-code (format nil "discard readDirectory(~S);0" root) "" '(:directory-faults ((:scan 1 -4) (:child-stat 1 -4)))))
+    (same 0 (v13-native-code (v13-error-body (format nil "readDirectory(~S)" root) "List<DirectoryEntry>" "ReadDirectory" "NotFound" (concatenate 'string root "/child"))
+                            "" '(:directory-faults ((:child-stat 1 -2) (:close 1 -5)))))
+    (dolist (errno '(31 22 14))
+      (let ((path (concatenate 'string root "/new")))
+        (if (= errno 14)
+            (multiple-value-bind (out err code) (process-result (list (namestring (v12-native (v13-manifest (format nil "discard createDirectory(~S);0" path))
+              (list :directory-faults (list (list :mkdir 1 (- errno))))))))
+              (same "" out) (same 3 code) (is (search "internal error" err)))
+            (same 0 (v13-native-code (v13-error-body (format nil "createDirectory(~S)" path) "Unit" "CreateDirectory"
+                                                      (if (= errno 31) "ResourceExhausted" "Other") path)
+                                    "" (list :directory-faults (list (list :mkdir 1 (- errno)))))))
+        (is (not (probe-file path)))))))
+
+(deftest v013-native-runtime-cleanup
+  (let ((root (v13-directory)))
+    (put-text (pathname (concatenate 'string root "/entry")) "x")
+    ;; Allocation one creates the capturing main closure. The next five construct
+    ;; the name, kind, entry, list node and Result after closing the directory.
+    (loop for ordinal from 2 to 6 do
+      (multiple-value-bind (out err code trace)
+          (v13-trace (v12-native (v13-manifest (format nil "discard readDirectory(~S);0" root)) (list :fail-allocation ordinal)))
+        (same "" out) (same 4 code) (is (search "allocation failure" err))
+        (let ((report (search "write(2," trace)))
+          (is report) (is (search "close(3)" trace :end2 report)) (is (search "munmap(" trace :end2 report)))))
+    (dolist (case (list (list "discard joinPath(\"a\",\"b\");0" "string length overflow")
+                       (list (format nil "discard readDirectory(~S);0" root) "list length overflow")))
+      (multiple-value-bind (out err code)
+          (process-result (list (namestring (v12-native (v13-manifest (first case)) '(:directory-length-limit 0)))))
+        (same "" out) (same 4 code) (is (search (second case) err))))))
+
+(defun v13-internal-suite (root marker stage &optional (first "unit"))
+  (let ((operation (format nil "discard readDirectory(~S);unit" root)))
+    (project-fixture
+      (list (cons "a.mgn" (format nil "namespace App;@test let a:Function():Unit=function():Unit{~A};" first))
+            (cons "b.mgn" (format nil "namespace App;~A~A@test let b:Function():Unit=function():Unit{~A};~A"
+                                   *v12-imports* *v13-imports* (if (= stage 2) operation "unit")
+                                   (if (= stage 1) (format nil "let init:Unit={~A};" operation) "")))
+            (cons "c.mgn" (format nil "namespace App;~A@test let c:Function():Unit=function():Unit{discard writeTextFile(~S,\"wrong\");unit};" *v12-imports* marker))))))
+
+(deftest v013-internal-runner-real-helper
+  (dolist (stage '(1 2))
+    (dolist (faults '(((:scan 1 -9)) ((:child-stat 1 -13) (:close 1 -9))))
+      (let* ((root (v13-directory)) (marker (namestring (fresh-path ".marker")))
+             (before (v11-fd-snapshot)) (attempts nil) (paths nil)
+             (mognitio.native.runtime::*test-options* (list :directory-faults faults)))
+        (put-text (pathname (concatenate 'string root "/entry")) "x")
+        (multiple-value-bind (out err code)
+            (v11-driver (v13-internal-suite root marker stage)
+              (lambda (point object)
+                (when (eq point :before-spawn) (push object attempts))
+                (when (eq point :image-created) (push (mognitio.testing::test-case-path object) paths))))
+          (same 3 code) (is (search "total=3 passed=1 failed=0 errors=0 aborted=1 not_run=1" out))
+          (is (search (if (= stage 1) "stage=initialization" "stage=body") err))
+          (is (search "Native child detected an internal runtime inconsistency" err))
+          (is (not (probe-file marker))) (same 2 (length attempts))
+          (same (* 123 256) (mognitio.testing::attempt-resources-status (first attempts))))
+        (mapc #'v11-assert-released attempts) (same before (v11-fd-snapshot))
+        (dolist (path paths) (is (not (probe-file path)))))))
+  (dolist (case '(("assert false;" "passed=0 failed=1 errors=0 aborted=1 not_run=1")
+                  ("panic{\"first\"}" "passed=0 failed=0 errors=1 aborted=1 not_run=1")))
+    (let ((mognitio.native.runtime::*test-options* '(:directory-faults ((:scan 1 -9)))))
+      (multiple-value-bind (out err code)
+          (v11-driver (v13-internal-suite (v13-directory) (namestring (fresh-path ".marker")) 2 (first case)))
+        (declare (ignore err)) (same 3 code) (is (search (second case) out))))))
+
+(deftest v013-private-status-classifier
+  ;; Status is classified after wait AND EOF, independently of ready/running.
+  (dolist (state '(:not-run :running))
+    (dolist (partial '(0 7))
+      (dolist (terminal '(nil (0 . 18446744073709551615)))
+        (let ((attempt (mognitio.testing::make-attempt-resources :process-state :reaped :status (* 123 256)))
+              (reader (mognitio.testing::make-event-reader :ordinal 0 :eof t :used partial :terminal terminal))
+              (test (mognitio.testing::make-test-case :state state)))
+          (signals internal-failure (mognitio.testing::commit-result attempt reader test))
+          (same state (mognitio.testing::test-case-state test))))))
+  (dolist (ready '(nil t))
+    (let ((attempt (mognitio.testing::make-attempt-resources :process-state :reaped :status (* 124 256)))
+          (reader (mognitio.testing::make-event-reader :ordinal 0 :eof t :ready ready))
+          (test (mognitio.testing::make-test-case)))
+      (signals usage-or-io-failure (mognitio.testing::commit-result attempt reader test))))
+  (same 123 mognitio.testing::+internal-child-status+)
+  (same 124 mognitio.testing::+transport-child-status+)
+  (same 3 mognitio.testing::+protocol-version+))
+
+(deftest v013-child-subject-spelling-and-repetition
+  (let ((root (v13-directory)))
+    (put-text (pathname (concatenate 'string root "/entry")) "x")
+    (uiop:with-current-directory (*temp*)
+      (dolist (path (list root (concatenate 'string root "/")
+                         (concatenate 'string "./" (file-namestring root) "//")))
+        (let* ((subject (concatenate 'string path (if (char= (char path (1- (length path))) #\/) "" "/") "entry"))
+               (body (v13-error-body (format nil "readDirectory(~S)" path) "List<DirectoryEntry>" "ReadDirectory" "PermissionDenied" subject))
+               (mognitio.io::*directory-fault-hook* (lambda (phase) (case phase (:child-stat -13) (:close -5)))))
+          (same 0 (v13-host-code body))
+          (same 0 (v13-native-code body "" '(:directory-faults ((:child-stat 1 -13) (:close 1 -5))))))))
+    (let ((body (format nil "var i:Int=0;loop while(i<100){discard readDirectory(~S);discard readDirectory(\"missing\");i=i+1;};0" root)))
+      (multiple-value-bind (out err code trace)
+          (v13-trace (v12-native (v13-manifest body)
+                                '(:directory-faults ((:child-stat 1 -13)) :arena-unit 4096 :cap 4096 :stress t :validate t)))
+        (same "" out) (same "" err) (same 0 code)
+        (same 100 (count-if (lambda (line) (search "close(3)" line)) (uiop:split-string trace :separator '(#\Newline))))))))

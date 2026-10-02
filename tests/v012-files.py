@@ -48,7 +48,7 @@ with tempfile.TemporaryDirectory(prefix="mgn-v012-files-") as temporary:
       let copy:Function():Result<Unit,IoError>=function():Result<Unit,IoError>{
         let text:String=try readTextFile(input);try writeTextFile(output,text);Result<Unit,IoError>::Ok(unit)};
       branch on copy(){Result<Unit,IoError>::Ok=>0,Result<Unit,IoError>::Err(e:IoError)=>{
-        let operation:Int=branch on e->operation{IoOperation::ReadTextFile=>{assert e->subject==input;100},IoOperation::WriteTextFile=>{assert e->subject==output;200},IoOperation::ReadStdin=>panic{"op"},IoOperation::WriteStdout=>panic{"op"},IoOperation::WriteStderr=>panic{"op"}};
+        let operation:Int=branch on e->operation{IoOperation::ReadTextFile=>{assert e->subject==input;100},IoOperation::WriteTextFile=>{assert e->subject==output;200},IoOperation::ReadStdin=>panic{"op"},IoOperation::WriteStdout=>panic{"op"},IoOperation::WriteStderr=>panic{"op"},IoOperation::JoinPath=>panic{"op"},IoOperation::ReadDirectory=>panic{"op"},IoOperation::CreateDirectory=>panic{"op"}};
         operation + branch on e->kind{''' + kinds + '}}}')
     # Each execution owns a fresh fixture: no second backend observes prior writes.
     serial = 0

@@ -41,7 +41,9 @@
              (list 'mognitio.io::invoke (mognitio.syntax::io-expression-operation node) (cons 'cl:list args)
                    (list 'cl:quote result) (list 'cl:quote error-type)
                    (list 'cl:quote (cdr (assoc "operation" fields :test #'string=)))
-                   (list 'cl:quote (cdr (assoc "kind" fields :test #'string=))))))))
+                   (list 'cl:quote (cdr (assoc "kind" fields :test #'string=)))
+                   (list 'cl:quote (gethash "standard:Std\\Io#DirectoryEntry" (mognitio.semantic::value-context-names context)))
+                   (list 'cl:quote (gethash "standard:Std\\Io#DirectoryEntryKind" (mognitio.semantic::value-context-names context))))))))
       (mognitio.syntax::test-stage *void-value*)
       (mognitio.syntax::runtime-arguments '(cl:prog1 mognitio.runtime::*arguments*
           (cl:setf mognitio.runtime::*arguments* mognitio.value::*empty-list*)))

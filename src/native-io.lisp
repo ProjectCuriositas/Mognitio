@@ -66,6 +66,8 @@
     (:load-frame :rcx -152) (:add-reg :rax :rcx) (:store-frame -152 :rax) (:jmp :write)))
 
 (defun io-operation-unit (instruction context)
+  (when (member (mognitio.ir:instruction-value instruction) '(:join-path :read-directory :create-directory))
+    (return-from io-operation-unit (directory-operation-unit instruction context)))
   (let* ((operation (mognitio.ir:instruction-value instruction))
          (number (position operation '(:read-file :write-file :read-stdin :write-stdout :write-stderr)))
          (file-p (< number 2)) (read-p (member operation '(:read-file :read-stdin)))
