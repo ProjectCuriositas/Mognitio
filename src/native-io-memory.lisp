@@ -22,10 +22,9 @@
 
 (defun io-map-unit ()
   (runtime-unit :io.map
-    (append (when (option :directory-fail-map) '((:jmp :allocation-failed)))
     '((:load-word :rsi :rsp 8) (:imm-reg :rdi 0) (:imm-rdx 3)
       (:imm-reg :r10 34) (:imm-reg :r8 -1) (:imm-reg :r9 0)
-      (:mov-eax 9) (:syscall) (:cmp-imm :rax -4095) (:jae :allocation-failed) (:ret)))))
+      (:mov-eax 9) (:syscall) (:cmp-imm :rax -4095) (:jae :allocation-failed) (:ret))))
 
 (defun io-close-unit ()
   (runtime-unit :io.close
