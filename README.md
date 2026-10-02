@@ -2,15 +2,15 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-The v0.13.0 implementation adds lexical path joining, directory enumeration
-and single-level directory creation. It extends the v0.12.0 arguments and text-I/O
-release; version-branch implementation is separate from publishing a release.
+The v0.13.0 release adds lexical path joining, directory enumeration
+and single-level directory creation, extending the arguments and text-I/O APIs.
+It is a source release for Linux amd64; no prebuilt compiler is distributed.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
-- [Release validation](verification/v0.12.0-release.md): pinned release checks.
+- [Release validation](verification/v0.13.0-release.md): pinned release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [File converter](examples/file-converter/README.md): arguments and text I/O.
 - [Directory converter](examples/directory-converter/README.md): explicit tree traversal.

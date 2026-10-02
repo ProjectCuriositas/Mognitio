@@ -10,7 +10,7 @@ The retained v0.11 [72-case ledger](v0.11.0-testing.md) and
 [process evidence](v0.11.0-process.md) describe the inherited runner.
 The [runner review fixes](v0.11.0-review.md) cover host storage recovery,
 helper frame-register preservation, and committed-result diagnostics.
-The current release validation is [v0.12.0](v0.12.0-release.md).
+The current release validation is [v0.13.0](v0.13.0-release.md).
 Run checks from the repository root on a non-root Linux amd64 host with SBCL,
 Python 3, glibc 2.34+, strace, getfacl/setfacl, and permission to trace child processes. The v0.13 different-group inheritance
 fixture additionally requires membership in a supplementary group distinct
@@ -50,6 +50,7 @@ evidence. Do not include private setup details in public records.
 
 ## Historical records
 
+- [v0.12.0 release](v0.12.0-release.md)
 - [v0.11.0 release](v0.11.0-release.md)
 
 - [v0.10.0 release](v0.10.0-release.md)
