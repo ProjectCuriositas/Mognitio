@@ -15,6 +15,7 @@ cases to executable fixtures. Host/process audit details are recorded
 
 | Files | Independent observations |
 |---|---|
+| v012-review.py, v012-review.lisp | Repeated stdin after invalid UTF-8, broken startup diagnostics, test source errors plus signal restoration failure, and ordinary nonzero status |
 | v012-entry.py | Raw argument bytes, order, empty/literal values, strict UTF-8, entry types and application status |
 | v012-io.py, v012-files.py | CL/native exact I/O bytes, invalid paths, file modes/ACLs, symlinks/hardlinks, chunk boundaries, real SIGXFSZ and broken pipes |
 | v012-execution.py | Ordinary function values and evaluation order, initialization dependencies, repeated test instances, large escaped output and private diagnostics |

@@ -29,7 +29,10 @@
 
 (defun io-read-forms ()
   (append
-    '((:label :read) (:load-frame :rax -136) (:load-frame :rcx -104) (:cmp) (:jb :capacity)
+    ;; Reserve a whole fixed-size read even after a prior short transfer. Merely
+    ;; clamping to free capacity would still differ from the host's next request.
+    '((:label :read) (:load-frame :rax -136) (:add-imm :rax 4096) (:jo :allocation-failed)
+      (:load-frame :rcx -104) (:cmp) (:jbe :capacity)
       (:test-rcx) (:jz :first-buffer) (:mov-reg :rax :rcx) (:add) (:jo :allocation-failed)
       (:jmp :grow) (:label :first-buffer) (:imm-rax 4096)
       (:label :grow) (:store-frame -168 :rax)
@@ -44,7 +47,7 @@
     '((:load-frame :rdi -96) (:load-frame :rsi -88) (:imm-rax 0) (:store-frame -96 :rax)
       (:mov-eax 11) (:syscall) (:test) (:js :os-error)
       (:label :capacity) (:load-frame :rdi -160) (:load-frame :rsi -112) (:load-frame :rax -136)
-      (:add-reg :rsi :rax) (:load-frame :rdx -104) (:sub-reg :rdx :rax)
+      (:add-reg :rsi :rax) (:mov-edx 4096)
       (:mov-eax 0) (:syscall) (:cmp-eintr) (:jz :read) (:test) (:js :os-error) (:jz :eof)
       (:store-frame -176 :rax) (:store-out 8 :rax)
       (:load-frame :rax -112) (:load-frame :rcx -136) (:add-reg :rax :rcx) (:store-out 0 :rax)

@@ -13,7 +13,7 @@
   (multiple-value-bind (command manifest output target arguments) (parse-invocation argv)
     (when (string= command "test")
       (return-from run-pipeline
-        (let ((code (mognitio.testing::run-tests manifest stdout stderr))) (values code (member code '(2 3))))))
+        (mognitio.testing::run-tests manifest stdout stderr)))
     (let ((project (mognitio.project::load-project manifest)))
       (when output (mognitio.project::validate-project-output project output))
       (let ((checked (checked-project project)))
@@ -41,6 +41,8 @@
         (values (mognitio.runtime:write-runtime-failure condition stderr) t))
       (source-failure (condition)
         (report-failure (failure-diagnostic condition) 1))
+      (mognitio.runtime::argument-startup-failure (condition)
+        (values (mognitio.runtime::write-argument-startup-failure condition stderr) t))
       (usage-or-io-failure (condition)
         (report-failure (failure-diagnostic condition) 2))
       (internal-failure (condition)
