@@ -33,6 +33,15 @@ execution. Sources outside `src` are excluded. All test images are prepared
 before any test begins. Tests execute in source-path and declaration order.
 An empty, statically valid suite succeeds without running initializers.
 
+Every test sees stdin at EOF. Application stdout/stderr is captured separately
+and reported to runner stderr with test identity, stream name and escaped bytes.
+NUL, newlines and partial UTF-8 bytes cannot impersonate a result or summary.
+Runtime diagnostics use a separate private channel. Large application output is
+drained while the child runs; no application-output size limit is imposed.
+
+Filesystem changes remain visible to later tests even though language state is
+fresh. The runner supplies no per-test filesystem sandbox or rollback.
+
 Results and summary counts go to stdout; failure details go to stderr.
 Diagnostics identify the test, initialization/body stage when known, failure
 kind, and the assertion location where applicable. A test failure permits the
