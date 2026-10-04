@@ -8,7 +8,7 @@
            (program (mognitio.project::standard-catalog-program catalog))
            (types (program-declarations program)) (bindings (program-statements program))
            (function (local-binding-initializer (aref bindings 6))) (body (function-expression-body function)))
-      (same 5 (length types)) (same 8 (length bindings))
+      (same 6 (length types)) (same 8 (length bindings))
       (ecase mutation
         (:entry-field (setf (named-member-value (aref (data-declaration-members (aref types 4)) 1))
                            (named-member-value (aref (data-declaration-members (aref types 4)) 0))))

@@ -19,8 +19,8 @@
       (loop for kind in '(0 2 3 4 6) append
         `((:label ,(intern (format nil "KIND-~D" kind) :keyword)) (:imm-rax ,kind) (:ret))))))
 
-(defun directory-cleanup-unit ()
-  (runtime-unit :directory.cleanup
+(defun directory-cleanup-unit (&optional (name :directory.cleanup))
+  (runtime-unit name
     (append (helper-frame 8)
       '((:load-frame :rax 16) (:store-frame -8 :rax) (:store-out 0 :rax)
         (:load-word :rdx :rax 8) (:cmp-imm :rdx -1) (:jl :bad-fd) (:jmp :close)

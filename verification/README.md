@@ -1,7 +1,8 @@
 # Verification
 
-The current implementation record is [v0.13.0](v0.13.0.md), with its
-[42-condition public ledger](v0.13.0-conformance.md) and [internal gates](v0.13.0-internals.md).
+The current implementation record is [v0.14.0](v0.14.0.md), with its
+[coverage ledger](v0.14.0-conformance.md). The inherited [v0.13.0 record](v0.13.0.md)
+has a [42-condition ledger](v0.13.0-conformance.md) and [internal gates](v0.13.0-internals.md).
 The [v0.13 review corrections](v0.13.0-review.md) cover directory mmap errno
 classification and independent verification of internal-failure latch paths.
 The [v0.12 review corrections](v0.12.0-review.md) cover repeated stdin consumption

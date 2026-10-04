@@ -42,6 +42,7 @@
                    (list 'cl:quote result) (list 'cl:quote error-type)
                    (list 'cl:quote (cdr (assoc "operation" fields :test #'string=)))
                    (list 'cl:quote (cdr (assoc "kind" fields :test #'string=)))
+                   (list 'cl:quote (cdr (assoc "phase" fields :test #'string=)))
                    (list 'cl:quote (gethash "standard:Std\\Io#DirectoryEntry" (mognitio.semantic::value-context-names context)))
                    (list 'cl:quote (gethash "standard:Std\\Io#DirectoryEntryKind" (mognitio.semantic::value-context-names context))))))))
       (mognitio.syntax::test-stage *void-value*)
@@ -119,6 +120,8 @@
                  (append
                    (list (ecase (operation-info-kind info)
                            (:text.length 'mognitio.text:text-length)
+                           (:text.scalars 'mognitio.value::text-scalars)
+                           (:text.join 'mognitio.value::text-join)
                            (:text.slice.result 'mognitio.value::text-slice-result)
                            (:list.length 'mognitio.value::list-length-value)
                            (:list.append 'mognitio.value::list-append-value)

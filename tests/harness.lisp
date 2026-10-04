@@ -59,11 +59,11 @@
          (code (mognitio.tests.kernel::run-cli argv out err)))
     (values (get-output-stream-string out) (get-output-stream-string err) code)))
 
-(defun process-result (argv &key directory (timeout 20))
+(defun process-result (argv &key directory input binary-error (timeout 20))
   ;; Files avoid pipe-buffer deadlocks while the parent enforces the timeout.
   (let* ((out (fresh-path ".stdout")) (err (fresh-path ".stderr"))
          (process (uiop:launch-program argv :directory (or directory *temp*)
-                                            :input nil :output out :error-output err))
+                                            :input input :output out :error-output err))
          (deadline (+ (get-internal-real-time)
                       (* timeout internal-time-units-per-second))))
     (incf *processes*)
@@ -75,7 +75,7 @@
                     (sleep 0.01))
            (let ((code (uiop:wait-process process)))
              (values (uiop:read-file-string out :external-format :utf-8)
-                     (uiop:read-file-string err :external-format :utf-8) code)))
+                     (if binary-error (read-bytes err) (uiop:read-file-string err :external-format :utf-8)) code)))
       (when (uiop:process-alive-p process)
         (uiop:terminate-process process :urgent t))
       (uiop:wait-process process)

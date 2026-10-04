@@ -6,7 +6,7 @@
 (defun operation-effects (op)
   (case op
     (:io.call '(:external-effect :may-allocate :may-fail :call-barrier))
-    ((:call :call.value :call.interface :closure.call :closure.make :list.append :list.at :list.buffer :text.slice.result :struct.make :enum.make :interface.pack :text.concat :text.slice) '(:may-allocate :may-fail :call-barrier))
+    ((:call :call.value :call.interface :closure.call :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result :struct.make :enum.make :interface.pack :text.concat :text.slice) '(:may-allocate :may-fail :call-barrier))
     (:test.stage '(:may-fail :call-barrier))
     ((:text.length :text.equal :text.not-equal) '(:call-barrier))
     ((:neg :add :sub :mul :div :rem) '(:may-fail))))
