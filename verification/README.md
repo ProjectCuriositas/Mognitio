@@ -1,5 +1,8 @@
 # Verification
 
+The [v0.14 review corrections](v0.14.0-review.md) cover first file close,
+scalar root lifetime, and primary-phase guard verification.
+
 The current implementation record is [v0.14.0](v0.14.0.md), with its
 [coverage ledger](v0.14.0-conformance.md). The inherited [v0.13.0 record](v0.13.0.md)
 has a [42-condition ledger](v0.13.0-conformance.md) and [internal gates](v0.13.0-internals.md).
