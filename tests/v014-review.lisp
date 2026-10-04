@@ -115,3 +115,34 @@
                                (error 'sb-posix:syscall-error :name "close" :errno sb-posix:ebadf)))
       (signals internal-failure (mognitio.io::file-operation :read-file (v12-text (namestring path)) nil)))
     (same 1 calls)))
+
+(deftest v014-review-proof-state-coverage
+  (let* ((unit (v14-review-unit :read-directory)) (forms (v14-review-forms unit))
+         (at (position '(:cmp-imm :rcx -1) forms :test #'equal :from-end t)))
+    ;; This guard is wrong only for Other, not the old NotFound sample.
+    (setf (nth at forms) '(:cmp-imm :rcx 7))
+    (v14-review-set unit forms)
+    (signals internal-failure (mognitio.native.runtime::verify-v014-phase-shape unit)))
+  (let* ((unit (v14-review-unit :read-stdin)) (forms (v14-review-forms unit))
+         (at (position '(:store-word :r15 272 :rax) forms :test #'equal :from-end t)))
+    (v14-review-set unit (append (subseq forms 0 (1+ at)) '((:imm-rax 2) (:store-frame -400 :rax)) (nthcdr (1+ at) forms)))
+    (signals internal-failure (mognitio.native.runtime::verify-v014-phase-shape unit)))
+  (let* ((unit (v14-review-unit :text.scalars)) (forms (v14-review-forms unit))
+         (at (position '(:call (:runtime :allocate-block)) forms :test #'equal)))
+    (v14-review-set unit (append (subseq forms 0 at) '((:imm-rax 0) (:store-word :rbp -24 :rax)) (nthcdr at forms)))
+    (signals internal-failure (mognitio.native.runtime::verify-text-collection-helper unit))))
+
+(deftest v014-review-native-primary-runtime
+  ;; Fail read scratch acquisition before a language value is allocated, then
+  ;; make the cleanup close report invalid ownership. Keep the original runtime.
+  (let* ((path (put-text (fresh-path ".txt") "ok"))
+         (image (v12-native (v13-manifest (format nil "discard readTextFile(~S);0" (namestring path)))))
+         (trace (fresh-path ".trace")))
+    (multiple-value-bind (out err code)
+        (process-result (list "strace" "-qq" "-e" "trace=mmap,munmap,close,write,exit"
+                              "-e" "inject=mmap:error=ENOMEM:when=3" "-e" "inject=close:error=EBADF:when=1"
+                              "-o" (namestring trace) (namestring image)))
+      (same "" out) (same 4 code) (is (search "allocation failure" err))
+      (let ((log (uiop:read-file-string trace)))
+        (is (search "ENOMEM" log)) (is (search "EBADF" log))
+        (is (< (search "munmap(" log) (search "write(2," log)))))))

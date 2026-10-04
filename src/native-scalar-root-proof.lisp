@@ -6,6 +6,10 @@
   (let ((code (coerce forms 'vector)) (labels (make-hash-table :test #'equal))
         (queue (list (list 0 :idle nil 0 0 0 :unknown :unknown)))
         (seen (make-hash-table :test #'equal)))
+    (dolist (f forms)
+      (when (or (and (eq (first f) :lea-base) (eq (third f) :rbp) (member (fourth f) '(-8 -16 -24)))
+                (and (member (first f) '(:store-word :store-byte)) (eq (second f) :rbp) (member (third f) '(-8 -16 -24))))
+        (internal-error "Scalar root slot escapes tracked operations")))
     (loop for f across code for pc from 0 when (eq (first f) :label)
           do (setf (gethash (second f) labels) pc))
     (loop while queue for state = (pop queue) unless (gethash state seen) do
