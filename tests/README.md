@@ -120,3 +120,6 @@ nominal phase values, built-in tests, and old/new escaping equivalence.
 Run `sbcl --noinform --script tests/v014-measure.lisp` separately for bounded
 normal/small-heap allocation, collection, retained-byte and elapsed observations.
 Those observations do not establish a whole-program complexity or speedup claim.
+
+`v014-review.lisp` adds first-close precedence/resource tests and independent
+scalar-root and primary-phase control-flow mutation checks.

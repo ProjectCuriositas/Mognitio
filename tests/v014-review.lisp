@@ -1,0 +1,148 @@
+(in-package #:mognitio.tests)
+
+(defun v14-review-unit (kind)
+  (let* ((ir (mognitio.ir:lower-program (project-checked (v13-manifest "discard \"xy\"->scalars()->join(\"\");0"))))
+         (mognitio.native.runtime::*runtime-module* ir))
+    (find-if (lambda (unit) (let ((name (second (mognitio.object:code-unit-entry unit))))
+                             (and (consp name) (or (eq (first name) kind) (eq (third name) kind)))))
+             (mognitio.native.runtime::value-helper-units ir))))
+(defun v14-review-forms (unit)
+  (mapcar (lambda (i) (cons (mognitio.machine:instruction-opcode i) (mognitio.machine:instruction-operands i)))
+          (mognitio.object:code-unit-instructions unit)))
+(defun v14-review-set (unit forms)
+  (setf (mognitio.object:code-unit-instructions unit) (v13-review-instructions forms)))
+
+(deftest v014-review-file-close-host
+  (dolist (invalid '(nil t))
+    (let* ((path (put-bytes (fresh-path ".txt") (if invalid #(255) #(65))))
+           (mognitio.io::*operation-hook* (lambda (stage &rest args) (declare (ignore args))
+                                           (when (eq stage :close) (mognitio.diagnostics:internal-error "owned close failure")))))
+      (signals internal-failure (mognitio.io::file-operation :read-file (v12-text (namestring path)) nil)))))
+
+(deftest v014-review-file-close-native
+  (dolist (invalid '(nil t))
+    (let* ((path (put-bytes (fresh-path ".txt") (if invalid #(255) #(65))))
+           (image (v12-native (v13-manifest (format nil "discard readTextFile(~S);0" (namestring path))))))
+      (multiple-value-bind (out err code trace) (v13-trace image "close:error=EBADF:when=1")
+        (same "" out) (same 3 code) (is (search "internal error" err))
+        (is (search "(INJECTED)" trace))))))
+
+(deftest v014-review-scalar-early-clear
+  (let* ((unit (v14-review-unit :text.scalars)) (forms (v14-review-forms unit))
+         (clear (position '(:store-frame -24 :rax) forms :test #'equal :from-end t))
+         (pair (subseq forms (1- clear) (1+ clear))))
+    (same '((:imm-rax 0) (:store-frame -24 :rax)) pair)
+    (setf forms (append (subseq forms 0 (1- clear)) (nthcdr (1+ clear) forms)))
+    (let ((at (position '(:call (:runtime :allocate-block)) forms :test #'equal)))
+      (v14-review-set unit (append (subseq forms 0 at) pair (nthcdr at forms))))
+    (signals internal-failure (mognitio.native.runtime::verify-text-collection-helper unit))))
+
+(deftest v014-review-primary-guard
+  (let* ((unit (v14-review-unit :read-directory)) (forms (v14-review-forms unit))
+         (at (position-if (lambda (f) (and (eq (first f) :jnz) (symbolp (second f))
+                                            (search "RELEASE-0-RELEASED" (symbol-name (second f))))) forms)))
+    (is at)
+    (setf (first (nth at forms)) :jz)
+    (v14-review-set unit forms)
+    (signals internal-failure (mognitio.native.runtime::verify-v014-phase-shape unit))))
+
+(deftest v014-review-scalar-paths
+  (dolist (mutation '(:detour :branch-clear :overwrite))
+    (let* ((unit (v14-review-unit :text.scalars)) (forms (v14-review-forms unit))
+           (at (position '(:call (:runtime :allocate-block)) forms :test #'equal))
+           (extra (ecase mutation
+                    (:detour '((:jmp :review-detour) (:label :review-detour)))
+                    (:branch-clear '((:test) (:jz :review-clear) (:jmp :review-allocate)
+                                     (:label :review-clear) (:imm-rax 0) (:store-frame -24 :rax) (:label :review-allocate)))
+                    (:overwrite '((:imm-rax 1) (:store-frame -24 :rax))))))
+      (v14-review-set unit (append (subseq forms 0 at) extra (nthcdr at forms)))
+      (if (eq mutation :detour) (is (mognitio.native.runtime::verify-text-collection-helper unit))
+          (signals internal-failure (mognitio.native.runtime::verify-text-collection-helper unit))))))
+
+(deftest v014-review-all-primary-guards
+  (let ((mutations 0))
+    (dolist (operation '(:read-file :write-file :read-stdin :write-stdout :write-stderr :join-path :read-directory :create-directory))
+      (let* ((unit (v14-review-unit operation)) (forms (v14-review-forms unit))
+             (directory (member operation '(:join-path :read-directory :create-directory)))
+             (slot (if directory -96 -64)))
+        (is (mognitio.native.runtime::verify-v014-phase-shape unit))
+        (loop for f in forms for i from 0 when
+          (and (eq (first f) :jnz) (> i 1)
+               (or (and (equal (nth (- i 2) forms) (list :load-frame :rcx slot))
+                        (equal (nth (1- i) forms) '(:cmp-imm :rcx -1)))
+                   (and (not directory) (equal (nth (- i 2) forms) '(:load-frame :rcx -56))
+                        (equal (nth (1- i) forms) '(:test-rcx))))) do
+          (dolist (bypass '(nil t))
+            (let ((changed (copy-tree forms)))
+              (setf (nth i changed) (if bypass '(:label :review-bypassed-guard) (cons :jz (rest f))))
+              (v14-review-set unit changed)
+              (signals internal-failure (mognitio.native.runtime::verify-v014-phase-shape unit))
+              (incf mutations))))))
+    (is (>= mutations 50))))
+
+(deftest v014-review-file-close-resources
+  (dolist (write-p '(nil t))
+    (dolist (body-fails '(nil t))
+      (let* ((path (put-bytes (fresh-path ".txt") (if (and body-fails (not write-p)) #(255) #(65))))
+             (body (format nil "discard ~A(~S~A);0" (if write-p "writeTextFile" "readTextFile")
+                           (namestring path) (if write-p ",\"output\"" "")))
+             (image (v12-native (v13-manifest body) '(:file-close-fault -9))))
+        (multiple-value-bind (out err code trace) (v13-trace image (when (and write-p body-fails) "write:error=EIO:when=1"))
+          (same "" out) (same 3 code) (is (search "internal error" err))
+          (v13-assert-map-cleanup trace)))))
+  (dolist (invalid '(nil t))
+    (let* ((path (put-bytes (fresh-path ".txt") (if invalid #(255) #(65))))
+           (body (v14-error-body (format nil "readTextFile(~S)" (namestring path)) "String" "ReadTextFile"
+                                 (if invalid "InvalidEncoding" "Other") (namestring path) (if invalid "Body" "Cleanup"))))
+      (same 0 (v13-native-code body *v14-phase-import* '(:file-close-fault -5))))))
+
+(deftest v014-review-host-failure-precedence
+  (dolist (mode '(:io :runtime :storage))
+    (let* ((path (put-bytes (fresh-path ".txt") #(255)))
+           (closed 0) (before (v11-fd-snapshot)) (primary nil)
+           (mognitio.io::*operation-hook*
+             (lambda (stage &rest args) (declare (ignore args))
+               (when (and (eq stage :read) (not (eq mode :io)))
+                 (handler-case (if (eq mode :runtime) (mognitio.runtime:runtime-error :allocation-failed)
+                                   (error 'storage-condition))
+                   ((or error storage-condition) (e) (setf primary e) (error e))))
+               (when (eq stage :close) (incf closed) (mognitio.diagnostics:internal-error "owned close failure")))))
+      (handler-case (progn (mognitio.io::file-operation :read-file (v12-text (namestring path)) nil) (is nil))
+        ((or error storage-condition) (e) (if (eq mode :io) (is (typep e 'internal-failure)) (is (eq primary e)))))
+      (same 1 closed) (same before (v11-fd-snapshot))))
+  (let* ((path (put-text (fresh-path ".txt") "ok")) (original (fdefinition 'sb-posix:close)) (calls 0))
+    (replacing (sb-posix:close (lambda (fd) (incf calls) (funcall original fd)
+                               (error 'sb-posix:syscall-error :name "close" :errno sb-posix:ebadf)))
+      (signals internal-failure (mognitio.io::file-operation :read-file (v12-text (namestring path)) nil)))
+    (same 1 calls)))
+
+(deftest v014-review-proof-state-coverage
+  (let* ((unit (v14-review-unit :read-directory)) (forms (v14-review-forms unit))
+         (at (position '(:cmp-imm :rcx -1) forms :test #'equal :from-end t)))
+    ;; This guard is wrong only for Other, not the old NotFound sample.
+    (setf (nth at forms) '(:cmp-imm :rcx 7))
+    (v14-review-set unit forms)
+    (signals internal-failure (mognitio.native.runtime::verify-v014-phase-shape unit)))
+  (let* ((unit (v14-review-unit :read-stdin)) (forms (v14-review-forms unit))
+         (at (position '(:store-word :r15 272 :rax) forms :test #'equal :from-end t)))
+    (v14-review-set unit (append (subseq forms 0 (1+ at)) '((:imm-rax 2) (:store-frame -400 :rax)) (nthcdr (1+ at) forms)))
+    (signals internal-failure (mognitio.native.runtime::verify-v014-phase-shape unit)))
+  (let* ((unit (v14-review-unit :text.scalars)) (forms (v14-review-forms unit))
+         (at (position '(:call (:runtime :allocate-block)) forms :test #'equal)))
+    (v14-review-set unit (append (subseq forms 0 at) '((:imm-rax 0) (:store-word :rbp -24 :rax)) (nthcdr at forms)))
+    (signals internal-failure (mognitio.native.runtime::verify-text-collection-helper unit))))
+
+(deftest v014-review-native-primary-runtime
+  ;; Fail read scratch acquisition before a language value is allocated, then
+  ;; make the cleanup close report invalid ownership. Keep the original runtime.
+  (let* ((path (put-text (fresh-path ".txt") "ok"))
+         (image (v12-native (v13-manifest (format nil "discard readTextFile(~S);0" (namestring path)))))
+         (trace (fresh-path ".trace")))
+    (multiple-value-bind (out err code)
+        (process-result (list "strace" "-qq" "-e" "trace=mmap,munmap,close,write,exit"
+                              "-e" "inject=mmap:error=ENOMEM:when=3" "-e" "inject=close:error=EBADF:when=1"
+                              "-o" (namestring trace) (namestring image)))
+      (same "" out) (same 4 code) (is (search "allocation failure" err))
+      (let ((log (uiop:read-file-string trace)))
+        (is (search "ENOMEM" log)) (is (search "EBADF" log))
+        (is (< (search "munmap(" log) (search "write(2," log)))))))
