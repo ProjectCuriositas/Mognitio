@@ -40,6 +40,7 @@
                     (count '(:call (:runtime :allocate-block)) forms :test #'equal)))
       (internal-error "Text helper allocation topology changed"))
     (when (eq op :text.scalars)
+      (verify-scalar-root-flow forms)
       (dolist (required '((:store-frame -8 :rax) (:store-frame -16 :rdx) (:store-frame -24 :rax)
                           (:load-frame :rax -24) (:store-word :rdx 48 :rax)))
         (unless (member required forms :test #'equal) (internal-error "Scalar transient root missing")))
@@ -74,6 +75,7 @@
                  (member (list :load-frame :rax root) forms :test #'equal)
                  (= 1 (count '(:store-word :rdx 56 :rax) forms :test #'equal)))
       (internal-error "IoError phase is not a rooted nominal field"))
+    (verify-primary-phase-flow forms directory)
     ;; Every subsequent primary store must select final-cleanup's API phase.
     (loop for form in forms for i from 0 when (equal form (list :store-frame primary :rax)) do
       (unless (or (equal (nth (1- i) forms) (list :load-frame :rax current))
@@ -85,20 +87,20 @@
     unit))
 
 (defun verify-v014-stream-cleanup-latch (unit)
-  ;; Analyze both possible cleanup latch returns with the existing independent
-  ;; zero/nonzero CFG interpreter. It must reject clearing or bypassing the latch.
+  ;; Cover both an earlier close latch and both possible final cleanup returns.
   (let* ((forms (mapcar (lambda (i) (cons (mognitio.machine:instruction-opcode i)
                                           (mognitio.machine:instruction-operands i)))
                          (mognitio.object:code-unit-instructions unit)))
          (at (position '(:call (:runtime :io.cleanup)) forms :test #'equal)))
     (unless at (internal-error "Missing stream/file cleanup boundary"))
-    (dolist (returned '(0 1))
-      (verify-directory-latch
-        (cons (list :imm-rdx returned)
-          (mapcar (lambda (form)
-                    (cond ((and (eq (first form) :store-frame) (= (second form) -408))
-                           (list :store-frame -104 (third form)))
-                          ((and (eq (first form) :load-frame) (= (third form) -408))
-                           (list :load-frame (second form) -104))
-                          (t form))) (nthcdr (1+ at) forms)))))
+    (dolist (earlier '(0 1))
+      (dolist (returned '(0 1))
+        (verify-directory-latch
+          (append (list (list :imm-rax earlier) '(:store-frame -104 :rax) (list :imm-rdx returned))
+            (mapcar (lambda (form)
+                      (cond ((and (eq (first form) :store-frame) (= (second form) -408))
+                             (list :store-frame -104 (third form)))
+                            ((and (eq (first form) :load-frame) (= (third form) -408))
+                             (list :load-frame (second form) -104))
+                            (t form))) (nthcdr (1+ at) forms))))))
     unit))
