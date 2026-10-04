@@ -152,7 +152,7 @@
                (loop for argument in (mognitio.ir:instruction-operands inst) for offset from 0 by 8 do
                  (load-value argument) (emit :store-out offset :rax))
                (emit :call (list :function (mognitio.ir:instruction-value inst))))
-              ((:io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.slice.result)
+              ((:io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result)
                (loop for argument in (mognitio.ir:instruction-operands inst) for offset from 0 by 8 do
                  (load-value argument) (emit :store-out offset :rax))
                (emit :call (mognitio.native.runtime::value-helper-name inst)))
@@ -203,7 +203,7 @@
                (arithmetic inst)))
             (write-location (home (mognitio.ir:instruction-result inst)) :rax)
             (when (member (mognitio.ir:instruction-op inst)
-                          '(:io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.slice.result))
+                          '(:io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
               (push (list :operation (list (mognitio.ir:basic-block-id block) index) (ldiff code start)) sections))))
         (let ((term (mognitio.ir:basic-block-terminator block)))
           (ecase (first term)

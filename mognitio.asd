@@ -1,6 +1,6 @@
 (asdf:defsystem "mognitio"
   :description "Mognitio compiler"
-  :version "0.13.0"
+  :version "0.14.0"
   :depends-on ("sb-posix")
   :serial t
   :components ((:file "src/packages")
@@ -39,6 +39,7 @@
                (:file "src/assertion-runtime")
                (:file "src/value-runtime")
                (:file "src/closure-list-runtime")
+               (:file "src/text-collection-runtime")
                (:file "src/utf8-runtime")
                (:file "src/argument-runtime")
                (:file "src/io-runtime")
@@ -69,6 +70,7 @@
                (:file "src/native-memory")
                (:file "src/native-gc")
                (:file "src/native-text")
+               (:file "src/native-text-collection")
                (:file "src/native-utf8")
                (:file "src/native-arguments")
                (:file "src/native-io-memory")
@@ -78,6 +80,9 @@
                (:file "src/native-io")
                (:file "src/native-directory-proof")
                (:file "src/native-io-proof")
+               (:file "src/native-scalar-root-proof")
+               (:file "src/native-primary-phase-proof")
+               (:file "src/native-v014-proof")
                (:file "src/native-panic")
                (:file "src/native-assertion")
                (:file "src/machine-ir")
@@ -143,14 +148,18 @@
                (:file "tests/v013-records")
                (:file "tests/v013-runner")
                (:file "tests/v013-proofs")
-               (:file "tests/v013-review"))
+               (:file "tests/v013-review")
+               (:file "tests/v014-text")
+               (:file "tests/v014-io")
+               (:file "tests/v014-proofs")
+               (:file "tests/v014-review"))
   :perform (asdf:test-op (op system)
              (declare (ignore op system))
              (uiop:symbol-call :mognitio.tests :run-tests)
              (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" "tests/v010-projects.py"))) :output *standard-output* :error-output *error-output*)
              (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" "tests/v011-testing.py"))) :output *standard-output* :error-output *error-output*)
              (dolist (file '("tests/v012-entry.py" "tests/v012-io.py" "tests/v012-files.py" "tests/v012-execution.py" "tests/v012-reference.py" "tests/v012-review.py"
-                             "tests/v013-directory.py" "tests/v013-inheritance.py" "tests/v013-reference.py" "tests/v013-integration.py"))
+                             "tests/v013-directory.py" "tests/v013-inheritance.py" "tests/v013-reference.py" "tests/v013-integration.py" "tests/v014-integration.py"))
                (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" file)))
                                  :output *standard-output* :error-output *error-output*))))
 

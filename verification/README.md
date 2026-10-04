@@ -1,7 +1,11 @@
 # Verification
 
-The current implementation record is [v0.13.0](v0.13.0.md), with its
-[42-condition public ledger](v0.13.0-conformance.md) and [internal gates](v0.13.0-internals.md).
+The [v0.14 review corrections](v0.14.0-review.md) cover first file close,
+scalar root lifetime, and primary-phase guard verification.
+
+The current implementation record is [v0.14.0](v0.14.0.md), with its
+[coverage ledger](v0.14.0-conformance.md). The inherited [v0.13.0 record](v0.13.0.md)
+has a [42-condition ledger](v0.13.0-conformance.md) and [internal gates](v0.13.0-internals.md).
 The [v0.13 review corrections](v0.13.0-review.md) cover directory mmap errno
 classification and independent verification of internal-failure latch paths.
 The [v0.12 review corrections](v0.12.0-review.md) cover repeated stdin consumption
@@ -10,7 +14,7 @@ The retained v0.11 [72-case ledger](v0.11.0-testing.md) and
 [process evidence](v0.11.0-process.md) describe the inherited runner.
 The [runner review fixes](v0.11.0-review.md) cover host storage recovery,
 helper frame-register preservation, and committed-result diagnostics.
-The current release validation is [v0.13.0](v0.13.0-release.md).
+The current release validation is [v0.14.0](v0.14.0-release.md).
 Run checks from the repository root on a non-root Linux amd64 host with SBCL,
 Python 3, glibc 2.34+, strace, getfacl/setfacl, and permission to trace child processes. The v0.13 different-group inheritance
 fixture additionally requires membership in a supplementary group distinct
@@ -49,6 +53,8 @@ Follow [contribution guidelines](../CONTRIBUTING.md) and publish sanitized
 evidence. Do not include private setup details in public records.
 
 ## Historical records
+
+- [v0.13.0 release](v0.13.0-release.md)
 
 - [v0.12.0 release](v0.12.0-release.md)
 - [v0.11.0 release](v0.11.0-release.md)

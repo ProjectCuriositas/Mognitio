@@ -2,19 +2,19 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-The v0.13.0 release adds lexical path joining, directory enumeration
-and single-level directory creation, extending the arguments and text-I/O APIs.
-It is a source release for Linux amd64; no prebuilt compiler is distributed.
+Version 0.14.0 adds scalar decomposition, text joining, and explicit
+I/O failure phases.
+The compiler targets Linux amd64; no prebuilt compiler is distributed.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
-- [Release validation](verification/v0.13.0-release.md): pinned release checks.
+- [Release validation](verification/v0.14.0-release.md): pinned release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [File converter](examples/file-converter/README.md): arguments and text I/O.
 - [Directory converter](examples/directory-converter/README.md): explicit tree traversal.
-- [Implementation verification](verification/v0.13.0.md): evidence and limits.
+- [Implementation verification](verification/v0.14.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
 
@@ -119,6 +119,13 @@ structural work, indexing is linear, and a complete traversal prepares one
 forward buffer in linear time. Allocator, GC, and loop body costs are separate.
 Invalid indexing and String slicing return `Result` values.
 
+`String->scalars()` returns a `List<String>` in Unicode scalar order; each
+element has length one. It preserves NUL, BOM, combining marks and line endings.
+`List<String>->join(separator: String)` returns one String with separators only
+between elements. Both use linear structural work; allocator and collector costs
+are separate. Aliases preserve these methods, but unconstrained `List<T>` has no
+`join`, even if a template is only instantiated with `String`.
+
 ## Arguments and I/O
 
 The main function receives arguments after `--` for `run`, or after the executable
@@ -130,6 +137,14 @@ Import ordinary functions explicitly from `Std\Io`: `readTextFile`,
 `writeTextFile`, `readStdin`, `writeStdout`, and `writeStderr`. They return
 `Result<String, IoError>` for reads or `Result<Unit, IoError>` for writes.
 Expected I/O errors are values; discarding an Err does not change exit status.
+
+`IoError` now requires `phase: IoErrorPhase` in addition to operation, kind and
+subject. Import `IoErrorPhase` explicitly from `Std\Io`; its variants are `Input`,
+`Target`, `Body` and `Cleanup`. Standard stream errors use `Body`, including
+private scratch-release failures; borrowed descriptors are never closed.
+A missing directory is a creation candidate only for a `ReadDirectory` error
+with `Target`, `NotFound`, and the requested subject. `Body` or `Cleanup`
+failures must not be treated as an absent or empty directory.
 See the [converter guide](examples/file-converter/README.md) for signatures,
 error fields, resource behavior, and runnable examples.
 

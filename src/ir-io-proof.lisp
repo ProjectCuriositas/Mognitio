@@ -33,8 +33,10 @@
                (otherwise (eq success :void))))
            error-info (equal (type-info-name error-info) "standard:Std\\Io#IoError")
            (let ((fields (type-info-fields error-info)))
-             (and (equal (mapcar #'car fields) '("operation" "kind" "subject"))
-                  (eq (cdar (last fields)) :string)
+             (and (equal (mapcar #'car fields) '("operation" "kind" "subject" "phase"))
+                  (eq (cdr (third fields)) :string)
+                  (sum-shape (cdr (fourth fields)) "standard:Std\\Io#IoErrorPhase"
+                             '("Input" "Target" "Body" "Cleanup"))
                   (sum-shape (cdar fields) "standard:Std\\Io#IoOperation"
                              '("ReadTextFile" "WriteTextFile" "ReadStdin" "WriteStdout" "WriteStderr" "JoinPath" "ReadDirectory" "CreateDirectory"))
                   (sum-shape (cdr (second fields)) "standard:Std\\Io#IoErrorKind"

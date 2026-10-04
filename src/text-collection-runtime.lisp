@@ -1,0 +1,43 @@
+(in-package #:mognitio.value)
+
+(defvar *text-operation-observer* nil)
+(defvar *text-length-limit* mognitio.integer:+maximum+)
+(defun text-event (kind &optional (count 1))
+  (when *text-operation-observer* (funcall *text-operation-observer* kind count)))
+(defun text-scalars (text)
+  (let ((bytes (mognitio.text:text-value-octets text)) (cursor 0) (result *empty-list*))
+    (loop while (< cursor (length bytes)) do
+      (let* ((lead (aref bytes cursor))
+             (width (cond ((< lead #x80) 1) ((< lead #xe0) 2) ((< lead #xf0) 3) (t 4)))
+             (end (+ cursor width)))
+        (when (> end (length bytes)) (mognitio.diagnostics:internal-error "Invalid scalar boundary"))
+        (text-event :scalar-step) (text-event :scalar-copy width)
+        (let ((scalar (mognitio.text::allocate-text width 1
+                        (lambda (out) (replace out bytes :start2 cursor :end2 end)))))
+          (setf result (list-append-value result scalar) cursor end))))
+    result))
+(defun text-join (parts separator)
+  (let ((bytes 0) (scalars 0) (count (list-value-length parts))
+        (sep (mognitio.text:text-value-octets separator)))
+    (loop for node = parts then (list-value-previous node)
+          while (plusp (list-value-length node)) for fragment = (list-value-element node) do
+      (text-event :join-size-node)
+      (incf bytes (length (mognitio.text:text-value-octets fragment)))
+      (incf scalars (mognitio.text:text-length fragment)))
+    (incf bytes (* (max 0 (1- count)) (length sep)))
+    (incf scalars (* (max 0 (1- count)) (mognitio.text:text-length separator)))
+    (when (> scalars *text-length-limit*) (mognitio.runtime:runtime-error :string-size-overflow))
+    (if (zerop bytes) mognitio.text::*empty*
+        (progn (text-event :join-allocation)
+          (mognitio.text::allocate-text bytes scalars
+            (lambda (out)
+              (let ((cursor bytes))
+                (loop for node = parts then (list-value-previous node)
+                      while (plusp (list-value-length node))
+                      for fragment = (mognitio.text:text-value-octets (list-value-element node)) do
+                  (text-event :join-copy-node) (text-event :join-copy (length fragment))
+                  (decf cursor (length fragment)) (replace out fragment :start1 cursor)
+                  (when (> (list-value-length node) 1)
+                    (text-event :join-copy (length sep))
+                    (decf cursor (length sep)) (replace out sep :start1 cursor)))
+                (unless (zerop cursor) (mognitio.diagnostics:internal-error "Invalid join extent")))))))))

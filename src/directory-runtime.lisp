@@ -80,7 +80,7 @@
           (replace out right :start1 (+ (length left) separator)))))))
 
 (defun create-directory-value (text)
-  (let* ((path (directory-path-bytes text)) (mode (directory-stat path -100 0 :create-stat)))
+  (let* ((path (directory-path-bytes text)) (mode (progn (setf *public-phase* 1) (directory-stat path -100 0 :create-stat))))
     (cond ((= mode #o040000))
           ((>= mode 0) (directory-reject 4))
           ((/= mode -2) (directory-result mode))
@@ -122,10 +122,12 @@
     (unwind-protect
          (handler-case
              (progn
+               (setf *public-phase* 1)
                (sb-sys:without-interrupts
                  (setf fd (sb-sys:with-pinned-objects (path)
                             (directory-result (directory-call :open
                               (lambda () (directory-openat -100 (sb-sys:vector-sap path) #x90000 0)))))))
+               (setf *public-phase* 2)
                (observe :directory-opened fd)
                (loop for count = (sb-sys:with-pinned-objects (scan)
                                    (directory-result (directory-call :scan
@@ -155,7 +157,7 @@
            ((or error storage-condition) (condition) (setf primary condition)))
       (when fd
         (let ((owned fd))
-          (setf fd nil)
+          (setf fd nil *public-phase* 3)
           (handler-case
               (sb-sys:without-interrupts
                 (directory-result (directory-call :close (lambda () (directory-close owned)) t))
@@ -183,23 +185,23 @@
         (setf previous bytes))
       result)))
 
-(defun invoke-directory (operation arguments result-type error-type operation-type kind-type entry-type entry-kind)
+(defun invoke-directory (operation arguments result-type error-type operation-type kind-type phase-type entry-type entry-kind)
   (handler-case
       (let ((number (ecase operation (:join-path 5) (:read-directory 6) (:create-directory 7)))
-            (*operation-secondary* nil) (subject (first arguments)) (failure nil) (value nil))
+            (*operation-secondary* nil) (*public-phase* 0) (failure-phase nil) (subject (first arguments)) (failure nil) (value nil))
         (handler-case
             (setf value (ecase operation
                           (:join-path (join-directory-path (first arguments) (second arguments)))
                           (:read-directory (read-directory-value subject entry-type entry-kind))
                           (:create-directory (create-directory-value subject))))
           (directory-failure (condition)
-            (setf failure (io-failure-kind condition))
+            (setf failure (io-failure-kind condition) failure-phase (io-failure-phase condition))
             (cond ((directory-failure-subject condition) (setf subject (directory-failure-subject condition)))
                   ((directory-failure-child condition)
                    (setf subject (join-directory-path subject (decoded-text (directory-failure-child condition))))))))
         (if failure
             (mognitio.value:construct result-type 1
               (mognitio.value:construct error-type 0 (mognitio.value:construct operation-type number)
-                                      (mognitio.value:construct kind-type failure) subject))
+                                      (mognitio.value:construct kind-type failure) subject (mognitio.value:construct phase-type failure-phase)))
             (mognitio.value:construct result-type 0 value)))
     (storage-condition () (mognitio.runtime:runtime-error :allocation-failed))))

@@ -1,7 +1,7 @@
 (in-package #:mognitio.ir)
 
 (defparameter *value-operations* '(:io.call :struct.make :enum.make :struct.field :enum.tag :enum.payload :interface.pack :call.interface
-    :closure.make :closure.env.get :closure.call :list.empty :list.length :list.append :list.at :list.buffer :buffer.length :buffer.get :text.slice.result))
+    :closure.make :closure.env.get :closure.call :list.empty :list.length :list.append :list.at :list.buffer :buffer.length :buffer.get :text.scalars :text.join :text.slice.result))
 
 (defun verify-core-types (context functions)
   (let ((types (value-context-types context)))
@@ -145,6 +145,8 @@
                 (= (first operands) (caar (basic-block-parameters (gethash (ir-function-entry target) blocks)))))))
         (:closure.call
          (and (function-type-p data) (equal (first types) data) (equal (rest types) (second data)) (equal result (third data))))
+        (:text.scalars (and (equal result '(:list :string)) (equal types '(:string)) (null data)))
+        (:text.join (and (eq result :string) (equal types '((:list :string) :string)) (null data)))
         (:list.empty (and (list-type-p result) (null data) (null types)))
         (:list.length (and (= (length types) 1) (list-type-p (first types)) (eq result :int) (null data)))
         (:list.append (and (list-type-p result) (equal types (list result (second result))) (null data)))
