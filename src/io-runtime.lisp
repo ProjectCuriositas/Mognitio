@@ -7,13 +7,15 @@
 (defvar *error-output-stream* nil)
 (defvar *operation-hook* nil)
 (defvar *operation-secondary* nil)
+(defvar *public-phase* 0)
 
 (defun retry-syscall (thunk)
   (loop (handler-case (return (funcall thunk))
           (sb-posix:syscall-error (condition)
             (unless (= (sb-posix:syscall-errno condition) sb-posix:eintr) (error condition))))))
 (defconstant +o-cloexec+ #x80000)
-(define-condition io-failure (error) ((kind :initarg :kind :reader io-failure-kind)))
+(define-condition io-failure (error) ((kind :initarg :kind :reader io-failure-kind)
+                                   (phase :initform *public-phase* :reader io-failure-phase)))
 (defun reject (kind) (error 'io-failure :kind kind))
 (defun observe (stage &rest values)
   (when *operation-hook* (apply *operation-hook* stage values)))
@@ -69,7 +71,8 @@
 (defun file-operation (operation path text)
   (let* ((sb-alien::*default-c-string-external-format* :latin-1)
          (native (path-native path)) (write-p (eq operation :write-file))
-         (fd nil) (primary nil) (data nil))
+         (fd nil) (primary nil) (primary-phase nil) (data nil))
+    (setf *public-phase* 1)
     ;; The nonblocking metadata/open/fstat sequence rejects known special files
     ;; without waiting on a FIFO or truncating a changed target.
     (unwind-protect
@@ -85,17 +88,18 @@
                (require-regular (retry-syscall (lambda () (sb-posix:fstat fd))))
                (if write-p
                    (progn (observe :truncate fd) (retry-syscall (lambda () (sb-posix:ftruncate fd 0)))
-                          (write-all fd (mognitio.text:text-value-octets text)))
-                   (setf data (read-all fd))))
-           ((or error storage-condition) (condition) (setf primary condition)))
+                          (setf *public-phase* 2) (write-all fd (mognitio.text:text-value-octets text)))
+                   (progn (setf *public-phase* 2) (setf data (read-all fd)))))
+           ((or error storage-condition) (condition) (setf primary condition primary-phase *public-phase*)))
       (when fd
         (let ((owned fd))
-          (setf fd nil)
+          (setf fd nil *public-phase* 3)
           (handler-case
               (sb-sys:without-interrupts (sb-posix:close owned) (observe :close owned))
             ((or error storage-condition) (condition)
-              (if primary (push condition *operation-secondary*) (setf primary condition)))))))
-    (when primary (error primary))
+              (if primary (push condition *operation-secondary*) (setf primary condition primary-phase *public-phase*)))))))
+    (when primary (setf *public-phase* primary-phase) (error primary))
+    (setf *public-phase* 2)
     data))
 
 (defun stream-operation (operation text)
@@ -119,11 +123,12 @@
     (if (zerop count) mognitio.text::*empty*
         (mognitio.text::allocate-text (length bytes) count (lambda (out) (replace out bytes))))))
 
-(defun invoke (operation arguments result-type error-type operation-type kind-type &optional entry-type entry-kind)
+(defun invoke (operation arguments result-type error-type operation-type kind-type phase-type &optional entry-type entry-kind)
   (when (member operation '(:join-path :read-directory :create-directory))
-    (return-from invoke (invoke-directory operation arguments result-type error-type operation-type kind-type entry-type entry-kind)))
+    (return-from invoke (invoke-directory operation arguments result-type error-type operation-type kind-type phase-type entry-type entry-kind)))
   (handler-case
-      (let* ((*operation-secondary* nil) (number (position operation '(:read-file :write-file :read-stdin :write-stdout :write-stderr)))
+      (let* ((*public-phase* (if (member operation '(:read-file :write-file)) 0 2))
+             (*operation-secondary* nil) (number (position operation '(:read-file :write-file :read-stdin :write-stdout :write-stderr)))
              (subject (if (< number 2) (first arguments)
                           (let* ((name (nth (- number 2) '("stdin" "stdout" "stderr")))
                                  (bytes (sb-ext:string-to-octets name :external-format :utf-8)))
@@ -133,7 +138,7 @@
             (let ((bytes (if (< number 2) (file-operation operation subject (second arguments))
                              (stream-operation operation (first arguments)))))
               (when (member operation '(:read-file :read-stdin)) (setf value (decoded-text bytes))))
-          (io-failure (condition) (setf failure (io-failure-kind condition)))
+          (io-failure (condition) (setf failure (io-failure-kind condition) *public-phase* (io-failure-phase condition)))
           (sb-posix:syscall-error (condition) (setf failure (errno-kind (sb-posix:syscall-errno condition))))
           (stream-error () (setf failure 7)))
         ;; All owned OS resources are gone before managed error/result allocation.
@@ -141,6 +146,6 @@
             (mognitio.value:construct result-type 1
               (mognitio.value:construct error-type 0
                 (mognitio.value:construct operation-type number)
-                (mognitio.value:construct kind-type failure) subject))
+                (mognitio.value:construct kind-type failure) subject (mognitio.value:construct phase-type *public-phase*)))
             (mognitio.value:construct result-type 0 value)))
     (storage-condition () (mognitio.runtime:runtime-error :allocation-failed))))

@@ -33,9 +33,11 @@ values and can be aliased, captured, passed as arguments, or stored in lists.
 | writeStdout | Function(String): Result<Unit, IoError> |
 | writeStderr | Function(String): Result<Unit, IoError> |
 
-`IoError` is a product with `operation: IoOperation`, `kind: IoErrorKind`, and
-`subject: String`. The operation variants are `ReadTextFile`, `WriteTextFile`,
-`ReadStdin`, `WriteStdout`, and `WriteStderr`. The kind variants are `InvalidPath`,
+`IoError` is a product with `operation: IoOperation`, `kind: IoErrorKind`,
+`subject: String`, and `phase: IoErrorPhase`. Phase is the ordinary imported Sum
+`Input`, `Target`, `Body`, or `Cleanup`; standard streams use only `Body`. The operation variants are `ReadTextFile`, `WriteTextFile`,
+`ReadStdin`, `WriteStdout`, `WriteStderr`, `JoinPath`, `ReadDirectory`, and
+`CreateDirectory`. The kind variants are `InvalidPath`,
 `InvalidEncoding`, `NotFound`, `PermissionDenied`, `UnsupportedTarget`,
 `BrokenPipe`, `ResourceExhausted`, and `Other`. File subjects retain the original
 path; stream subjects are `stdin`, `stdout`, and `stderr`.

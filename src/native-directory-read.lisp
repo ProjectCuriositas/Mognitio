@@ -31,10 +31,13 @@
   (append (directory-path-map-forms)
     (directory-syscall-forms :open :open
       '((:imm-reg :rdi -100) (:load-frame :rsi -224) (:mov-edx 589824) (:mov-r10d 0) (:mov-eax 257)))
-    '((:store-frame -232 :rax) (:imm-rax 65536) (:store-frame -200 :rax)
+    '((:store-frame -232 :rax) (:imm-rax 2) (:store-frame -720 :rax)
+      (:imm-rax 1) (:store-frame -736 :rax) (:imm-rax 65536) (:store-frame -200 :rax)
       (:store-out 0 :rax))
     (directory-map-forms :scan-map)
-    '((:store-frame -208 :rax) (:label :scan))
+    '((:store-frame -208 :rax))
+    (when (option :directory-after-accept-kind) '((:jmp :unsupported)))
+    '((:label :scan))
     (directory-syscall-forms :scan :scan
       '((:load-frame :rdi -232) (:load-frame :rsi -208) (:mov-edx 65536) (:mov-eax 217)))
     (directory-scan-mutation)

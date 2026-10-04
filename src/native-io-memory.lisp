@@ -35,27 +35,7 @@
       (:label :absent) (:imm-rax 0) (:ret))))
 
 (defun io-cleanup-unit ()
-  (runtime-unit :io.cleanup
-    (append (helper-frame 6)
-      '((:load-frame :rax 16) (:store-frame -8 :rax) (:store-out 0 :rax)
-        (:call (:runtime :io.close)) (:store-frame -16 :rax))
-      (loop for pair in '((16 24) (32 40) (48 56)) for index from 0 append
-        (let ((next (intern (format nil "CLEANUP-NEXT-~D" index) :keyword)))
-          `((:load-frame :rdx -8) (:load-word :rdi :rdx ,(first pair))
-            (:cmp-imm :rdi 0) (:jz ,next) (:load-word :rsi :rdx ,(second pair))
-            (:imm-rax 0) (:store-word :rdx ,(first pair) :rax)
-            (:cmp-imm :rsi 0) (:jle ,(intern (format nil "CLEANUP-BAD-~D" index) :keyword))
-            (:mov-reg :rax :rdi) (:and-imm :rax 4095) (:test) (:jnz ,(intern (format nil "CLEANUP-BAD-~D" index) :keyword))
-            (:cmp-imm :rdi 0) (:jl ,(intern (format nil "CLEANUP-BAD-~D" index) :keyword))
-            (:mov-eax 11) (:syscall)
-            ,@(when (option :directory-cleanup-fault) `((:imm-rax ,(option :directory-cleanup-fault))))
-            (:test) (:jz ,next)
-            (:jmp ,(intern (format nil "CLEANUP-ERROR-~D" index) :keyword))
-            (:label ,(intern (format nil "CLEANUP-BAD-~D" index) :keyword)) (:imm-rax -22)
-            (:label ,(intern (format nil "CLEANUP-ERROR-~D" index) :keyword))
-            (:load-frame :rcx -16) (:test-rcx) (:jnz ,next) (:store-frame -16 :rax)
-            (:label ,next))))
-      '((:load-frame :rax -16)) (helper-return))))
+  (directory-cleanup-unit :io.cleanup))
 
 (defun io-cleanup-all-unit ()
   (runtime-unit :io.cleanup-all

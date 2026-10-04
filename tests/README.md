@@ -1,11 +1,11 @@
 # Test coverage
 
-The ASDF `mognitio/tests` system is the current v0.13.0 suite.
+The ASDF `mognitio/tests` system is the current v0.14.0 suite.
 Run it with `sbcl --noinform --script scripts/test.lisp`.
 A failed assertion or unavailable required facility fails the command.
 The Lisp summary counts test groups, assertions, and processes invoked through
 the general harness. Runner-owned native children and Python-suite processes
-are additional; see the [current record](../verification/v0.13.0.md).
+are additional; see the [current record](../verification/v0.14.0.md).
 
 The retained [test acceptance ledger](../verification/v0.11.0-testing.md) maps all 72
 cases to executable fixtures. Host/process audit details are recorded
@@ -109,3 +109,14 @@ They preserve independent Boolean-tree, writer-syscall, ABI, and fault oracles
 without exposing a second installed CLI mode. Historical kernel checks do not
 establish project CLI conformance. The production launcher loads none of these
 adapters and accepts only `mognitio.toml` projects.
+
+## v0.14 increment
+
+`v014-text.lisp`, `v014-io.lisp`, and `v014-proofs.lisp` cover the two text
+methods, generic rejection, I/O phases, consumer absence guards, transient roots,
+cleanup latch mutations, and structural operation counters. `v014-integration.py`
+checks public commands, copied standalone artifacts, evaluation noncompletion,
+nominal phase values, built-in tests, and old/new escaping equivalence.
+Run `sbcl --noinform --script tests/v014-measure.lisp` separately for bounded
+normal/small-heap allocation, collection, retained-byte and elapsed observations.
+Those observations do not establish a whole-program complexity or speedup claim.

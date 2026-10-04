@@ -37,9 +37,10 @@
             (nth index '((("ReadTextFile") ("WriteTextFile") ("ReadStdin") ("WriteStdout") ("WriteStderr") ("JoinPath") ("ReadDirectory") ("CreateDirectory"))
                          (("InvalidPath") ("InvalidEncoding") ("NotFound") ("PermissionDenied")
                           ("UnsupportedTarget") ("BrokenPipe") ("ResourceExhausted") ("Other"))
-                         (("operation" "IoOperation") ("kind" "IoErrorKind") ("subject" "String"))
+                         (("operation" "IoOperation") ("kind" "IoErrorKind") ("subject" "String") ("phase" "IoErrorPhase"))
                          (("File") ("Directory") ("Symlink") ("Other"))
-                         (("name" "String") ("kind" "DirectoryEntryKind")))))))
+                         (("name" "String") ("kind" "DirectoryEntryKind"))
+                         (("Input") ("Target") ("Body") ("Cleanup")))))))
       (loop for binding across bindings for index from 0
             for function = (local-binding-initializer binding)
             for arguments = (nth index '((("String")) (("String") ("String")) nil (("String")) (("String")) (("String") ("String")) (("String")) (("String"))))
