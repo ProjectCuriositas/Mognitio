@@ -169,9 +169,9 @@ shared frontend and payload protocol checks remain separate suites.
 
 Cooperative semantic-token projection, per-source reuse, and control-event checks:
 
-\`\`\`sh
+```sh
 python3 tests/v015-tokens.py
-\`\`\`
+```
 
 This uses 16 real 3 MiB files accepted by discovery, with one token at the front
 or tail and no diagnostics. Worker rows are injected into the actual coordinator
