@@ -1,6 +1,6 @@
 #!/bin/sh
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P) || exit 3
-/usr/bin/python3 -I "$root/lsp/check_payload.py" || exit 3
+/usr/bin/python3 -I -B "$root/lsp/check_payload.py" || exit 3
 if ( : 9<&0 ) 2>&-; then
     exec 9<&0
     mgn_stdin_open=yes

@@ -48,10 +48,15 @@ def disk_text(path):
 def discover(root, documents):
     if root is None:
         sources = {}
+        total = 0
         for uri, doc in sorted(documents.items()):
             if doc["text"] is None:
                 raise InputError("Open document is unavailable")
-            sources[uri] = doc["text"]
+            text = valid_text(doc["text"])
+            total += len(text.encode("utf-8"))
+            if len(sources) >= SOURCE_COUNT or total > PROJECT_BYTES:
+                raise InputError("Standalone source budget exceeded")
+            sources[uri] = text
         return {"root": None, "sources": sources}
     base = Path(root)
     manifest = base / "mognitio.toml"
@@ -63,9 +68,10 @@ def discover(root, documents):
     sources, ids = {}, set()
     deadline = time.monotonic() + 5
     entries = 0
+    total = 0
 
     def walk(path, depth):
-        nonlocal entries
+        nonlocal entries, total
         entries += 1
         if entries > 65536 or depth > 64 or time.monotonic() >= deadline:
             raise InputError("Directory exploration budget exceeded")
@@ -96,6 +102,9 @@ def discover(root, documents):
                 text = doc["text"]
             else:
                 text = disk_text(path)
+            total += len(text.encode("utf-8"))
+            if total > PROJECT_BYTES:
+                raise InputError("Project source bytes exceeded")
             sources[path.relative_to(base).as_posix()] = text
             if len(sources) > SOURCE_COUNT:
                 raise InputError("Project source count exceeded")
@@ -131,10 +140,29 @@ def position(text, byte):
     return {"line": line, "character": len(prefix[start:].encode("utf-16-le")) // 2}
 
 def token_data(text, rows, mapping):
+    endpoints = {offset for row in rows for offset in row[:2]}
+    positions = {}
+    byte = line = column = 0
+    previous_cr = False
+    for char in text:
+        if byte in endpoints:
+            positions[byte] = {"line": line, "character": column}
+        byte += len(char.encode("utf-8"))
+        if char == "\r":
+            line += 1
+            column = 0
+        elif char == "\n":
+            if not previous_cr:
+                line += 1
+            column = 0
+        else:
+            column += 2 if ord(char) > 0xffff else 1
+        previous_cr = char == "\r"
+    positions[byte] = {"line": line, "character": column}
     result = []
     last_line = last_column = 0
     for start, end, kind, modifiers in rows:
-        first, final = position(text, start), position(text, end)
+        first, final = positions[start], positions[end]
         if first["line"] != final["line"] or final["character"] <= first["character"]:
             continue
         target = mapping.get(kind)

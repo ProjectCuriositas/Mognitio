@@ -252,12 +252,12 @@ class Server:
             return
         self.snapshot = snapshot
         generation = self.generation
-        command = [sys.executable, "-I", str(self.payload / "lsp/worker_exec.py"), str(os.getpid()),
+        command = [sys.executable, "-I", "-B", str(self.payload / "lsp/worker_exec.py"), str(os.getpid()),
                    str(self.payload / "runtime/sbcl"), "--core", str(self.payload / "runtime/mognitio.core"),
                    "--noinform", "--no-sysinit", "--no-userinit", "--mognitio-worker"]
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.worker = (process, generation, time.monotonic())
-        body = (json.dumps(snapshot, ensure_ascii=True, separators=(",", ":")) + "\n").encode()
+        body = (json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
 
         def communicate():
             stdout, stderr = process.communicate(body)
@@ -271,6 +271,7 @@ class Server:
         texts = dict(sources)
         if "manifest" in self.snapshot:
             texts["mognitio.toml"] = self.snapshot["manifest"]
+        truncated = len(result["diagnostics"]) > 2000
         for diagnostic in result["diagnostics"][:2000]:
             path = diagnostic.get("path")
             text = texts.get(path)
@@ -280,6 +281,7 @@ class Server:
             uri = uri_from_path(Path(self.root) / path) if self.root else path
             rows = grouped.setdefault(uri, [])
             if len(rows) >= 200:
+                truncated = True
                 continue
             rows.append({"range": {"start": position(text, diagnostic["start"]),
                                    "end": position(text, diagnostic["end"] or diagnostic["start"])},
@@ -296,6 +298,8 @@ class Server:
                     "message": item["message"]})
             if related:
                 rows[-1]["relatedInformation"] = related
+        if truncated or result.get("truncated"):
+            self.notify("window/showMessage", {"type": 2, "message": "Diagnostic limit reached; analysis is incomplete"})
         current = set(grouped)
         for uri in sorted(self.published | current | set(self.documents)):
             params = {"uri": uri, "diagnostics": grouped.get(uri, [])}

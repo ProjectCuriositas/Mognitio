@@ -17,7 +17,10 @@ def sha(path):
 
 def run(args):
     payload = args.payload.resolve()
-    identity = json.loads((payload / "identity.json").read_text())
+    spec = importlib.util.spec_from_file_location("payload_validation", ROOT / "tools/lsp/payload.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    identity = module.payload_identity(payload)
     version = identity["version"]
     if identity["inputs"]["mode"] != "release":
         raise ValueError("Distribution packages require an explicit release-mode build")

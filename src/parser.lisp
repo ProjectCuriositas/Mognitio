@@ -12,6 +12,8 @@
   (let ((statements nil) (declarations nil) (tail nil) (start (p-peek p)))
     (loop until (eq (p-kind p) end-kind) do
       (when (eq (p-kind p) :eof) (fail-at (token-span (p-peek p)) :parse "Unclosed block"))
+      (let ((begin (parser-cursor p)))
+        (handler-case
       (cond
         ((member (p-kind p) '(:at :public :type :alias :contract :witness :template :let :var))
          (let ((node (p-declaration p top)))
@@ -43,7 +45,10 @@
                                       :span (p-span p node (p-expect p :semicolon))) statements)))
              ((eq (p-kind p) :semicolon)
               (push (make-expression-statement :expression node :span (p-span p node (p-take p))) statements))
-             (t (setf tail node) (return)))))))
+             (t (setf tail node) (return))))))
+          (source-failure (condition)
+            (unless *recover-errors* (error condition))
+            (push (recover-parser-unit p begin condition end-kind) statements)))))
     (let ((last (p-expect p end-kind)))
       (values (make-sequence-node :statements (coerce (nreverse statements) 'vector)
                                   :terminal tail :span (p-span p start last))
