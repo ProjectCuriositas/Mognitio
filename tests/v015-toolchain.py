@@ -139,6 +139,8 @@ class SupervisionTests(unittest.TestCase):
         server.worker = (child, 1, time.monotonic())
         server.retiring = []
         server.projection = None
+        server.state, server.result, server.pending = "running", None, {}
+        server.token_job, server.token_cache = None, {}
         server.events = queue.Queue()
         server.memory = SimpleNamespace(check=lambda: None)
         started = time.monotonic()

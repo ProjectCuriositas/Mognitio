@@ -16,7 +16,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from framing import Framer, FrameError, ParseError, encode
-from snapshot import InputError, discover, path_from_uri, uri_from_path, valid_text, token_data
+from snapshot import InputError, discover, path_from_uri, uri_from_path, valid_text, token_steps
 
 TYPES = ["namespace", "type", "interface", "typeParameter", "function", "variable",
          "parameter", "property", "method", "enumMember", "keyword"]
@@ -38,6 +38,7 @@ class Server:
         self.dirty = False
         self.worker = None
         self.projection = None
+        self.token_job, self.token_cache = None, {}
         self.retiring = []
         self.events = queue.Queue()
         self.snapshot = None
@@ -159,6 +160,7 @@ class Server:
         self.generation += 1
         self.result = None
         self.projection = None
+        self.token_job, self.token_cache = None, {}
         self.dirty = True
         self.cancel_worker()
         for id in list(self.pending):
@@ -239,6 +241,7 @@ class Server:
             elif method == "shutdown" and request:
                 self.cancel_worker()
                 self.projection = None
+                self.token_job, self.token_cache = None, {}
                 for pending in list(self.pending):
                     self.error(pending, -32800, "Server shutting down")
                 self.pending.clear()
@@ -256,12 +259,9 @@ class Server:
                 self.changed()
             elif method == "textDocument/semanticTokens/full" and request:
                 uri = uri_from_path(path_from_uri(params["textDocument"]["uri"]))
-                if self.result is None:
-                    if id in self.pending:
-                        raise InputError("Duplicate pending request id")
-                    self.pending[id] = uri
-                else:
-                    self.respond_tokens(id, uri)
+                if id in self.pending:
+                    raise InputError("Duplicate pending request id")
+                self.pending[id] = uri
             elif request:
                 self.error(id, -32601, "Method not found")
         except (InputError, KeyError, TypeError, ValueError, UnicodeError) as error:
@@ -300,6 +300,7 @@ class Server:
 
     def accept(self, result, started=None):
         self.result = None
+        self.token_job, self.token_cache = None, {}
         self.projection = (diagnostics_steps(self.snapshot, result), result, self.generation,
                            (started if started is not None else time.monotonic()) + 10)
 
@@ -336,21 +337,43 @@ class Server:
                 params["version"] = self.documents[uri]["version"]
             self.notify("textDocument/publishDiagnostics", params)
         self.published = current
-        for id, uri in list(self.pending.items()):
-            self.respond_tokens(id, uri)
-        self.pending.clear()
         if self.refresh:
             self.refresh_id += 1
             self.send({"jsonrpc": "2.0", "id": "refresh:" + str(self.refresh_id),
                        "method": "workspace/semanticTokens/refresh"})
 
-    def respond_tokens(self, id, uri):
-        path = os.path.relpath(path_from_uri(uri), self.snapshot["root"]) if self.snapshot["root"] else uri
-        text = self.snapshot["sources"].get(path, "")
-        rows = self.result["tokens"].get(path, [])
-        projected = [[a, b, c, sum(target for bit, target in self.modifier_mapping.items() if mods & bit)]
-                     for a, b, c, mods in rows]
-        self.response(id, {"resultId": str(self.generation), "data": token_data(text, projected, self.mapping)})
+    def advance_tokens(self):
+        if self.state != "running" or self.result is None or not self.pending:
+            self.token_job = None
+            return
+        id, uri = next(iter(self.pending.items()))
+        if uri in self.token_cache:
+            # One reply per event-loop turn, including cached and empty results.
+            self.response(id, {"resultId": str(self.generation), "data": self.token_cache[uri]})
+            del self.pending[id]
+            return
+        if self.token_job is None or self.token_job[0] != uri:
+            path = os.path.relpath(path_from_uri(uri), self.snapshot["root"]) if self.snapshot["root"] else uri
+            steps = token_steps(self.snapshot["sources"].get(path, ""),
+                                self.result["tokens"].get(path, []), self.mapping, self.modifier_mapping)
+            self.token_job = (uri, self.generation, steps, time.monotonic() + 10)
+        _, generation, steps, deadline = self.token_job
+        if generation != self.generation:
+            self.token_job = None
+            return
+        if time.monotonic() >= deadline:
+            self.token_job = None
+            self.token_cache[uri] = []
+            self.notify("window/showMessage", {"type": 2, "message": "Semantic token time budget exceeded"})
+            return
+        quantum = min(time.monotonic() + 0.005, deadline)
+        while time.monotonic() < quantum:
+            try:
+                next(steps)
+            except StopIteration as finished:
+                self.token_cache[uri] = finished.value
+                self.token_job = None
+                return
 
     def supervise(self):
         now = time.monotonic()
@@ -374,12 +397,13 @@ class Server:
                 raise RuntimeError("Analysis worker failed")
             self.accept(json.loads(stdout), started)
         self.advance_projection()
+        self.advance_tokens()
         self.memory.check()
 
     def run(self):
         try:
             while True:
-                for key, _ in self.selector.select(0 if self.projection else 0.025):
+                for key, _ in self.selector.select(0 if self.projection or (self.result is not None and self.pending) else 0.025):
                     if key.data == "parent":
                         return 1
                     data = os.read(0, 65536)

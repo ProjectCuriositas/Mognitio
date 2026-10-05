@@ -95,6 +95,8 @@ class ProjectionTests(unittest.TestCase):
         server.projection = (steps, result, generation, time.monotonic() - 1)
         server.pending = {50: "file:///sample.mgn"}
         server.supervise()
+        while server.pending:
+            server.supervise()
         self.assertIsNone(server.projection)
         self.assertTrue(any(m.get("method") == "window/showMessage" for m in server.sent))
         self.assertEqual(next(m for m in server.sent if m.get("id") == 50)["result"]["data"], [])
