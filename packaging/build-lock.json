@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "imageDigest": "sha256:f610ab94648195aa356059f5b41d6085c9d4d903c072430cdd1af7bdb646106b",
+  "runtimeVersion": "SBCL 2.2.9.debian",
+  "runtimeDigest": "2409c8befe0ca3d6309fcce4f820d8257ceff316a437b38115e228d9259f5670",
+  "inputCoreDigest": "ff039c28938a7516e8c4b4438488d90d7188c728f9166ec1345797c9516fa2eb",
+  "runtimeNoticeDigest": "3107a0b340a0d718c5e5525ce4d4060b20b0fe125a2ea10548133eddda6c26f1"
+}

@@ -1,6 +1,6 @@
 (asdf:defsystem "mognitio"
   :description "Mognitio compiler"
-  :version "0.14.0"
+  :version (:read-file-line "VERSION")
   :depends-on ("sb-posix")
   :serial t
   :components ((:file "src/packages")
@@ -105,7 +105,11 @@
                (:file "src/test-runner")
                (:file "src/invocation")
                              (:file "src/driver")
-               (:file "src/cli"))
+               (:file "src/cli")
+               (:file "src/json")
+               (:file "src/analysis")
+               (:file "src/analysis-tokens")
+               (:file "src/identity"))
   :in-order-to ((asdf:test-op (asdf:test-op "mognitio/tests"))))
 
 (asdf:defsystem "mognitio/tests"

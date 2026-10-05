@@ -1,0 +1,6 @@
+(require :asdf)
+(let* ((root (merge-pathnames "../" (uiop:pathname-directory-pathname *load-truename*)))
+       (*standard-output* *error-output*) (*compile-verbose* nil) (*compile-print* nil))
+  (asdf:load-asd (truename (merge-pathnames "mognitio.asd" root)))
+  (asdf:load-system "mognitio"))
+(mognitio.analysis:worker-main)
