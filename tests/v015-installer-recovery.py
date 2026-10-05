@@ -75,7 +75,7 @@ class RecoveryTests(unittest.TestCase):
                         before = path.read_bytes()
                         mode = path.stat().st_mode
                         result = self.run_install(int(upgrade))
-                        self.assertNotEqual(result.returncode, 0, result.stdout)
+                        self.assertEqual(result.returncode, 2, result.stderr)
                         self.assertEqual(path.read_bytes(), before)
                         self.assertEqual(path.stat().st_mode, mode)
                         self.assertEqual(path.is_symlink(), mutation == "symlink")
@@ -98,7 +98,7 @@ class RecoveryTests(unittest.TestCase):
         management = self.prefix / "lib/mognitio"
         (management / "uninstall.sh").write_bytes(b"last conflict")
         original = (self.prefix / "bin/mgn").read_bytes()
-        self.assertNotEqual(self.run_install().returncode, 0)
+        self.assertEqual(self.run_install().returncode, 2)
         self.assertEqual((self.prefix / "bin/mgn").read_bytes(), original)
 
 if __name__ == "__main__":

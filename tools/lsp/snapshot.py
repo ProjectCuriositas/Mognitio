@@ -141,6 +141,37 @@ def discover(root, documents):
         raise InputError("Project source bytes exceeded")
     return {"root": root, "manifest": disk_text(manifest), "sources": sources}
 
+def position_steps(text, offsets):
+    """Visit requested UTF-8 boundaries once, yielding at most every 4096 scalars."""
+    needed = set(offsets)
+    positions = {}
+    byte = line = column = 0
+    previous_cr = False
+    for index, char in enumerate(text):
+        if byte in needed:
+            positions[byte] = {"line": line, "character": column}
+            if len(positions) == len(needed):
+                return positions
+        code = ord(char)
+        byte += 1 if code < 0x80 else 2 if code < 0x800 else 3 if code < 0x10000 else 4
+        if char == "\r":
+            line += 1
+            column = 0
+        elif char == "\n":
+            if not previous_cr:
+                line += 1
+            column = 0
+        else:
+            column += 2 if code > 0xffff else 1
+        previous_cr = char == "\r"
+        if index % 4096 == 4095:
+            yield
+    if byte in needed:
+        positions[byte] = {"line": line, "character": column}
+    if positions.keys() != needed:
+        raise ValueError("Diagnostic offset is not a UTF-8 source boundary")
+    return positions
+
 def position(text, byte):
     data = text.encode("utf-8")
     byte = max(0, min(len(data), byte))
@@ -164,6 +195,8 @@ def position(text, byte):
     return {"line": line, "character": len(prefix[start:].encode("utf-16-le")) // 2}
 
 def token_data(text, rows, mapping):
+    if not rows:
+        return []
     endpoints = {offset for row in rows for offset in row[:2]}
     positions = {}
     byte = line = column = 0

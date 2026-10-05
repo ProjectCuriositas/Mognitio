@@ -16,7 +16,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from framing import Framer, FrameError, ParseError, encode
-from snapshot import InputError, discover, path_from_uri, uri_from_path, valid_text, position, token_data
+from snapshot import InputError, discover, path_from_uri, uri_from_path, valid_text, token_data
 
 TYPES = ["namespace", "type", "interface", "typeParameter", "function", "variable",
          "parameter", "property", "method", "enumMember", "keyword"]
@@ -27,6 +27,7 @@ FALLBACK = {"interface": "type", "typeParameter": "type", "function": "variable"
 
 from payload import payload_identity
 from budget import MemoryBudget
+from projection import diagnostics_steps
 
 class Server:
     def __init__(self, payload, identity):
@@ -36,6 +37,7 @@ class Server:
         self.generation = 0
         self.dirty = False
         self.worker = None
+        self.projection = None
         self.retiring = []
         self.events = queue.Queue()
         self.snapshot = None
@@ -156,6 +158,7 @@ class Server:
     def changed(self):
         self.generation += 1
         self.result = None
+        self.projection = None
         self.dirty = True
         self.cancel_worker()
         for id in list(self.pending):
@@ -235,6 +238,7 @@ class Server:
                 self.changed()
             elif method == "shutdown" and request:
                 self.cancel_worker()
+                self.projection = None
                 for pending in list(self.pending):
                     self.error(pending, -32800, "Server shutting down")
                 self.pending.clear()
@@ -294,42 +298,37 @@ class Server:
             self.events.put((process, generation, stdout, stderr))
         threading.Thread(target=communicate, daemon=True).start()
 
-    def accept(self, result):
+    def accept(self, result, started=None):
+        self.result = None
+        self.projection = (diagnostics_steps(self.snapshot, result), result, self.generation,
+                           (started if started is not None else time.monotonic()) + 10)
+
+    def advance_projection(self):
+        if self.projection is None:
+            return
+        steps, result, generation, deadline = self.projection
+        if generation != self.generation or self.state != "running":
+            self.projection = None
+            return
+        if time.monotonic() >= deadline:
+            self.projection = None
+            self.notify("window/showMessage", {"type": 2, "message": "Analysis time budget exceeded"})
+            self.publish_result({"diagnostics": [], "tokens": {}, "complete": False}, {})
+            return
+        quantum = time.monotonic() + 0.005
+        while time.monotonic() < min(quantum, deadline):
+            try:
+                next(steps)
+            except StopIteration as finished:
+                self.projection = None
+                grouped, messages = finished.value
+                for message in messages:
+                    self.notify("window/showMessage", {"type": 2, "message": message})
+                self.publish_result(result, grouped)
+                return
+
+    def publish_result(self, result, grouped):
         self.result = result
-        grouped = {}
-        sources = self.snapshot["sources"]
-        texts = dict(sources)
-        if "manifest" in self.snapshot:
-            texts["mognitio.toml"] = self.snapshot["manifest"]
-        truncated = len(result["diagnostics"]) > 2000
-        for diagnostic in result["diagnostics"][:2000]:
-            path = diagnostic.get("path")
-            text = texts.get(path)
-            if text is None or diagnostic.get("start") is None:
-                self.notify("window/showMessage", {"type": 2, "message": diagnostic["message"]})
-                continue
-            uri = uri_from_path(Path(self.snapshot["root"]) / path) if self.snapshot["root"] else path
-            rows = grouped.setdefault(uri, [])
-            if len(rows) >= 200:
-                truncated = True
-                continue
-            rows.append({"range": {"start": position(text, diagnostic["start"]),
-                                   "end": position(text, diagnostic["end"] or diagnostic["start"])},
-                         "severity": 1, "source": "Mognitio", "code": diagnostic["phase"],
-                         "message": diagnostic["message"]})
-            related = []
-            for item in diagnostic.get("related", []):
-                other = texts.get(item.get("path"))
-                if other is None or item.get("start") is None:
-                    continue
-                location = uri_from_path(Path(self.snapshot["root"]) / item["path"]) if self.snapshot["root"] else item["path"]
-                related.append({"location": {"uri": location, "range": {
-                    "start": position(other, item["start"]), "end": position(other, item["end"])}},
-                    "message": item["message"]})
-            if related:
-                rows[-1]["relatedInformation"] = related
-        if truncated or result.get("truncated"):
-            self.notify("window/showMessage", {"type": 2, "message": "Diagnostic limit reached; analysis is incomplete"})
         current = set(grouped)
         for uri in sorted(self.published | current | set(self.documents)):
             params = {"uri": uri, "diagnostics": grouped.get(uri, [])}
@@ -369,16 +368,18 @@ class Server:
             process, generation, stdout, stderr = self.events.get()
             if generation != self.generation or self.worker is None or process is not self.worker[0]:
                 continue
+            started = self.worker[2]
             self.worker = None
             if process.returncode:
                 raise RuntimeError("Analysis worker failed")
-            self.accept(json.loads(stdout))
+            self.accept(json.loads(stdout), started)
+        self.advance_projection()
         self.memory.check()
 
     def run(self):
         try:
             while True:
-                for key, _ in self.selector.select(0.025):
+                for key, _ in self.selector.select(0 if self.projection else 0.025):
                     if key.data == "parent":
                         return 1
                     data = os.read(0, 65536)
