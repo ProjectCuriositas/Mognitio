@@ -45,12 +45,17 @@
                  (push (token-row token role mods) (gethash source by-source))))))
          (types (x &optional (role "type"))
            (typecase x
-             (type-syntax (emit (type-syntax-name x) role)
+             (type-syntax (types (type-syntax-name x) role)
               (map nil #'types (type-syntax-arguments x)))
              (function-type-syntax
               (map nil #'types (function-type-syntax-parameters x))
               (types (function-type-syntax-result x)))
-             (token (emit x role (if (member (token-text x) mognitio.project::*predeclared* :test #'equal) 4 0)))))
+             (token
+              (let ((resolved (gethash (token-text x)
+                                      (mognitio.semantic::value-context-names
+                                       (mognitio.semantic::checked-program-values checked)))))
+                (emit x (if (mognitio.semantic::nominal-type-p resolved :interface) "interface" role)
+                      (if (member (token-text x) mognitio.project::*predeclared* :test #'equal) 4 0))))))
          (visit (node)
            (typecase node
              (local-binding (types (local-binding-annotation node)))
@@ -77,17 +82,41 @@
              (template-declaration
               (emit (template-declaration-name node) "function" 3)
               (map nil (lambda (p) (emit p "typeParameter" 1)) (template-declaration-parameters node)))
+             (variable-reference
+              (let ((resolved (gethash (token-text (variable-reference-name node))
+                                      (mognitio.semantic::value-context-names
+                                       (mognitio.semantic::checked-program-values checked)))))
+                (when (mognitio.semantic::nominal-type-p resolved :interface)
+                  (emit (variable-reference-name node) "interface"))))
              (specialization-reference (emit (specialization-reference-name node) "function"))
              (field-expression (emit (field-expression-name node) "property"))
              (method-call
               (let ((info (mognitio.semantic::checked-member checked node)))
-                (emit (method-call-name node) "method"
-                      (if (and info (eq (mognitio.semantic::member-info-kind info) :intrinsic)) 4 0))))
+                (emit (method-call-name node)
+                      (if (and info (eq (mognitio.semantic::member-info-kind info) :field-call)) "property" "method")
+                      (if (mognitio.semantic::checked-operation checked node) 4 0))))
              (enum-expression (types (enum-expression-name node)) (emit (enum-expression-variant node) "enumMember"))
              (struct-expression
               (types (struct-expression-name node))
               (loop for m across (struct-expression-fields node) do (emit (named-member-name m) "property")))
              (variant-pattern (types (variant-pattern-name node)) (emit (variant-pattern-variant node) "enumMember")))))
+      ;; Scoped type parameter occurrences and declaration roles precede binding types.
+      (dolist (module (mognitio.project::project-modules project))
+        (let ((program (mognitio.project::source-module-program module)))
+          (mognitio.syntax:walk-ast
+           program
+           (lambda (node)
+             (let ((parameters (typecase node
+                                 (data-declaration (data-declaration-type-parameters node))
+                                 (template-declaration (template-declaration-parameters node)))))
+               (when parameters
+                 (map nil (lambda (token) (emit token "typeParameter" 1)) parameters)
+                 (mognitio.syntax:walk-ast
+                  node (lambda (child)
+                         (when (and (typep child 'token)
+                                    (find (token-text child) parameters :key #'token-text :test #'equal))
+                           (emit child "typeParameter"))))))))
+          (mognitio.syntax:walk-ast program #'visit)))
       ;; Role is determined by resolved declaration before Function structure.
       (maphash
        (lambda (node symbol)
