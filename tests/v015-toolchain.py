@@ -153,6 +153,7 @@ class SupervisionTests(unittest.TestCase):
             if child.poll() is None:
                 child.kill()
                 child.wait()
+            child.stdout.close()
 
 class ToolchainTests(unittest.TestCase):
     def setUp(self):
@@ -209,6 +210,7 @@ class ToolchainTests(unittest.TestCase):
 
     def test_invalid_rootless_file_does_not_hide_other_files(self):
         p = self.peer(root=False)
+        (self.root / "other.mgn").write_text("let value: Int = 1;")
         other = (self.root / "other.mgn").as_uri()
         p.open(self.uri, "let value: Int = 1;")
         p.open(other, "let other: Int = 2;")
@@ -228,6 +230,7 @@ class ToolchainTests(unittest.TestCase):
         p = self.peer(root=False)
         p.open(self.uri, 'let value: String = "unfinished')
         p.wait(lambda m: m.get("method") == "textDocument/publishDiagnostics" and m["params"]["diagnostics"])
+        (self.root / "other.mgn").write_text("let value: Int = 1;")
         other = (self.root / "other.mgn").as_uri()
         p.open(other, "let value: Int = 1;")
         self.assertTrue(p.tokens(other)["result"]["data"])
@@ -246,6 +249,90 @@ class ToolchainTests(unittest.TestCase):
             self.assertIn("result", p.wait(lambda m: m.get("id") == 2))
             p.send({"method": "initialized", "params": {}})
             self.assertTrue(p.tokens(self.uri)["result"]["data"])
+
+    def test_initialize_retry_replaces_all_negotiated_mappings(self):
+        p = self.peer(parent=-1)
+        self.assertEqual(p.initialize["error"]["code"], -32602)
+        p.send({"id": 2, "method": "initialize", "params": {
+            "rootUri": self.root.as_uri(), "processId": None,
+            "capabilities": {"textDocument": {"semanticTokens": {
+                "tokenTypes": ["variable"], "tokenModifiers": []}}}}})
+        result = p.wait(lambda m: m.get("id") == 2)["result"]
+        legend = result["capabilities"]["semanticTokensProvider"]["legend"]
+        self.assertEqual(legend, {"tokenTypes": ["variable"], "tokenModifiers": []})
+        p.send({"method": "initialized", "params": {}})
+        data = p.tokens(self.uri)["result"]["data"]
+        self.assertTrue(data)
+        self.assertTrue(all(kind == 0 for kind in data[3::5]))
+        self.assertTrue(all(modifier == 0 for modifier in data[4::5]))
+
+    def test_missing_manifest_syntax_and_project_transitions(self):
+        manifest = self.root / "mognitio.toml"
+        valid = manifest.read_text()
+        manifest.unlink()
+        p = self.peer()
+        p.open(self.uri, 'let value: String = "unfinished')
+        p.tokens(self.uri)
+        self.assertTrue(any(m.get("method") == "textDocument/publishDiagnostics"
+                            and m["params"]["uri"] == self.uri and m["params"]["diagnostics"]
+                            for m in p.events))
+        p.change(self.uri, "namespace Example;\nlet value: Int = false;", 2)
+        p.tokens(self.uri, 21)
+        latest = [m["params"] for m in p.events if m.get("method") == "textDocument/publishDiagnostics"
+                  and m["params"]["uri"] == self.uri][-1]
+        self.assertEqual(latest["diagnostics"], [])
+        for index, contents in enumerate((valid, None, valid, "[project]\nname = 123\n", valid)):
+            if contents is None:
+                manifest.unlink()
+            else:
+                manifest.write_text(contents)
+            p.send({"method": "workspace/didChangeWatchedFiles", "params": {
+                "changes": [{"uri": manifest.as_uri(), "type": 2}]}})
+            p.tokens(self.uri, 30 + index)
+            latest = [m["params"] for m in p.events if m.get("method") == "textDocument/publishDiagnostics"
+                      and m["params"]["uri"] == self.uri][-1]
+            self.assertEqual(bool(latest["diagnostics"]), contents == valid)
+        self.assertTrue(any(m.get("method") == "textDocument/publishDiagnostics"
+                            and m["params"]["uri"] == manifest.as_uri() and m["params"]["diagnostics"]
+                            for m in p.events))
+
+    def test_syntax_input_kinds_and_isolation(self):
+        link = self.root / "link.mgn"
+        link.symlink_to(self.root / "src/sample.mgn")
+        fifo = self.root / "fifo.mgn"
+        os.mkfifo(fifo)
+        directory = self.root / "directory.mgn"
+        directory.mkdir()
+        parent = self.root / "linked-directory"
+        parent.symlink_to(self.root / "src", target_is_directory=True)
+        uris = [p.as_uri() for p in (link, fifo, directory, parent / "sample.mgn")]
+        p = self.peer(root=False)
+        for uri in [self.uri, *uris]:
+            p.open(uri, "let value: Int = 1;")
+        self.assertTrue(p.tokens(self.uri)["result"]["data"])
+        for index, uri in enumerate(uris):
+            self.assertEqual(p.tokens(uri, 30 + index)["result"]["data"], [])
+        documents = {uri: {"version": 1, "text": "let value: Int = 1;"} for uri in [self.uri, *uris]}
+        result = discover(None, documents)
+        self.assertEqual(set(result["sources"]), {self.uri})
+        self.assertEqual(set(result["unavailable"]), set(uris))
+        (self.root / "mognitio.toml").unlink()
+        (self.root / "src/link.mgn").symlink_to("sample.mgn")
+        docs = {**documents, (self.root / "src/link.mgn").as_uri(): {"version": 1, "text": "let x: Int = 1;"}}
+        result = discover(str(self.root), docs)
+        self.assertEqual(set(result["sources"]), {self.uri})
+        self.assertIn((self.root / "src/link.mgn").as_uri(), result["unavailable"])
+
+    def test_manifest_access_error_is_not_missing(self):
+        from unittest.mock import patch
+        original = Path.lstat
+        def inspect(path, *args, **kwargs):
+            if path.name == "mognitio.toml":
+                raise PermissionError("fixture")
+            return original(path, *args, **kwargs)
+        with patch.object(Path, "lstat", inspect):
+            with self.assertRaisesRegex(InputError, "Cannot inspect workspace"):
+                discover(str(self.root), {self.uri: {"version": 1, "text": "let x: Int = 1;"}})
 
     def test_protocol_errors_and_notifications(self):
         p = self.peer()

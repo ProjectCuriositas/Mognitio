@@ -45,28 +45,51 @@ def disk_text(path):
     except (OSError, UnicodeError) as error:
         raise InputError("Source cannot be read as UTF-8") from error
 
+def regular_input(path):
+    """Inspect input kinds without opening special files or following directory links."""
+    try:
+        for component in [path, *path.parents]:
+            info = component.lstat()
+            if stat.S_ISLNK(info.st_mode):
+                raise InputError("Symlink input is forbidden")
+            if component == path and not stat.S_ISREG(info.st_mode):
+                raise InputError("Source must be a regular file")
+        return path.lstat()
+    except OSError as error:
+        raise InputError("Cannot inspect source input") from error
+
+def syntax_snapshot(documents):
+    sources, unavailable = {}, {}
+    total = 0
+    for uri, doc in sorted(documents.items()):
+        try:
+            regular_input(Path(path_from_uri(uri)))
+            if doc["text"] is None:
+                raise InputError("Open document is unavailable")
+            text = valid_text(doc["text"])
+        except InputError as error:
+            unavailable[uri] = str(error)
+            continue
+        total += len(text.encode("utf-8"))
+        if len(sources) >= SOURCE_COUNT or total > PROJECT_BYTES:
+            raise InputError("Standalone source budget exceeded")
+        sources[uri] = text
+    return {"root": None, "sources": sources, "unavailable": unavailable}
+
 def discover(root, documents):
     if root is None:
-        sources = {}
-        unavailable = {}
-        total = 0
-        for uri, doc in sorted(documents.items()):
-            if doc["text"] is None:
-                unavailable[uri] = "Open document is unavailable"
-                continue
-            text = valid_text(doc["text"])
-            total += len(text.encode("utf-8"))
-            if len(sources) >= SOURCE_COUNT or total > PROJECT_BYTES:
-                raise InputError("Standalone source budget exceeded")
-            sources[uri] = text
-        return {"root": None, "sources": sources, "unavailable": unavailable}
+        return syntax_snapshot(documents)
     base = Path(root)
     manifest = base / "mognitio.toml"
     try:
         if not stat.S_ISREG(manifest.lstat().st_mode):
             raise InputError("Expected a regular mognitio.toml")
+    except FileNotFoundError:
+        source_root = base / "src"
+        return syntax_snapshot({uri: doc for uri, doc in documents.items()
+                                if Path(path_from_uri(uri)).is_relative_to(source_root)})
     except OSError as error:
-        raise InputError("Workspace folder needs its own mognitio.toml") from error
+        raise InputError("Cannot inspect workspace mognitio.toml") from error
     sources, ids = {}, set()
     deadline = time.monotonic() + 5
     entries = 0
@@ -90,8 +113,7 @@ def discover(root, documents):
             for name in sorted(children):
                 walk(path / name, depth + 1)
         elif path.suffix == ".mgn":
-            if not stat.S_ISREG(info.st_mode):
-                raise InputError("Source must be a regular file")
+            info = regular_input(path)
             identity = (info.st_dev, info.st_ino)
             if identity in ids:
                 raise InputError("Duplicate physical input")
