@@ -239,7 +239,7 @@ class Server:
                 self.log("Invalid notification: " + str(error))
 
     def run_analysis(self):
-        if not self.dirty or self.state != "running":
+        if not self.dirty or self.state != "running" or self.retiring:
             return
         self.dirty = False
         try:
