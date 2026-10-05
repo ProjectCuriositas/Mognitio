@@ -142,3 +142,9 @@ keys must never be used as production trust roots.
 
 The independent mognitio-vscode repository owns VSIX packaging, Extension Host,
 actual semantic paint, and trust tests.
+
+Run tests/v015-memory.py in an exclusive delegated cgroup scope to check hard
+memory enforcement and cleanup. For example, systemd-run --user --scope
+-p Delegate=yes python3 tests/v015-memory.py. The separate --oom case must
+terminate with SIGKILL (shell status 137); run it only inside that delegated
+scope. Without delegation the test returns 77 rather than claiming a hard limit.
