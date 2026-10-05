@@ -157,3 +157,12 @@ python3 tests/v015-installer-recovery.py
 
 The LSP suite also covers missing-manifest transitions, syntax-only input kinds,
 and initialization retry with a different semantic legend.
+
+Cooperative diagnostic projection and live coordinator interruption checks:
+
+```sh
+python3 tests/v015-projection.py
+```
+
+These inject a bounded worker-result fixture into the real coordinator loop;
+shared frontend and payload protocol checks remain separate suites.

@@ -113,9 +113,12 @@ def state_matches(path, value):
     return matches(path, value)
 
 def recover(management):
+    global TRANSACTION_STARTED
     journal = management / "journal.json"
-    if not journal.exists():
+    if not journal.exists() and not journal.is_symlink():
         return
+    # A retained journal represents a partial operation even in a fresh process.
+    TRANSACTION_STARTED = True
     entry = load(journal)
     current = management / "current"
     if current.exists() and not current.is_symlink():
@@ -155,6 +158,7 @@ def recover(management):
     else:
         raise ValueError("Interrupted transaction has an unknown current selector")
     journal.unlink()
+    TRANSACTION_STARTED = False
 
 def fault(stage):
     if os.environ.get("MOGNITIO_INSTALL_FAULT") == stage:
