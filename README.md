@@ -2,9 +2,10 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-Version 0.14.0 adds scalar decomposition, text joining, and explicit
-I/O failure phases.
-The compiler targets Linux amd64; no prebuilt compiler is distributed.
+Version 0.15.0 adds a shared static analyzer, a stdio language server, build-time
+toolchain identities, and Linux APT/offline packaging.
+The compiler targets Linux amd64. Package tooling in this branch does not imply
+that an official binary release or public APT repository has been published.
 
 ## Start here
 
@@ -16,6 +17,7 @@ The compiler targets Linux amd64; no prebuilt compiler is distributed.
 - [Directory converter](examples/directory-converter/README.md): explicit tree traversal.
 - [Implementation verification](verification/v0.14.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
+- [Toolchain distribution](packaging/README.md): pinned builds, APT staging, and offline installation.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
 
 ## Requirements and commands
