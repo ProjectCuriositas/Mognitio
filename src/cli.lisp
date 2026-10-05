@@ -15,6 +15,15 @@
         ((or mognitio.diagnostics:usage-or-io-failure stream-error file-error sb-posix:syscall-error) ()
           (ignore-errors (write-line "mgn: Invalid argument transport" *error-output*) (finish-output *error-output*))
           (return-from command (values 2 t)))))
+    (let ((argv (if (mognitio.driver::raw-invocation-p arguments)
+                    (mognitio.driver::raw-invocation-arguments arguments) arguments)))
+      (when (and (= (length argv) 1) (equal (mognitio.driver::compiler-argument (first argv)) "--version"))
+        (let ((version (symbol-value (find-symbol "*VERSION*" "MOGNITIO.IDENTITY"))))
+          (unless version
+            (write-line "mgn: Build the toolchain before requesting its identity" *error-output*)
+            (return-from command (values 3 t)))
+          (format t "mgn ~A~%" version)
+          (return-from command (values 0 t)))))
     (mognitio.driver:run-cli arguments *standard-output* *error-output*)))
 
 (defun main ()

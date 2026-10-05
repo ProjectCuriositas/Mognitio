@@ -1,5 +1,13 @@
 (in-package #:mognitio.frontend)
 
+(defvar *nesting-limit* nil)
+(defvar *syntax-depth* 0)
+(defmacro with-syntax-depth ((p) &body body)
+  `(let ((*syntax-depth* (1+ *syntax-depth*)))
+     (when (and *nesting-limit* (> *syntax-depth* *nesting-limit*))
+       (fail-at (token-span (p-peek ,p)) :parse "Syntax nesting budget exceeded"))
+     ,@body))
+
 (defstruct parser source tokens (cursor 0) headers)
 (defun p-peek (p &optional (ahead 0))
   (let ((at (+ (parser-cursor p) ahead)))
@@ -62,6 +70,7 @@
     (when stack (fail-at (token-span (first stack)) :parse "Unclosed delimiter"))
     headers))
 (defun p-type (p)
+  (with-syntax-depth (p)
   (let ((name (p-expect p :identifier)))
     (if (string= (token-text name) "Function")
         (progn
@@ -74,7 +83,7 @@
             (progn (p-take p)
               (let* ((args (p-list p #'p-type :gt nil)) (last (p-expect p :gt)))
                 (make-type-syntax :kind :identifier :name name :arguments args :span (p-span p name last))))
-            name))))
+            name)))))
 (defun p-type-parameters (p)
   (if (eq (p-kind p) :lt)
       (progn (p-take p)
@@ -93,3 +102,23 @@
            (end (if signature-only (p-expect p :semicolon) body)))
       (make-function-expression :parameters parameters :result-type result :body body
                                 :span (p-span p start end)))))
+
+(defun check-syntax-depth (program)
+  (when *nesting-limit*
+    (let ((stack (list (cons program 0))))
+      (loop while stack do
+        (destructuring-bind (node . depth) (pop stack)
+          (cond
+            ((and (vectorp node) (not (stringp node)))
+             (map nil (lambda (child) (push (cons child depth) stack)) node))
+            ((consp node) (dolist (child node) (push (cons child depth) stack)))
+            ((and (typep node 'structure-object)
+                  (eq (symbol-package (type-of node)) (find-package :mognitio.syntax)))
+             (when (> depth *nesting-limit*)
+               (fail-at (form-span node) :parse "Syntax nesting budget exceeded"))
+             (dolist (slot (sb-mop:class-slots (class-of node)))
+               (let ((name (sb-mop:slot-definition-name slot)))
+                 (unless (member (symbol-name name) '("SPAN" "SOURCE" "PROJECT" "MODULES" "PAYLOAD")
+                                 :test #'equal)
+                   (push (cons (slot-value node name) (1+ depth)) stack))))))))))
+  program)

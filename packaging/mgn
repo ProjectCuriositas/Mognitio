@@ -1,0 +1,20 @@
+#!/bin/sh
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P) || exit 3
+/usr/bin/python3 -I "$root/lsp/check_payload.py" || exit 3
+if ( : 9<&0 ) 2>&-; then
+    exec 9<&0
+    mgn_stdin_open=yes
+else
+    mgn_stdin_open=no
+fi
+mgn_launch() {
+    if [ "$mgn_stdin_open" = yes ]; then
+        exec "$root/runtime/sbcl" --core "$root/runtime/mognitio.core" --noinform --no-sysinit --no-userinit --mognitio-argv-fd=3 3<&0 0<&9 9<&-
+    else
+        exec "$root/runtime/sbcl" --core "$root/runtime/mognitio.core" --noinform --no-sysinit --no-userinit --mognitio-argv-fd=3 --mognitio-stdin-closed 3<&0 0</dev/null
+    fi
+}
+{
+    printf '%s\000' "$#"
+    for argument do printf '%s\000' "$argument"; done
+} | mgn_launch
