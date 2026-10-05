@@ -194,39 +194,40 @@ def position(text, byte):
             i += 1
     return {"line": line, "character": len(prefix[start:].encode("utf-16-le")) // 2}
 
-def token_data(text, rows, mapping):
+def token_steps(text, rows, mapping, modifier_mapping=None):
+    """Project one immutable source cooperatively, including token preparation."""
     if not rows:
         return []
-    endpoints = {offset for row in rows for offset in row[:2]}
-    positions = {}
-    byte = line = column = 0
-    previous_cr = False
-    for char in text:
-        if byte in endpoints:
-            positions[byte] = {"line": line, "character": column}
-        byte += len(char.encode("utf-8"))
-        if char == "\r":
-            line += 1
-            column = 0
-        elif char == "\n":
-            if not previous_cr:
-                line += 1
-            column = 0
-        else:
-            column += 2 if ord(char) > 0xffff else 1
-        previous_cr = char == "\r"
-    positions[byte] = {"line": line, "character": column}
+    endpoints = set()
+    for index, row in enumerate(rows):
+        endpoints.update(row[:2])
+        if index % 256 == 255:
+            yield
+    positions = yield from position_steps(text, endpoints)
     result = []
     last_line = last_column = 0
-    for start, end, kind, modifiers in rows:
+    for index, (start, end, kind, modifiers) in enumerate(rows):
+        if index % 256 == 255:
+            yield
         first, final = positions[start], positions[end]
         if first["line"] != final["line"] or final["character"] <= first["character"]:
             continue
         target = mapping.get(kind)
         if target is None:
             continue
+        if modifier_mapping is not None:
+            modifiers = sum(target for bit, target in modifier_mapping.items() if modifiers & bit)
         line, column = first["line"], first["character"]
         result.extend([line - last_line, column - last_column if line == last_line else column,
                        final["character"] - column, target, modifiers])
         last_line, last_column = line, column
     return result
+
+def token_data(text, rows, mapping):
+    """Synchronous adapter for callers outside the coordinator."""
+    steps = token_steps(text, rows, mapping)
+    while True:
+        try:
+            next(steps)
+        except StopIteration as done:
+            return done.value
