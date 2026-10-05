@@ -48,16 +48,18 @@ def disk_text(path):
 def discover(root, documents):
     if root is None:
         sources = {}
+        unavailable = {}
         total = 0
         for uri, doc in sorted(documents.items()):
             if doc["text"] is None:
-                raise InputError("Open document is unavailable")
+                unavailable[uri] = "Open document is unavailable"
+                continue
             text = valid_text(doc["text"])
             total += len(text.encode("utf-8"))
             if len(sources) >= SOURCE_COUNT or total > PROJECT_BYTES:
                 raise InputError("Standalone source budget exceeded")
             sources[uri] = text
-        return {"root": None, "sources": sources}
+        return {"root": None, "sources": sources, "unavailable": unavailable}
     base = Path(root)
     manifest = base / "mognitio.toml"
     try:

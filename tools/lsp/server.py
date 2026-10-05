@@ -251,6 +251,8 @@ class Server:
             self.accept({"diagnostics": [], "tokens": {}, "complete": False})
             return
         self.snapshot = snapshot
+        for uri, reason in snapshot.get("unavailable", {}).items():
+            self.notify("window/showMessage", {"type": 2, "message": reason + ": " + uri})
         generation = self.generation
         command = [sys.executable, "-I", "-B", str(self.payload / "lsp/worker_exec.py"), str(os.getpid()),
                    str(self.payload / "runtime/sbcl"), "--core", str(self.payload / "runtime/mognitio.core"),

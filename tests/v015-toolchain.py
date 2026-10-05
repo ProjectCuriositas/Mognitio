@@ -207,6 +207,16 @@ class ToolchainTests(unittest.TestCase):
         p.change(self.uri, "namespace Example;\nlet value: Int = 2;\n", 3)
         self.assertTrue(p.tokens(self.uri, 22)["result"]["data"])
 
+    def test_invalid_rootless_file_does_not_hide_other_files(self):
+        p = self.peer(root=False)
+        other = (self.root / "other.mgn").as_uri()
+        p.open(self.uri, "let value: Int = 1;")
+        p.open(other, "let other: Int = 2;")
+        self.assertTrue(p.tokens(other)["result"]["data"])
+        p.change(self.uri, "\\ud800", 2)
+        self.assertEqual(p.tokens(self.uri, 21)["result"]["data"], [])
+        self.assertTrue(p.tokens(other, 22)["result"]["data"])
+
     def test_stale_version_ignored(self):
         p = self.peer()
         p.open(self.uri, "namespace Example;\nlet value: Int = 1;\n", 4)
