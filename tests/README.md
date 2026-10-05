@@ -123,3 +123,22 @@ Those observations do not establish a whole-program complexity or speedup claim.
 
 `v014-review.lisp` adds first-close precedence/resource tests and independent
 scalar-root and primary-phase control-flow mutation checks.
+
+## v0.15 toolchain and editor support
+
+Build a payload using the pinned inputs in packaging/build-lock.json, then run
+python3 tests/v015-analysis.py --payload PAYLOAD and
+python3 tests/v015-toolchain.py --payload PAYLOAD.
+These exercise shared frontend analysis, process-level LSP behavior, protocol
+framing, cancellation supervision, identity mismatch, and payload reclamation
+during a live session.
+
+After creating and externally verifying a release-mode bundle, run
+python3 tests/v015-installer.py --bundle EXTRACTED_DIRECTORY.
+It uses temporary user prefixes, including spaces and Japanese characters,
+and checks recovery, ownership preservation, and argument rejection.
+Run distribution acceptance in disposable supported OS userlands. Test signing
+keys must never be used as production trust roots.
+
+The independent mognitio-vscode repository owns VSIX packaging, Extension Host,
+actual semantic paint, and trust tests.

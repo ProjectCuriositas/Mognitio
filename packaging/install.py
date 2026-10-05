@@ -13,6 +13,8 @@ import subprocess
 import sys
 import tempfile
 
+TRANSACTION_STARTED = False
+
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -119,6 +121,7 @@ def fault(stage):
         raise RuntimeError("Injected interruption at " + stage)
 
 def uninstall(prefix, management, state):
+    global TRANSACTION_STARTED
     if not state:
         raise ValueError("Ownership record is missing")
     retained = []
@@ -130,6 +133,7 @@ def uninstall(prefix, management, state):
         if not path.exists() and not path.is_symlink():
             continue
         if matches(path, value):
+            TRANSACTION_STARTED = True
             path.unlink()
         else:
             retained.append(name)
@@ -156,6 +160,9 @@ def uninstall(prefix, management, state):
     return 0
 
 def run(args):
+    global TRANSACTION_STARTED
+    if args.uninstall and args.version:
+        raise ValueError("--uninstall cannot be combined with --version")
     prefix = Path(args.prefix).expanduser().absolute()
     if prefix != prefix.resolve() or str(prefix) in ("/", "/usr", "/usr/local", "/opt", "/bin", "/sbin"):
         raise ValueError("Choose a non-symlink user prefix outside system package locations")
@@ -242,6 +249,7 @@ def run(args):
         target = "versions/" + identity["build"]
         journal = {"phase": "prepared", "old": old, "new": target, "state": None, "previous": previous}
         write_json(management / "journal.json", journal)
+        TRANSACTION_STARTED = True
         fault("prepared")
         (prefix / "bin").mkdir(exist_ok=True)
         for tool in ["mgn", "mognitio-lsp"]:
@@ -285,12 +293,15 @@ def run(args):
         return 0
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    class Arguments(argparse.ArgumentParser):
+        def error(self, message):
+            self.exit(1, "Mognitio installer: " + message + "\n")
+    parser = Arguments(description="Offline user installation from an externally verified bundle. No network download.")
     parser.add_argument("--prefix", default="~/.local")
-    parser.add_argument("--version")
+    parser.add_argument("--version", help="Require this exact bundled version; does not download versions")
     parser.add_argument("--uninstall", action="store_true")
     try:
         sys.exit(run(parser.parse_args()))
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
         print("Mognitio installer: " + str(error), file=sys.stderr)
-        sys.exit(2 if isinstance(error, RuntimeError) else 1)
+        sys.exit(2 if TRANSACTION_STARTED or isinstance(error, RuntimeError) else 1)

@@ -168,6 +168,8 @@ class ToolchainTests(unittest.TestCase):
         for peer in self.peers:
             if peer.process.poll() is None:
                 peer.close()
+            for stream in (peer.process.stdin, peer.process.stdout, peer.process.stderr):
+                stream.close()
         self.directory.cleanup()
 
     def peer(self, root=True, **kwargs):
@@ -243,6 +245,29 @@ class ToolchainTests(unittest.TestCase):
         self.assertEqual(answer["error"]["code"], -32800)
         p.tokens(self.uri, 42)
         self.assertEqual(sum(m.get("id") == 41 for m in p.events), 1)
+
+    def test_live_session_survives_old_payload_reclamation(self):
+        global PAYLOAD
+        import shutil
+        original = PAYLOAD
+        copied = self.root / "old-payload"
+        shutil.copytree(original, copied)
+        try:
+            PAYLOAD = copied
+            p = self.peer()
+            before = p.initialize["result"]["serverInfo"]["version"]
+            self.assertTrue(p.tokens(self.uri)["result"]["data"])
+            shutil.rmtree(copied)
+            p.open(self.uri, "namespace Example;\nlet value: Int = false;\n")
+            result = p.wait(lambda m: m.get("method") == "textDocument/publishDiagnostics" and m["params"].get("version") == 1)
+            self.assertTrue(result["params"]["diagnostics"])
+            p.change(self.uri, "namespace Example;\nlet value: Int = 2;\n", 2)
+            corrected = p.wait(lambda m: m.get("method") == "textDocument/publishDiagnostics" and m["params"].get("version") == 2)
+            self.assertEqual(corrected["params"]["diagnostics"], [])
+            self.assertTrue(p.tokens(self.uri, 24)["result"]["data"])
+            self.assertEqual(before, json.loads((original / "identity.json").read_text())["version"])
+        finally:
+            PAYLOAD = original
 
     def test_component_mismatch(self):
         import shutil

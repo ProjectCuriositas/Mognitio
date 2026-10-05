@@ -11,6 +11,8 @@ def run(prefix,*args,env=None,code=0):
 with tempfile.TemporaryDirectory(prefix="installation test ") as temp:
  root=Path(temp)
  prefix=root/"prefix 日本語 with spaces"
+ run(prefix,"--uninstall","--version","0.15.0",code=1)
+ run(prefix,"--unknown",code=1)
  run(prefix)
  for tool in ("mgn","mognitio-lsp"):
   p=subprocess.run([str(prefix/"bin"/tool),"--version"],capture_output=True,text=True)
