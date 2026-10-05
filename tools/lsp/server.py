@@ -105,6 +105,7 @@ class Server:
         if not isinstance(refresh, bool):
             raise InputError("Refresh support must be a boolean")
         legend = []
+        mapping = {}
         for index, kind in enumerate(TYPES):
             candidate = kind
             while candidate not in supported and candidate in FALLBACK:
@@ -112,19 +113,24 @@ class Server:
             if candidate in supported:
                 if candidate not in legend:
                     legend.append(candidate)
-                self.mapping[index] = legend.index(candidate)
+                mapping[index] = legend.index(candidate)
         modifiers = [value for value in MODIFIERS if value in supported_modifiers]
-        self.modifier_mapping = {1 << i: 1 << modifiers.index(value)
+        modifier_mapping = {1 << i: 1 << modifiers.index(value)
                                  for i, value in enumerate(MODIFIERS) if value in modifiers}
+        parent_fd = None
         parent = params.get("processId")
         if parent is not None:
             if not isinstance(parent, int) or isinstance(parent, bool) or parent <= 0:
                 raise InputError("Invalid processId")
             try:
-                self.parent_fd = os.pidfd_open(parent)
-                self.selector.register(self.parent_fd, selectors.EVENT_READ, "parent")
-            except OSError as error:
+                parent_fd = os.pidfd_open(parent)
+                self.selector.register(parent_fd, selectors.EVENT_READ, "parent")
+            except (OSError, ValueError, KeyError) as error:
+                if parent_fd is not None:
+                    os.close(parent_fd)
                 raise InputError("Cannot establish parent monitoring") from error
+        self.mapping, self.modifier_mapping = mapping, modifier_mapping
+        self.parent_fd = parent_fd
         self.refresh = refresh
         self.root, self.state = root, "initializing"
         self.response(id, {
@@ -302,7 +308,7 @@ class Server:
             if text is None or diagnostic.get("start") is None:
                 self.notify("window/showMessage", {"type": 2, "message": diagnostic["message"]})
                 continue
-            uri = uri_from_path(Path(self.root) / path) if self.root else path
+            uri = uri_from_path(Path(self.snapshot["root"]) / path) if self.snapshot["root"] else path
             rows = grouped.setdefault(uri, [])
             if len(rows) >= 200:
                 truncated = True
@@ -316,7 +322,7 @@ class Server:
                 other = texts.get(item.get("path"))
                 if other is None or item.get("start") is None:
                     continue
-                location = uri_from_path(Path(self.root) / item["path"]) if self.root else item["path"]
+                location = uri_from_path(Path(self.snapshot["root"]) / item["path"]) if self.snapshot["root"] else item["path"]
                 related.append({"location": {"uri": location, "range": {
                     "start": position(other, item["start"]), "end": position(other, item["end"])}},
                     "message": item["message"]})
@@ -340,7 +346,7 @@ class Server:
                        "method": "workspace/semanticTokens/refresh"})
 
     def respond_tokens(self, id, uri):
-        path = os.path.relpath(path_from_uri(uri), self.root) if self.root else uri
+        path = os.path.relpath(path_from_uri(uri), self.snapshot["root"]) if self.snapshot["root"] else uri
         text = self.snapshot["sources"].get(path, "")
         rows = self.result["tokens"].get(path, [])
         projected = [[a, b, c, sum(target for bit, target in self.modifier_mapping.items() if mods & bit)]

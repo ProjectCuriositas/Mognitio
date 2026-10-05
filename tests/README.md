@@ -148,3 +148,12 @@ memory enforcement and cleanup. For example, systemd-run --user --scope
 -p Delegate=yes python3 tests/v015-memory.py. The separate --oom case must
 terminate with SIGKILL (shell status 137); run it only inside that delegated
 scope. Without delegation the test returns 77 rather than claiming a hard limit.
+
+Installer interruption recovery regressions (temporary payload fixtures, no system installation):
+
+```sh
+python3 tests/v015-installer-recovery.py
+```
+
+The LSP suite also covers missing-manifest transitions, syntax-only input kinds,
+and initialization retry with a different semantic legend.

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline, ownership-recorded user installation. Verify the bundle externally first."""
 import argparse
+import base64
 import fcntl
 import hashlib
 import json
@@ -89,29 +90,68 @@ def switch(current, target):
     temporary.symlink_to(target)
     temporary.replace(current)
 
+def file_record(data, mode):
+    return {"kind": "file", "digest": hashlib.sha256(data).hexdigest(), "mode": mode}
+
+def atomic_file(path, data, mode):
+    # Replacing a directory entry never writes through its final symlink.
+    fd, name = tempfile.mkstemp(prefix=path.name + ".tmp-", dir=path.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(data)
+            os.fchmod(stream.fileno(), mode)
+            stream.flush()
+            os.fsync(stream.fileno())
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+def state_matches(path, value):
+    if value is None:
+        return not path.exists() and not path.is_symlink()
+    return matches(path, value)
+
 def recover(management):
     journal = management / "journal.json"
     if not journal.exists():
         return
     entry = load(journal)
     current = management / "current"
+    if current.exists() and not current.is_symlink():
+        raise ValueError("Interrupted transaction has a changed current selector")
     selected = os.readlink(current) if current.is_symlink() else None
+    prefix = management.parent.parent
     if selected == entry["new"]:
         identity = verify_payload(management / selected)
         if identity["build"] != entry["state"]["build"]:
             raise ValueError("Interrupted transaction identity mismatch")
+        for name, expected in entry["state"]["files"].items():
+            if not matches(member(prefix, name), expected):
+                raise ValueError("Interrupted transaction contents changed: " + name)
         write_json(management / "install-state.json", entry["state"])
     elif selected == entry["old"]:
-        # Restore only the exact paths recorded before replacing managed entries.
-        import base64
-        prefix = management.parent.parent
-        for name, previous in entry.get("previous", {}).items():
+        # Validate every entry before any rollback; keep the journal on conflict.
+        rollback = []
+        for name, previous in entry["previous"].items():
             path = member(prefix, name)
+            before = None
+            if previous is not None:
+                data = base64.b64decode(previous["bytes"], validate=True)
+                before = file_record(data, previous["mode"])
+            if state_matches(path, before):
+                continue
+            expected = entry["installed"][name]
+            if not matches(path, expected):
+                raise ValueError("Interrupted transaction contents changed: " + name)
+            rollback.append((path, previous, expected))
+        for path, previous, expected in rollback:
+            if not matches(path, expected):
+                raise ValueError("Interrupted transaction contents changed: " + str(path))
             if previous is None:
-                path.unlink(missing_ok=True)
+                path.unlink()
             else:
-                path.write_bytes(base64.b64decode(previous["bytes"], validate=True))
-                path.chmod(previous["mode"])
+                atomic_file(path, base64.b64decode(previous["bytes"], validate=True), previous["mode"])
     else:
         raise ValueError("Interrupted transaction has an unknown current selector")
     journal.unlink()
@@ -235,7 +275,6 @@ def run(args):
                 verify_payload(staged)
                 subprocess.run([str(staged / "bin/mgn"), "--version"], check=True, capture_output=True, timeout=10)
                 staged.rename(destination)
-        import base64
         previous = {}
         for name in destinations:
             if name == "lib/mognitio/current":
@@ -243,25 +282,28 @@ def run(args):
             path = member(prefix, name)
             previous[name] = ({"bytes": base64.b64encode(path.read_bytes()).decode(),
                                "mode": path.stat().st_mode & 0o777} if path.exists() else None)
+        entries = {}
+        for tool in ["mgn", "mognitio-lsp"]:
+            text = "#!/bin/sh\nexec " + shlex.quote(str(management / "current/bin" / tool)) + ' "$@"\n'
+            entries["bin/" + tool] = (text.encode(), 0o755)
+        entries["lib/mognitio/install.py"] = ((bundle / "install.py").read_bytes(),
+                                             (bundle / "install.py").stat().st_mode & 0o777)
+        text = ("#!/bin/sh\nexec python3 -I " + shlex.quote(str(management / "install.py")) +
+                " --prefix " + shlex.quote(str(prefix)) + ' --uninstall "$@"\n')
+        entries["lib/mognitio/uninstall.sh"] = (text.encode(), 0o755)
         owned = dict(state["files"]) if state else {}
         current = management / "current"
         old = os.readlink(current) if current.is_symlink() else None
         target = "versions/" + identity["build"]
-        journal = {"phase": "prepared", "old": old, "new": target, "state": None, "previous": previous}
+        journal = {"phase": "prepared", "old": old, "new": target, "state": None, "previous": previous,
+                   "installed": {name: file_record(data, mode) for name, (data, mode) in entries.items()}}
         write_json(management / "journal.json", journal)
         TRANSACTION_STARTED = True
         fault("prepared")
         (prefix / "bin").mkdir(exist_ok=True)
-        for tool in ["mgn", "mognitio-lsp"]:
-            target = prefix / "bin" / tool
-            text = "#!/bin/sh\nexec " + shlex.quote(str(management / "current/bin" / tool)) + ' "$@"\n'
-            target.write_text(text)
-            target.chmod(0o755)
-        shutil.copy2(bundle / "install.py", management / "install.py")
+        for name, (data, mode) in entries.items():
+            atomic_file(member(prefix, name), data, mode)
         uninstall_script = management / "uninstall.sh"
-        uninstall_script.write_text("#!/bin/sh\nexec python3 -I " + shlex.quote(str(management / "install.py")) +
-                                   " --prefix " + shlex.quote(str(prefix)) + ' --uninstall "$@"\n')
-        uninstall_script.chmod(0o755)
         for path in destination.rglob("*"):
             if path.is_file():
                 owned[str(path.relative_to(prefix))] = record(path)
