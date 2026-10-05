@@ -73,24 +73,37 @@ class Server:
         root = params.get("rootUri")
         root = path_from_uri(root) if root is not None else None
         folders = params.get("workspaceFolders")
+        if folders is not None and not isinstance(folders, list):
+            raise InputError("Workspace folders must be an array or null")
         if folders:
             if not isinstance(folders, list) or len(folders) != 1 or path_from_uri(folders[0]["uri"]) != root:
                 raise InputError("One workspace folder matching rootUri is required")
         if root is not None and not os.path.isdir(root):
             raise InputError("Workspace root is not a directory")
-        parent = params.get("processId")
-        if parent is not None:
-            if not isinstance(parent, int) or isinstance(parent, bool) or parent <= 0:
-                raise InputError("Invalid processId")
-            try:
-                self.parent_fd = os.pidfd_open(parent)
-                self.selector.register(self.parent_fd, selectors.EVENT_READ, "parent")
-            except OSError as error:
-                raise InputError("Cannot establish parent monitoring") from error
         caps = params.get("capabilities", {})
-        semantic = caps.get("textDocument", {}).get("semanticTokens", {})
+        def object_member(value, key):
+            member = value.get(key, {})
+            if not isinstance(member, dict):
+                raise InputError("Capability " + key + " must be an object")
+            return member
+        if not isinstance(caps, dict):
+            raise InputError("Capabilities must be an object")
+        document_caps = object_member(caps, "textDocument")
+        workspace_caps = object_member(caps, "workspace")
+        general = object_member(caps, "general")
+        semantic = object_member(document_caps, "semanticTokens")
+        workspace_semantic = object_member(workspace_caps, "semanticTokens")
+        encodings = general.get("positionEncodings", ["utf-16"])
+        if not isinstance(encodings, list) or not all(isinstance(value, str) for value in encodings):
+            raise InputError("Position encodings must be an array of strings")
         supported = semantic.get("tokenTypes", TYPES)
         supported_modifiers = semantic.get("tokenModifiers", MODIFIERS)
+        if any(not isinstance(values, list) or not all(isinstance(value, str) for value in values)
+               for values in (supported, supported_modifiers)):
+            raise InputError("Token capabilities must be arrays of strings")
+        refresh = workspace_semantic.get("refreshSupport", False)
+        if not isinstance(refresh, bool):
+            raise InputError("Refresh support must be a boolean")
         legend = []
         for index, kind in enumerate(TYPES):
             candidate = kind
@@ -103,7 +116,16 @@ class Server:
         modifiers = [value for value in MODIFIERS if value in supported_modifiers]
         self.modifier_mapping = {1 << i: 1 << modifiers.index(value)
                                  for i, value in enumerate(MODIFIERS) if value in modifiers}
-        self.refresh = caps.get("workspace", {}).get("semanticTokens", {}).get("refreshSupport", False)
+        parent = params.get("processId")
+        if parent is not None:
+            if not isinstance(parent, int) or isinstance(parent, bool) or parent <= 0:
+                raise InputError("Invalid processId")
+            try:
+                self.parent_fd = os.pidfd_open(parent)
+                self.selector.register(self.parent_fd, selectors.EVENT_READ, "parent")
+            except OSError as error:
+                raise InputError("Cannot establish parent monitoring") from error
+        self.refresh = refresh
         self.root, self.state = root, "initializing"
         self.response(id, {
             "serverInfo": {"name": "mognitio-lsp", "version": self.identity["version"]},

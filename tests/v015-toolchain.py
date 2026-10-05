@@ -235,6 +235,18 @@ class ToolchainTests(unittest.TestCase):
         p.wait(lambda m: m.get("method") == "textDocument/publishDiagnostics" and m["params"]["uri"] == self.uri and m["params"].get("version") == 2)
         self.assertTrue(p.tokens(self.uri, 21)["result"]["data"])
 
+    def test_invalid_initialize_shapes_allow_a_corrected_request(self):
+        for capabilities in (["bad"], {"workspace": []}, {"textDocument": None},
+                             {"general": {"positionEncodings": 42}},
+                             {"textDocument": {"semanticTokens": {"tokenTypes": "variable"}}}):
+            p = self.peer(capabilities=capabilities)
+            self.assertEqual(p.initialize["error"]["code"], -32602)
+            p.send({"id": 2, "method": "initialize", "params": {
+                "rootUri": self.root.as_uri(), "processId": os.getpid(), "capabilities": {}}})
+            self.assertIn("result", p.wait(lambda m: m.get("id") == 2))
+            p.send({"method": "initialized", "params": {}})
+            self.assertTrue(p.tokens(self.uri)["result"]["data"])
+
     def test_protocol_errors_and_notifications(self):
         p = self.peer()
         p.send({"id": 30, "method": "unknown"})
