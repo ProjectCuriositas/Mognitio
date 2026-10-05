@@ -32,6 +32,10 @@ assert all(kind==6 for name,kind,mods in rows if name=="callback"),rows
 text='let words: String = "hello"; let length: Int = words->length();'
 result=one(text);source=("namespace Example;\n"+text).encode()
 assert any(source[a:b]==b"length" and kind==8 and mods&4 for a,b,kind,mods in result["tokens"]["src/sample.mgn"]),result
+text="type Box<T> = product { T: Int; value: T; }; let box: Box<Int> = Box<Int> { T: 1, value: 2 };"
+result=one(text);source=("namespace Example;\n"+text).encode()
+roles=[kind for a,b,kind,mods in result["tokens"]["src/sample.mgn"] if source[a:b]==b"T"]
+assert sorted(roles)==[3,3,7,7],roles
 # All shipped example projects share exactly the compiler's grammar and checker.
 count=0
 for manifest in sorted((root/"examples").glob("*/mognitio.toml")):

@@ -32,7 +32,7 @@
 (defun project-semantic-tokens (project checked)
   (let ((output (make-hash-table :test #'equal))
         (by-source (make-hash-table :test #'eq))
-        (seen (make-hash-table :test #'equal)))
+        (seen (make-hash-table :test #'equal)) (parameter-scopes nil))
     (labels
         ((emit (token role &optional (mods 0))
            (when (and token (typep token 'token))
@@ -54,7 +54,16 @@
               (let ((resolved (gethash (token-text x)
                                       (mognitio.semantic::value-context-names
                                        (mognitio.semantic::checked-program-values checked)))))
-                (emit x (if (mognitio.semantic::nominal-type-p resolved :interface) "interface" role)
+                (emit x (cond
+                          ((some (lambda (scope)
+                                   (destructuring-bind (span parameters) scope
+                                     (and (eq (span-source span) (span-source (token-span x)))
+                                          (<= (span-start span) (span-start (token-span x)))
+                                          (<= (span-end (token-span x)) (span-end span))
+                                          (find (token-text x) parameters :key #'token-text :test #'equal))))
+                                 parameter-scopes) "typeParameter")
+                          ((mognitio.semantic::nominal-type-p resolved :interface) "interface")
+                          (t role))
                       (if (member (token-text x) mognitio.project::*predeclared* :test #'equal) 4 0))))))
          (visit (node)
            (typecase node
@@ -88,7 +97,10 @@
                                        (mognitio.semantic::checked-program-values checked)))))
                 (when (mognitio.semantic::nominal-type-p resolved :interface)
                   (emit (variable-reference-name node) "interface"))))
-             (specialization-reference (emit (specialization-reference-name node) "function"))
+             (specialization-reference
+              (emit (specialization-reference-name node) "function")
+              (map nil #'types (specialization-reference-arguments node)))
+             (list-expression (types (mognitio.syntax::list-expression-type node)))
              (field-expression (emit (field-expression-name node) "property"))
              (method-call
               (let ((info (mognitio.semantic::checked-member checked node)))
@@ -109,13 +121,9 @@
              (let ((parameters (typecase node
                                  (data-declaration (data-declaration-type-parameters node))
                                  (template-declaration (template-declaration-parameters node)))))
-               (when parameters
+               (when (and parameters (plusp (length parameters)))
                  (map nil (lambda (token) (emit token "typeParameter" 1)) parameters)
-                 (mognitio.syntax:walk-ast
-                  node (lambda (child)
-                         (when (and (typep child 'token)
-                                    (find (token-text child) parameters :key #'token-text :test #'equal))
-                           (emit child "typeParameter"))))))))
+                 (push (list (node-span node) parameters) parameter-scopes)))))
           (mognitio.syntax:walk-ast program #'visit)))
       ;; Role is determined by resolved declaration before Function structure.
       (maphash
@@ -161,6 +169,7 @@
                   ((eq (token-kind token) :left-brace) (setf namespace nil))
                   ((eq (token-kind token) :semicolon) (setf namespace nil))
                   ((and namespace (eq (token-kind token) :identifier)) (emit token "namespace" (if (eq namespace :namespace) 1 0))))
+            (when (equal (token-text token) "Function") (emit token "type" 4))
             (when (rassoc (token-kind token) mognitio.frontend::*keywords*) (emit token "keyword")))
           (setf (gethash (source-path source) output)
                 (coerce (sort (gethash source by-source) #'< :key (lambda (row) (aref row 0))) 'vector)))))
