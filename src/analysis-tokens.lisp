@@ -32,7 +32,10 @@
 (defun project-semantic-tokens (project checked)
   (let ((output (make-hash-table :test #'equal))
         (by-source (make-hash-table :test #'eq))
-        (seen (make-hash-table :test #'equal)) (parameter-scopes nil))
+        (seen (make-hash-table :test #'equal)) (parameter-scopes nil)
+        (standard-keys (mapcar #'mognitio.project::module-declaration-key
+                              (mognitio.project::standard-catalog-declarations
+                               (mognitio.project::project-standard project)))))
     (labels
         ((emit (token role &optional (mods 0))
            (when (and token (typep token 'token))
@@ -43,6 +46,17 @@
                           (not (gethash key seen)))
                  (setf (gethash key seen) t)
                  (push (token-row token role mods) (gethash source by-source))))))
+         (standard-name-p (name)
+           (or (member name standard-keys :test #'equal)
+               (member name mognitio.project::*predeclared* :test #'equal)))
+         (standard-member-p (node)
+           (let* ((info (mognitio.semantic::checked-member checked node))
+                  (type (and info (mognitio.semantic::member-info-type info))))
+             (and (mognitio.semantic::nominal-type-p type)
+                  (standard-name-p
+                   (mognitio.semantic::type-info-name
+                    (mognitio.semantic::context-type
+                     (mognitio.semantic::checked-program-values checked) type))))))
          (types (x &optional (role "type"))
            (typecase x
              (type-syntax (types (type-syntax-name x) role)
@@ -64,7 +78,7 @@
                                  parameter-scopes) "typeParameter")
                           ((mognitio.semantic::nominal-type-p resolved :interface) "interface")
                           (t role))
-                      (if (member (token-text x) mognitio.project::*predeclared* :test #'equal) 4 0))))))
+                      (if (standard-name-p (token-text x)) 4 0))))))
          (visit (node)
            (typecase node
              (local-binding (types (local-binding-annotation node)))
@@ -101,17 +115,17 @@
               (emit (specialization-reference-name node) "function")
               (map nil #'types (specialization-reference-arguments node)))
              (list-expression (types (mognitio.syntax::list-expression-type node)))
-             (field-expression (emit (field-expression-name node) "property"))
+             (field-expression (emit (field-expression-name node) "property" (if (standard-member-p node) 4 0)))
              (method-call
               (let ((info (mognitio.semantic::checked-member checked node)))
                 (emit (method-call-name node)
                       (if (and info (eq (mognitio.semantic::member-info-kind info) :field-call)) "property" "method")
-                      (if (mognitio.semantic::checked-operation checked node) 4 0))))
-             (enum-expression (types (enum-expression-name node)) (emit (enum-expression-variant node) "enumMember"))
+                      (if (or (mognitio.semantic::checked-operation checked node) (standard-member-p node)) 4 0))))
+             (enum-expression (types (enum-expression-name node)) (emit (enum-expression-variant node) "enumMember" (if (standard-name-p (token-text (enum-expression-name node))) 4 0)))
              (struct-expression
               (types (struct-expression-name node))
               (loop for m across (struct-expression-fields node) do (emit (named-member-name m) "property")))
-             (variant-pattern (types (variant-pattern-name node)) (emit (variant-pattern-variant node) "enumMember")))))
+             (variant-pattern (types (variant-pattern-name node)) (emit (variant-pattern-variant node) "enumMember" (if (standard-name-p (token-text (variant-pattern-name node))) 4 0))))))
       ;; Scoped type parameter occurrences and declaration roles precede binding types.
       (dolist (module (mognitio.project::project-modules project))
         (let ((program (mognitio.project::source-module-program module)))

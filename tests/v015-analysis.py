@@ -36,6 +36,10 @@ text="type Box<T> = product { T: Int; value: T; }; let box: Box<Int> = Box<Int> 
 result=one(text);source=("namespace Example;\n"+text).encode()
 roles=[kind for a,b,kind,mods in result["tokens"]["src/sample.mgn"] if source[a:b]==b"T"]
 assert sorted(roles)==[3,3,7,7],roles
+text=r'use Std\Io\{IoError, readTextFile}; let response: Result<String,IoError> = readTextFile("not-opened");'
+result=one(text);source=("namespace Example;\n"+text).encode()
+standard=[mods for a,b,kind,mods in result["tokens"]["src/sample.mgn"] if source[a:b]==b"IoError"]
+assert len(standard)>=2 and all(mods&4 for mods in standard),standard
 # All shipped example projects share exactly the compiler's grammar and checker.
 count=0
 for manifest in sorted((root/"examples").glob("*/mognitio.toml")):
