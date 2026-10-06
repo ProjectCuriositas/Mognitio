@@ -1,0 +1,41 @@
+name: Sign frozen release manifest
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_sha256:
+        description: SHA-256 of the reviewed draft release manifest
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  sign:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: release-signing
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Download frozen draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v$(cat VERSION)"
+          test "$(gh release view "$tag" --json isDraft --jq .isDraft)" = true
+          test "$(git ls-remote origin "refs/tags/$tag" | cut -f1)" = "$GITHUB_SHA"
+          mkdir _release
+          gh release download "$tag" --dir _release
+      - name: Sign and verify immutable manifest
+        env:
+          BUNDLE_SIGNING_KEY: ${{ secrets.BUNDLE_SIGNING_KEY }}
+          BUNDLE_SIGNING_PASSPHRASE: ${{ secrets.BUNDLE_SIGNING_PASSPHRASE }}
+          MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+        run: python3 scripts/sign-release.py _release --manifest-sha256 "$MANIFEST_SHA256" --commit "$GITHUB_SHA"
+      - name: Attach signature to draft only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v$(cat VERSION)"
+          test "$(gh release view "$tag" --json isDraft --jq .isDraft)" = true
+          gh release upload "$tag" _release/manifest.json.asc
