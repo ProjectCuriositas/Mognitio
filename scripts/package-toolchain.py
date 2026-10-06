@@ -15,6 +15,18 @@ ROOT = Path(__file__).resolve().parent.parent
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
+def normalize_permissions(root):
+    """Export readable data and traversable directories, independent of umask."""
+    for path in [root, *root.rglob("*")]:
+        if path.is_symlink():
+            raise ValueError("Distribution links are forbidden")
+        if path.is_dir():
+            path.chmod(0o755)
+        elif path.is_file():
+            path.chmod(0o755 if path.stat().st_mode & 0o111 else 0o644)
+        else:
+            raise ValueError("Unsupported distribution member")
+
 def run(args):
     payload = args.payload.resolve()
     spec = importlib.util.spec_from_file_location("payload_validation", ROOT / "tools/lsp/payload.py")
@@ -32,6 +44,7 @@ def run(args):
         shutil.copytree(payload, bundle / "payload")
         for name in ("install.py", "install.sh"):
             shutil.copy2(ROOT / "packaging" / name, bundle / name)
+        normalize_permissions(bundle)
         bundle_file = args.output / ("mognitio-" + version + "-linux-amd64.tar.gz")
         with tarfile.open(bundle_file, "w:gz") as archive:
             archive.add(bundle, arcname="mognitio")
@@ -53,6 +66,7 @@ def run(args):
             "Depends: libc6 (>= 2.34), libzstd1, python3 (>= 3.12), util-linux\n"
             "Description: Mognitio compiler and language server\n"
             " A fixed compiler, frontend, standard library, and stdio language server.\n")
+        normalize_permissions(deb)
         deb_file = args.output / ("mognitio_" + version + "-1_amd64.deb")
         subprocess.run(["dpkg-deb", "--root-owner-group", "--build", str(deb), str(deb_file)], check=True)
         manifest = {"schema": 1, "identity": identity,

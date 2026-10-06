@@ -4,6 +4,7 @@ import argparse
 parser=argparse.ArgumentParser()
 parser.add_argument("--bundle",type=Path,required=True)
 bundle=parser.parse_args().bundle.resolve()
+version=json.loads((bundle/"payload/identity.json").read_text())["version"]
 def run(prefix,*args,env=None,code=0):
  p=subprocess.run(["sh",str(bundle/"install.sh"),"--prefix",str(prefix),*args],env=dict(os.environ,**(env or {})),capture_output=True,text=True)
  assert p.returncode==code,(p.returncode,code,p.stdout,p.stderr)
@@ -11,12 +12,12 @@ def run(prefix,*args,env=None,code=0):
 with tempfile.TemporaryDirectory(prefix="installation test ") as temp:
  root=Path(temp)
  prefix=root/"prefix 日本語 with spaces"
- run(prefix,"--uninstall","--version","0.15.0",code=1)
+ run(prefix,"--uninstall","--version",version,code=1)
  run(prefix,"--unknown",code=1)
  run(prefix)
  for tool in ("mgn","mognitio-lsp"):
   p=subprocess.run([str(prefix/"bin"/tool),"--version"],capture_output=True,text=True)
-  assert p.returncode==0 and "0.15.0" in p.stdout,p
+  assert p.returncode==0 and version in p.stdout,p
  run(prefix)
  (prefix/"keep.txt").write_text("user data")
  run(prefix,"--uninstall")
