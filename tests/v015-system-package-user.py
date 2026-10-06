@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -12,8 +13,25 @@ ROOT = Path(__file__).resolve().parent.parent
 def check(deb, rootfs, expect_denied=False):
     if os.geteuid() != 0:
         raise SystemExit("Run as root to install root-owned files and drop to UID 65534")
+    if rootfs == Path("/"):
+        raise SystemExit("Use a disposable Ubuntu rootfs, not the host root")
     with tempfile.TemporaryDirectory(prefix="mognitio-system-user-") as temp:
         work = Path(temp)
+        # Private directory copy permits mountpoints without changing the base.
+        sandbox = work / "rootfs"
+        def copy_file(source, target):
+            try:
+                os.link(source, target)
+            except OSError:
+                shutil.copy2(source, target)
+            return target
+        shutil.copytree(rootfs, sandbox, symlinks=True, copy_function=copy_file)
+        for name in ("usr/lib/mognitio", "source", "work"):
+            (sandbox / name).mkdir(parents=True, exist_ok=True)
+        for name in ("mgn", "mognitio-lsp"):
+            target = sandbox / "usr/bin" / name
+            if not target.exists():
+                target.touch()
         package = work / "package"
         subprocess.run(["dpkg-deb", "-x", str(deb), str(package)], check=True)
         payloads = list((package / "usr/lib/mognitio").iterdir())
@@ -24,7 +42,7 @@ def check(deb, rootfs, expect_denied=False):
         scratch = work / "work"
         scratch.mkdir(mode=0o700)
         os.chown(scratch, 65534, 65534)
-        command = ["bwrap", "--ro-bind", str(rootfs), "/", "--dev", "/dev", "--proc", "/proc",
+        command = ["bwrap", "--ro-bind", str(sandbox), "/", "--dev", "/dev", "--proc", "/proc",
                    "--tmpfs", "/tmp", "--ro-bind", str(package / "usr/lib/mognitio"),
                    "/usr/lib/mognitio", "--ro-bind", str(ROOT), "/source",
                    "--bind", str(scratch), "/work", "--chdir", "/work",
@@ -79,7 +97,7 @@ assert p.wait(timeout=10)==0
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--deb", type=Path, required=True)
-    parser.add_argument("--rootfs", type=Path, default=Path("/"))
+    parser.add_argument("--rootfs", type=Path, required=True)
     parser.add_argument("--expect-denied", action="store_true")
     args = parser.parse_args()
     check(args.deb.resolve(), args.rootfs.resolve(), args.expect_denied)
