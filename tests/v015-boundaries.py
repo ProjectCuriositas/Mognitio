@@ -147,4 +147,24 @@ class BoundaryTests(unittest.TestCase):
             result=json.loads(p.stdout);self.assertEqual(result["complete"],complete)
             if not complete:self.assertTrue(any("Syntax nesting budget exceeded" in d["message"] for d in result["diagnostics"]))
 
+
+    def test_oversized_full_change_clears_old_results_and_recovers(self):
+        import os
+        spec=importlib.util.spec_from_file_location("toolchain_fixture",Path(__file__).with_name("v015-toolchain.py"))
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        module.PAYLOAD=Path(os.environ["MOGNITIO_TEST_PAYLOAD"])
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/"sample.mgn";path.write_text("let value: Int = 1;")
+            peer=module.Peer()
+            try:
+                peer.open(path.as_uri(),path.read_text(),1)
+                self.assertTrue(peer.tokens(path.as_uri())["result"]["data"])
+                peer.change(path.as_uri(),"x"*(SOURCE_BYTES+1),2)
+                self.assertEqual(peer.tokens(path.as_uri(),21)["result"]["data"],[])
+                peer.change(path.as_uri(),"let value: Int = 2;",3)
+                self.assertTrue(peer.tokens(path.as_uri(),22)["result"]["data"])
+            finally:
+                peer.close()
+                for stream in (peer.process.stdin,peer.process.stdout,peer.process.stderr):stream.close()
+
 if __name__=="__main__":unittest.main()
