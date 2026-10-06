@@ -65,7 +65,7 @@ with tempfile.TemporaryDirectory(prefix="mognitio-trust-") as temporary, context
     signature=sign(keys[1][2],m)
     verify(oldring,keys[1][0],False);verify(newring,keys[1][0])
     print("PASS bundle: valid signature/hash; unknown/missing/incorrect trust, modified artifact/manifest rejected; rotation requires new external keyring",flush=True)
-    deb=args.artifacts/"mognitio_0.15.0-1_amd64.deb"
+    deb=args.artifacts/("mognitio_"+manifest["identity"]["version"]+"-1_amd64.deb")
     run(["python3",ROOT/"scripts/apt-repository.py","--output",temp/"repo-old","--signing-key",keys[0][1]+"!",deb],env)
     # Revocation is imported into current key material; frozen offline material stays stale.
     certificate=home/"openpgp-revocs.d"/(keys[0][0]+".rev")
@@ -82,7 +82,7 @@ with tempfile.TemporaryDirectory(prefix="mognitio-trust-") as temporary, context
     signature=sign(keys[1][2],m);verify(newring,keys[1][0])
     print("PASS stale offline and revoked-key gpgv success cannot authorize installation; removing old trust rejects it; independent replacement restores verification",flush=True)
     print("PASS current trust material marks old primary revoked; replacement primary independently selected",flush=True)
-    deb=args.artifacts/"mognitio_0.15.0-1_amd64.deb"
+    deb=args.artifacts/("mognitio_"+manifest["identity"]["version"]+"-1_amd64.deb")
     repos=[]
     # Use only the still valid replacement key for APT repo creation.
     for index in range(2):
