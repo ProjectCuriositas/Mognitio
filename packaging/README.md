@@ -39,8 +39,9 @@ The Debian revision is separate from the upstream toolchain version.
 Sign the manifest with the independently managed bundle signing subkey.
 Before extracting or executing an offline installer, use scripts/verify-bundle.py
 with --manifest, --signature, --keyring, and --fingerprint. Obtain the public key
-and full fingerprint through independently authenticated project channels;
-a key supplied by the archive itself is not sufficient trust.
+and full fingerprint from the reviewed [APT key record](https://github.com/ProjectCuriositas/apt#production-public-key);
+a key supplied by the archive itself is not sufficient trust. GitHub and Pages
+share an account authority; an independent trust channel is not yet available.
 This checks signature and artifact hashes, not current revocation status.
 Refresh trust information before installing; stale offline keyrings cannot
 establish that a key has not since been revoked.
@@ -84,3 +85,18 @@ A language server session retains its verified payload so it can reanalyze after
 APT reclaims an older installation. Restart the server to select a new toolchain.
 The selected executable path determines the running version; another mgn on PATH
 may belong to a different installation.
+
+## Release signing environment
+
+An owner registers the separately exported encrypted bundle subkey with
+scripts/register-bundle-key.py /path/to/online-transfer after checking the public
+fingerprints against the offline record. Enter the passphrase in the local
+terminal only. The script rejects primary secret material and other subkeys,
+verifies the passphrase through a temporary signature, and registers only
+BUNDLE_SIGNING_KEY and BUNDLE_SIGNING_PASSPHRASE in the release-signing environment.
+
+Prepare immutable draft release assets and record manifest.json's SHA-256.
+Dispatch the Sign frozen release manifest workflow on main with that digest.
+The version tag must name the exact main commit. The workflow verifies the
+frozen artifact set and attaches only manifest.json.asc to the draft; publishing
+the release is a separate action after final verification.
