@@ -2,20 +2,27 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-Version 0.14.0 adds scalar decomposition, text joining, and explicit
-I/O failure phases.
-The compiler targets Linux amd64; no prebuilt compiler is distributed.
+Version 0.15.0 adds a shared static analyzer, a stdio language server, build-time
+toolchain identities, and Linux APT/offline packaging.
+The compiler targets Linux amd64. Official Linux packages and installer bundles
+are published in [GitHub Releases](https://github.com/ProjectCuriositas/Mognitio/releases).
+Follow the [APT repository instructions](https://projectcuriositas.github.io/apt/)
+for Ubuntu 24.04 and 26.04 amd64. The packaged toolchain includes its fixed runtime;
+a host SBCL installation is required only for source development.
+The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=mognitio.mognitio)
+is versioned independently (extension 0.1.0 supports language server 0.15.x).
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
-- [Release validation](verification/v0.14.0-release.md): pinned release checks.
+- [Release validation](verification/v0.15.0-release.md): pinned release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [File converter](examples/file-converter/README.md): arguments and text I/O.
 - [Directory converter](examples/directory-converter/README.md): explicit tree traversal.
 - [Implementation verification](verification/v0.14.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
+- [Toolchain distribution](packaging/README.md): pinned builds, APT staging, and offline installation.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
 
 ## Requirements and commands

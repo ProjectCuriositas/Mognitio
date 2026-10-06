@@ -13,9 +13,9 @@
     ("/" . :div) ("%" . :rem) ("<" . :lt) (">" . :gt)
     ("(" . :left-paren) (")" . :right-paren)
     ("{" . :left-brace) ("}" . :right-brace) (";" . :semicolon) ("," . :comma) (":" . :colon)))
-(defun lex-source (source)
+(defun lex-source (source &key recover)
   (let ((text (source-text source)) (cursor 0)
-        (tokens (make-array 0 :adjustable t :fill-pointer 0)))
+        (tokens (make-array 0 :adjustable t :fill-pointer 0)) (errors nil))
     (labels ((emit (kind start &optional payload)
                (vector-push-extend
                 (make-token :kind kind :span (make-span source start cursor) :payload payload) tokens))
@@ -68,7 +68,8 @@
                  (emit :string-literal start
                        (make-text-payload :octets (sb-ext:string-to-octets chars :external-format :utf-8)
                                           :scalar-count (length chars))))))
-      (loop while (< cursor (length text)) for ch = (char text cursor) do
+      (loop while (< cursor (length text)) for ch = (char text cursor) for before = cursor do
+        (handler-case
         (cond
           ((find ch '(#\Space #\Tab #\Newline #\Return)) (incf cursor))
           ((and (char= ch #\/) (< (1+ cursor) (length text))
@@ -106,6 +107,10 @@
              (unless entry
                (fail-at (make-span source cursor (1+ cursor)) :lex "Undefined character"))
              (incf cursor (length (car entry)))
-             (emit (cdr entry) start)))))
+             (emit (cdr entry) start))))
+          (source-failure (condition)
+            (unless recover (error condition))
+            (when (< (length errors) 200) (push (failure-diagnostic condition) errors))
+            (setf cursor (min (length text) (max cursor (1+ before)))))))
       (emit :eof cursor))
-    tokens))
+    (values tokens (nreverse errors))))

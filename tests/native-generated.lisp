@@ -41,7 +41,7 @@
          (cache (merge-pathnames "native-cache/" *temp*))
          (source (put-text (fresh-path) text))
          (output (fresh-path ".elf")) (baseline nil))
-    (dolist (file (append (list (root-path "mognitio.asd") (root-path "tests/kernel-cli") (root-path "tests/kernel-driver.lisp") (root-path "tests/kernel-entry.lisp"))
+    (dolist (file (append (list (root-path "VERSION") (root-path "mognitio.asd") (root-path "tests/kernel-cli") (root-path "tests/kernel-driver.lisp") (root-path "tests/kernel-entry.lisp"))
                           (directory (merge-pathnames (make-pathname :name :wild :type "lisp")
                                                       (root-path "src/")))
                           (directory (merge-pathnames (make-pathname :name :wild :type "lisp")

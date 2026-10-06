@@ -1,0 +1,16 @@
+(defpackage #:mognitio.identity (:use #:cl) (:export #:*manifest* #:*version* #:main))
+(in-package #:mognitio.identity)
+(defvar *manifest* nil)
+(defvar *version* nil)
+(defun main ()
+  ;; A saved custom toplevel bypasses SBCL's init-file loader. Consume only the
+  ;; launcher's exact fixed option prefix before exposing application arguments.
+  (when (equal (subseq (rest sb-ext:*posix-argv*) 0 (min 2 (length (rest sb-ext:*posix-argv*))))
+               '("--no-sysinit" "--no-userinit"))
+    (setf sb-ext:*posix-argv* (cons (first sb-ext:*posix-argv*) (cdddr sb-ext:*posix-argv*))))
+  (let ((arguments (uiop:command-line-arguments)))
+    (cond ((equal arguments '("--mognitio-identity"))
+           (write-line *manifest*) (finish-output) (sb-ext:exit :code 0))
+          ((equal arguments '("--mognitio-worker"))
+           (mognitio.analysis:worker-main) (sb-ext:exit :code 0))
+          (t (mognitio.cli:main)))))

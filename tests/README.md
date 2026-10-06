@@ -123,3 +123,57 @@ Those observations do not establish a whole-program complexity or speedup claim.
 
 `v014-review.lisp` adds first-close precedence/resource tests and independent
 scalar-root and primary-phase control-flow mutation checks.
+
+## v0.15 toolchain and editor support
+
+Build a payload using the pinned inputs in packaging/build-lock.json, then run
+python3 tests/v015-analysis.py --payload PAYLOAD and
+python3 tests/v015-toolchain.py --payload PAYLOAD.
+These exercise shared frontend analysis, process-level LSP behavior, protocol
+framing, cancellation supervision, identity mismatch, and payload reclamation
+during a live session.
+
+After creating and externally verifying a release-mode bundle, run
+python3 tests/v015-installer.py --bundle EXTRACTED_DIRECTORY.
+It uses temporary user prefixes, including spaces and Japanese characters,
+and checks recovery, ownership preservation, and argument rejection.
+Run distribution acceptance in disposable supported OS userlands. Test signing
+keys must never be used as production trust roots.
+
+The independent mognitio-vscode repository owns VSIX packaging, Extension Host,
+actual semantic paint, and trust tests.
+
+Run tests/v015-memory.py in an exclusive delegated cgroup scope to check hard
+memory enforcement and cleanup. For example, systemd-run --user --scope
+-p Delegate=yes python3 tests/v015-memory.py. The separate --oom case must
+terminate with SIGKILL (shell status 137); run it only inside that delegated
+scope. Without delegation the test returns 77 rather than claiming a hard limit.
+
+Installer interruption recovery regressions (temporary payload fixtures, no system installation):
+
+```sh
+python3 tests/v015-installer-recovery.py
+```
+
+The LSP suite also covers missing-manifest transitions, syntax-only input kinds,
+and initialization retry with a different semantic legend.
+
+Cooperative diagnostic projection and live coordinator interruption checks:
+
+```sh
+python3 tests/v015-projection.py
+```
+
+These inject a bounded worker-result fixture into the real coordinator loop;
+shared frontend and payload protocol checks remain separate suites.
+
+Cooperative semantic-token projection, per-source reuse, and control-event checks:
+
+```sh
+python3 tests/v015-tokens.py
+```
+
+This uses 16 real 3 MiB files accepted by discovery, with one token at the front
+or tail and no diagnostics. Worker rows are injected into the actual coordinator
+loop; cancellation, shutdown, edits, and parent exit are observed independently
+of SBCL frontend throughput. A control-event barrier avoids scheduler races.

@@ -1,5 +1,6 @@
 (in-package #:mognitio.syntax)
 
+(defstruct analysis-error-node span)
 (defstruct text-payload (octets #() :read-only t) (scalar-count 0 :read-only t))
 (defstruct token resolved-name (kind nil :read-only t) (span nil :read-only t) (payload nil :read-only t))
 (defstruct (type-syntax (:include token)) name (arguments #()))
@@ -38,6 +39,7 @@
   (statements #() :read-only t))
 (defun node-span (node)
   (typecase node
+    (analysis-error-node (analysis-error-node-span node))
     (program (make-span (program-source node) 0 (length (source-text (program-source node)))))
     (test-stage (test-stage-span node))
     (runtime-arguments (runtime-arguments-span node))
