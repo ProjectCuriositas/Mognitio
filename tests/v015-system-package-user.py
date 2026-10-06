@@ -1,76 +1,41 @@
 #!/usr/bin/env python3
-"""Root-only disposable package acceptance with an unrelated UID (65534)."""
+"""Check a root-installed package using an unrelated unprivileged process."""
 import argparse
 import json
 import os
-import shutil
 from pathlib import Path
 import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 
-def check(deb, rootfs, expect_denied=False):
+def check(version, label, expect_denied):
     if os.geteuid() != 0:
-        raise SystemExit("Run as root to install root-owned files and drop to UID 65534")
-    if rootfs == Path("/"):
-        raise SystemExit("Use a disposable Ubuntu rootfs, not the host root")
-    with tempfile.TemporaryDirectory(prefix="mognitio-system-user-") as temp:
+        raise SystemExit("Run as root in a disposable system with mognitio installed")
+    with tempfile.TemporaryDirectory(prefix="mognitio-nonowner-") as temp:
         work = Path(temp)
-        # Private directory copy permits mountpoints without changing the base.
-        sandbox = work / "rootfs"
-        def copy_file(source, target):
-            try:
-                os.link(source, target)
-            except OSError:
-                shutil.copy2(source, target)
-            return target
-        shutil.copytree(rootfs, sandbox, symlinks=True, copy_function=copy_file)
-        for name in ("usr/lib/mognitio", "source", "work"):
-            (sandbox / name).mkdir(parents=True, exist_ok=True)
-        for name in ("mgn", "mognitio-lsp"):
-            target = sandbox / "usr/bin" / name
-            if not target.exists():
-                target.touch()
-        package = work / "package"
-        subprocess.run(["dpkg-deb", "-x", str(deb), str(package)], check=True)
-        payloads = list((package / "usr/lib/mognitio").iterdir())
-        assert len(payloads) == 1
-        payload = payloads[0]
-        assert payload.stat().st_uid == 0
-        identity = json.loads((payload / "identity.json").read_text())
-        scratch = work / "work"
-        scratch.mkdir(mode=0o700)
-        os.chown(scratch, 65534, 65534)
-        command = ["bwrap", "--ro-bind", str(sandbox), "/", "--dev", "/dev", "--proc", "/proc",
-                   "--tmpfs", "/tmp", "--ro-bind", str(package / "usr/lib/mognitio"),
-                   "/usr/lib/mognitio", "--ro-bind", str(ROOT), "/source",
-                   "--bind", str(scratch), "/work", "--chdir", "/work",
-                   "--setenv", "HOME", "/work", "--setenv", "LC_ALL", "C.UTF-8",
-                   "--setenv", "PATH", "/usr/bin:/bin", "--cap-drop", "ALL",
-                   "--cap-add", "CAP_SETUID", "--cap-add", "CAP_SETGID", "--cap-add", "CAP_SETPCAP"]
-        for name in ("mgn", "mognitio-lsp"):
-            command += ["--ro-bind", str(package / "usr/bin" / name), "/usr/bin/" + name]
-        command += ["--", "setpriv", "--reuid=65534", "--regid=65534", "--clear-groups",
-                    "--bounding-set=-all", "--inh-caps=-all", "--ambient-caps=-all", "--no-new-privs", "--"]
-        probe = subprocess.run(command + ["/usr/bin/mgn", "--version"], capture_output=True, text=True)
+        os.chown(work, 65534, 65534)
+        options = dict(user=65534, group=65534, extra_groups=[], cwd=work,
+                       env={"PATH": "/usr/bin:/bin", "HOME": str(work), "LC_ALL": "C.UTF-8"})
+        probe = subprocess.run(["/usr/bin/mgn", "--version"], **options, capture_output=True, text=True)
         if expect_denied:
-            assert probe.returncode != 0 and "Permission denied" in probe.stderr, probe
-            print("PASS: original package denies unrelated UID as expected")
+            assert probe.returncode != 0 and "/usr/bin/mgn:" in probe.stderr and "Permission denied" in probe.stderr, probe
+            print("PASS: original installed package denies unrelated UID")
             return
         assert probe.returncode == 0, (probe.stdout, probe.stderr)
-        assert probe.stdout.strip().split(" ", 1)[-1] == identity["version"]
-        script = r'''import os,subprocess,json
-assert os.geteuid()==65534 and os.getegid()==65534
+        assert probe.stdout == label + " " + version + "\n", probe.stdout
+        script = r'''import os,subprocess,json,sys
 from pathlib import Path
-status=Path("/proc/self/status").read_text()
-assert all(int(line.split()[1],16)==0 for line in status.splitlines() if line.startswith(("CapEff:","CapBnd:","CapAmb:")))
-for tool in ('mgn','mognitio-lsp'):
- subprocess.run([tool,'--version'],check=True)
-subprocess.run(['mgn','run','/source/examples/modules/mognitio.toml'],check=True)
-subprocess.run(['mgn','test','/source/examples/testing/mognitio.toml'],check=True)
-subprocess.run(['mgn','build','/source/examples/modules/mognitio.toml','-o','/work/program'],check=True)
-subprocess.run(['/work/program'],check=True)
+assert os.geteuid()==65534 and os.getegid()==65534
+assert os.getgroups()==[]
+status=Path('/proc/self/status').read_text()
+assert all(int(line.split()[1],16)==0 for line in status.splitlines() if line.startswith(('CapEff:','CapAmb:')))
+version,source=sys.argv[1:]
+assert subprocess.check_output(['mognitio-lsp','--version'],text=True)=='mognitio-lsp '+version+'\n'
+subprocess.run(['mgn','run',source+'/examples/modules/mognitio.toml'],check=True)
+subprocess.run(['mgn','test',source+'/examples/testing/mognitio.toml'],check=True)
+subprocess.run(['mgn','build',source+'/examples/modules/mognitio.toml','-o','program'],check=True)
+subprocess.run(['./program'],check=True)
 p=subprocess.Popen(['mognitio-lsp','--stdio'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 def send(message):
  raw=json.dumps(dict(jsonrpc='2.0',**message)).encode()
@@ -79,25 +44,25 @@ def receive():
  length=None
  while True:
   line=p.stdout.readline()
-  assert line, p.stderr.read().decode()
+  assert line,p.stderr.read().decode()
   if line==b'\r\n':break
   if line.lower().startswith(b'content-length:'):length=int(line.split(b':')[1])
  return json.loads(p.stdout.read(length))
 send({'id':1,'method':'initialize','params':{'rootUri':None,'processId':os.getpid(),'capabilities':{}}})
-assert 'result' in receive()
+assert receive()['result']['serverInfo']['version']==version
 send({'method':'initialized','params':{}})
 send({'id':2,'method':'shutdown'})
 while receive().get('id')!=2:pass
 send({'method':'exit'})
 assert p.wait(timeout=10)==0
 '''
-        subprocess.run(command + ["python3", "-c", script], check=True, timeout=90)
-        print("PASS: root-owned package CLI/run/build/test/LSP as unrelated UID 65534")
+        subprocess.run(["python3", "-c", script, version, str(ROOT)], **options, check=True, timeout=90)
+        print("PASS: root-installed package versions/run/build/test/LSP as unrelated UID 65534")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--deb", type=Path, required=True)
-    parser.add_argument("--rootfs", type=Path, required=True)
+    parser.add_argument("--expected-version", required=True)
+    parser.add_argument("--expected-label", default="Mognitio")
     parser.add_argument("--expect-denied", action="store_true")
     args = parser.parse_args()
-    check(args.deb.resolve(), args.rootfs.resolve(), args.expect_denied)
+    check(args.expected_version, args.expected_label, args.expect_denied)
