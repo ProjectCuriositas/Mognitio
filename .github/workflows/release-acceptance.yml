@@ -1,0 +1,62 @@
+name: Verify frozen release packages
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_sha256:
+        description: SHA-256 of the signed frozen draft release manifest
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  packages:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ["24.04", "26.04"]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Download frozen signed assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v$(cat VERSION)"
+          test "$(git ls-remote origin "refs/tags/$tag" | cut -f1)" = "$GITHUB_SHA"
+          mkdir _release _previous
+          gh release download "$tag" --dir _release
+          gh release download v0.15.0 --pattern mognitio_0.15.0-1_amd64.deb --dir _previous
+          echo '07b309eb241fd55cda0f35ef13cf6754de5598c53e7e53a1dd7945952c406706  _previous/mognitio_0.15.0-1_amd64.deb' | sha256sum --check
+      - name: Verify manifest approval, source identity and signature
+        env:
+          APPROVED_DIGEST: ${{ inputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          python3 -c 'import hashlib,json,os,pathlib; p=pathlib.Path("_release/manifest.json"); assert hashlib.sha256(p.read_bytes()).hexdigest()==os.environ["APPROVED_DIGEST"]; i=json.loads(p.read_text())["identity"]; assert i["version"]==pathlib.Path("VERSION").read_text().strip(); assert i["inputs"]["commit"]==os.environ["GITHUB_SHA"] and i["inputs"]["mode"]=="release" and not i["inputs"]["dirty"]'
+          gpg --batch --dearmor --output _release/key.gpg packaging/mognitio.asc
+          python3 scripts/verify-bundle.py --manifest _release/manifest.json --signature _release/manifest.json.asc --keyring _release/key.gpg --fingerprint C44A5AA9313FFA686779C262333C4A7C92BCBDA3
+          gpgv --status-fd 1 --keyring "$PWD/_release/key.gpg" _release/manifest.json.asc _release/manifest.json | grep '^\[GNUPG:\] VALIDSIG 4245611FC8A78B4B900CDF4F6CA5FC1ED455DC71 '
+      - name: Upgrade and reinstall as root, execute as an unrelated user
+        env:
+          UBUNTU: ${{ matrix.ubuntu }}
+        run: |
+          docker run --rm -v "$PWD:/source:ro" "ubuntu:$UBUNTU" sh -eu -c '
+            apt-get update -qq
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 libzstd1 util-linux
+            version=$(cat /source/VERSION)
+            deb=/source/_release/mognitio_${version}-1_amd64.deb
+            dpkg -i /source/_previous/mognitio_0.15.0-1_amd64.deb
+            python3 /source/tests/v015-system-package-user.py --expected-version 0.15.0 --expect-denied
+            dpkg -i "$deb"
+            python3 /source/tests/v015-system-package-user.py --expected-version "$version"
+            dpkg -i "$deb"
+            python3 /source/tests/v015-system-package-user.py --expected-version "$version"
+            dpkg --purge mognitio
+            test ! -e /usr/bin/mgn
+            dpkg -i "$deb"
+            python3 /source/tests/v015-system-package-user.py --expected-version "$version"
+            dpkg --purge mognitio
+          '
