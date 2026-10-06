@@ -14,6 +14,7 @@ jobs:
   non-owner:
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
         ubuntu: ["24.04", "26.04"]
     steps:
@@ -31,13 +32,16 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/source:ro" -v "$PWD/fixture:/fixture:ro" "ubuntu:$UBUNTU" sh -eu -c '
             apt-get update -qq
-            apt-get install -y python3 libzstd1 util-linux
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 libzstd1 util-linux
             dpkg-deb -x /fixture/mognitio_0.15.0-1_amd64.deb /original
             payload=$(find /original/usr/lib/mognitio -mindepth 1 -maxdepth 1 -type d)
             python3 /source/scripts/package-toolchain.py "$payload" --output /fixed
             python3 /source/tests/v015-package-permissions.py --payload "$payload"
             dpkg -i /fixture/mognitio_0.15.0-1_amd64.deb
             python3 /source/tests/v015-system-package-user.py --expected-version 0.15.0 --expect-denied
+            # dpkg preserves an existing directory mode; this identical-build
+            # fixture must start fresh. Real v0.15.1 has a new build directory.
+            dpkg --purge mognitio
             dpkg -i /fixed/mognitio_0.15.0-1_amd64.deb
             python3 /source/tests/v015-system-package-user.py --expected-version 0.15.0 --expected-label mgn
             dpkg -i /fixed/mognitio_0.15.0-1_amd64.deb
