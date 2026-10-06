@@ -29,11 +29,13 @@ def check(deb, rootfs, expect_denied=False):
                    "/usr/lib/mognitio", "--ro-bind", str(ROOT), "/source",
                    "--bind", str(scratch), "/work", "--chdir", "/work",
                    "--setenv", "HOME", "/work", "--setenv", "LC_ALL", "C.UTF-8",
-                   "--setenv", "PATH", "/usr/bin:/bin", "--uid", "65534", "--gid", "65534",
-                   "--cap-drop", "ALL"]
+                   "--setenv", "PATH", "/usr/bin:/bin", "--cap-drop", "ALL",
+                   "--cap-add", "CAP_SETUID", "--cap-add", "CAP_SETGID", "--cap-add", "CAP_SETPCAP"]
         for name in ("mgn", "mognitio-lsp"):
             command += ["--ro-bind", str(package / "usr/bin" / name), "/usr/bin/" + name]
-        probe = subprocess.run(command + ["--", "/usr/bin/mgn", "--version"], capture_output=True, text=True)
+        command += ["--", "setpriv", "--reuid=65534", "--regid=65534", "--clear-groups",
+                    "--bounding-set=-all", "--inh-caps=-all", "--ambient-caps=-all", "--no-new-privs", "--"]
+        probe = subprocess.run(command + ["/usr/bin/mgn", "--version"], capture_output=True, text=True)
         if expect_denied:
             assert probe.returncode != 0 and "Permission denied" in probe.stderr, probe
             print("PASS: original package denies unrelated UID as expected")
@@ -42,6 +44,9 @@ def check(deb, rootfs, expect_denied=False):
         assert probe.stdout.strip().split(" ", 1)[-1] == identity["version"]
         script = r'''import os,subprocess,json
 assert os.geteuid()==65534 and os.getegid()==65534
+from pathlib import Path
+status=Path("/proc/self/status").read_text()
+assert all(int(line.split()[1],16)==0 for line in status.splitlines() if line.startswith(("CapEff:","CapBnd:","CapAmb:")))
 for tool in ('mgn','mognitio-lsp'):
  subprocess.run([tool,'--version'],check=True)
 subprocess.run(['mgn','run','/source/examples/modules/mognitio.toml'],check=True)
@@ -68,7 +73,7 @@ while receive().get('id')!=2:pass
 send({'method':'exit'})
 assert p.wait(timeout=10)==0
 '''
-        subprocess.run(command + ["--", "python3", "-c", script], check=True, timeout=90)
+        subprocess.run(command + ["python3", "-c", script], check=True, timeout=90)
         print("PASS: root-owned package CLI/run/build/test/LSP as unrelated UID 65534")
 
 if __name__ == "__main__":
