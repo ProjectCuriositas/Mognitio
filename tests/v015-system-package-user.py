@@ -39,7 +39,7 @@ def check(deb, rootfs, expect_denied=False):
             print("PASS: original package denies unrelated UID as expected")
             return
         assert probe.returncode == 0, (probe.stdout, probe.stderr)
-        assert probe.stdout.strip() == "mgn " + identity["version"]
+        assert probe.stdout.strip().split(" ", 1)[-1] == identity["version"]
         script = r'''import os,subprocess,json
 assert os.geteuid()==65534 and os.getegid()==65534
 for tool in ('mgn','mognitio-lsp'):

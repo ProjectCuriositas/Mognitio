@@ -186,7 +186,7 @@ class ToolchainTests(unittest.TestCase):
         for tool in ["mgn", "mognitio-lsp"]:
             result = subprocess.run([str(PAYLOAD / "bin" / tool), "--version"], capture_output=True, text=True, cwd="/")
             self.assertEqual(result.returncode, 0)
-            self.assertEqual(result.stdout, tool + " " + identity["version"] + "\n")
+            self.assertEqual(result.stdout, ("Mognitio" if tool == "mgn" else tool) + " " + identity["version"] + "\n")
             self.assertEqual(result.stderr, "")
         p = self.peer()
         self.assertEqual(p.initialize["result"]["serverInfo"]["version"], identity["version"])

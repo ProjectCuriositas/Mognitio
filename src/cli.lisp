@@ -22,7 +22,7 @@
           (unless version
             (write-line "mgn: Build the toolchain before requesting its identity" *error-output*)
             (return-from command (values 3 t)))
-          (format t "mgn ~A~%" version)
+          (format t "Mognitio ~A~%" version)
           (return-from command (values 0 t)))))
     (mognitio.driver:run-cli arguments *standard-output* *error-output*)))
 
