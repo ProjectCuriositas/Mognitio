@@ -2,21 +2,24 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-Version 0.15.0 adds a shared static analyzer, a stdio language server, build-time
-toolchain identities, and Linux APT/offline packaging.
+Version 1.0.0 is the first stable release, validating the complete static-site
+generation workflow with [Lévi](https://github.com/ProjectCuriositas/Levi).
+It retains the language, runtime, static analyzer, stdio language server,
+build identities, and Linux packaging contracts of 0.15.1.
 The compiler targets Linux amd64. Official Linux packages and installer bundles
 are published in [GitHub Releases](https://github.com/ProjectCuriositas/Mognitio/releases).
 Follow the [APT repository instructions](https://projectcuriositas.github.io/apt/)
 for Ubuntu 24.04 and 26.04 amd64. The packaged toolchain includes its fixed runtime;
 a host SBCL installation is required only for source development.
 The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=mognitio.mognitio)
-is versioned independently (extension 0.1.0 supports language server 0.15.x).
+is versioned independently. Extension 0.1.0 supports only language server 0.15.x;
+use an extension version whose compatibility table explicitly includes 1.0.0.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
-- [Release validation](verification/v0.15.0-release.md): pinned release checks.
+- [Release validation](verification/v1.0.0-release.md): stable release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [File converter](examples/file-converter/README.md): arguments and text I/O.
 - [Directory converter](examples/directory-converter/README.md): explicit tree traversal.
