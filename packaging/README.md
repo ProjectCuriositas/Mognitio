@@ -35,6 +35,11 @@ the build fingerprint. Never replace an immutable published release.
 Run scripts/package-toolchain.py PAYLOAD --output OUTPUT to create a Debian
 package, offline archive, and manifest.json from one verified release payload.
 The Debian revision is separate from the upstream toolchain version.
+Packaging exports directories as 0755, executable files as 0755, and data as
+0644, regardless of the build umask or private staging directory modes. The
+source payload remains unchanged. Validate system packages as an unprivileged
+user after root installation; execution as the installing root user is not
+sufficient to detect inaccessible payload directories.
 
 Sign the manifest with the independently managed bundle signing subkey.
 Before extracting or executing an offline installer, use scripts/verify-bundle.py
