@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parent.parent
 def check(version, label, expect_denied):
     if os.geteuid() != 0:
         raise SystemExit("Run as root in a disposable system with mognitio installed")
+    assert Path("/usr/bin/mgn").stat().st_uid == 0
+    assert all(path.stat().st_uid == 0 for path in Path("/usr/lib/mognitio").iterdir())
     with tempfile.TemporaryDirectory(prefix="mognitio-nonowner-") as temp:
         work = Path(temp)
         os.chown(work, 65534, 65534)

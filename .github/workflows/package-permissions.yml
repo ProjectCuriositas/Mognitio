@@ -1,7 +1,5 @@
 name: Package non-owner regression
 on:
-  push:
-    branches: ["work/v0151-package-permissions"]
   pull_request:
     paths:
       - "scripts/package-toolchain.py"
