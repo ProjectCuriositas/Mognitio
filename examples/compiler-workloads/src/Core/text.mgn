@@ -1,0 +1,44 @@
+namespace Workloads\Core;
+
+public let lines: Function(String): List<String> = function(text: String): List<String> {
+    var output: List<String> = List<String>[];
+    var parts: List<String> = List<String>[];
+    loop over (text->scalars() as scalar: String) {
+        branch when {
+            scalar == "\n" => { output = output->append(parts->join("")); parts = List<String>[]; },
+            else => { parts = parts->append(scalar); },
+        };
+    };
+    output->append(parts->join(""))
+};
+public let decimal: Function(Int): String = function(value: Int): String {
+    branch when { value < 0 => panic { "negative count" }, value == 0 => { return "0"; }, else => unit };
+    let digits: List<String> = List<String>["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    var remaining: Int = value;
+    var text: String = "";
+    loop while (remaining > 0) {
+        let digit: String = branch on digits->at(remaining % 10) {
+            Result<String, IndexError>::Ok(found: String) => found,
+            Result<String, IndexError>::Err => panic { "digit bounds" },
+        };
+        text = digit + text;
+        remaining = remaining / 10;
+    };
+    text
+};
+public let natural: Function(String): Int = function(text: String): Int {
+    branch when { text->length() == 0 => panic { "empty count" }, else => unit };
+    let digits: List<String> = List<String>["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    var number: Int = 0;
+    loop over (text->scalars() as scalar: String) {
+        var index: Int = 0;
+        var value: Int = -1;
+        loop over (digits as digit: String) {
+            branch when { scalar == digit => { value = index; }, else => unit };
+            index = index + 1;
+        };
+        branch when { value < 0 => panic { "invalid count" }, else => unit };
+        number = number * 10 + value;
+    };
+    number
+};

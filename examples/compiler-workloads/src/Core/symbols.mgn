@@ -1,0 +1,23 @@
+namespace Workloads\Core;
+
+public type Symbol = product { id: Int; name: String; };
+public type SymbolTable = product { entries: List<Symbol>; };
+public type Lookup = sum { Found(Int); NotFound; };
+public type Registration = product { table: SymbolTable; id: Int; };
+public let emptyTable: Function(): SymbolTable = function(): SymbolTable { SymbolTable { entries: List<Symbol>[] } };
+public let lookup: Function(SymbolTable, String): Lookup = function(table: SymbolTable, name: String): Lookup {
+    loop over (table->entries as entry: Symbol) {
+        branch when { entry->name == name => { return Lookup::Found(entry->id); }, else => unit };
+    };
+    Lookup::NotFound
+};
+public let register: Function(SymbolTable, String): Registration = function(table: SymbolTable, name: String): Registration {
+    branch when { name->length() == 0 => panic { "empty symbol name" }, else => unit };
+    branch on lookup(table, name) {
+        Lookup::Found(id: Int) => Registration { table: table, id: id },
+        Lookup::NotFound => {
+            let id: Int = table->entries->length();
+            Registration { table: SymbolTable { entries: table->entries->append(Symbol { id: id, name: name }) }, id: id }
+        },
+    }
+};

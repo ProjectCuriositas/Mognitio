@@ -1,0 +1,43 @@
+namespace Workloads\Core;
+use Std\Io\{writeStdout, IoError};
+use Workloads\Core\{Token, TokenKind, Symbol, SymbolTable, Lookup, lookup, decimal};
+
+public let emit: Function(String): Unit = function(text: String): Unit {
+    branch on writeStdout(text) {
+        Result<Unit, IoError>::Ok => unit,
+        Result<Unit, IoError>::Err => panic { "output failure" },
+    }
+};
+public let emitNat: Function(Int): Unit = function(value: Int): Unit { emit(decimal(value)); emit("\n"); };
+public let emitText: Function(String): Unit = function(text: String): Unit {
+    emit(decimal(text->length())); emit(":"); emit(text); emit("\n");
+};
+public let emitTokens: Function(List<Token>): Unit = function(tokens: List<Token>): Unit {
+    emit("TOKENS\n"); emitNat(tokens->length());
+    loop over (tokens as token: Token) {
+        branch on token->kind { TokenKind::Word => emit("W\n"), TokenKind::Punctuation => emit("P\n") };
+        emitText(token->text); emitNat(token->start); emitNat(token->end);
+    };
+};
+public let emitTable: Function(SymbolTable, List<Int>, List<String>): Unit =
+    function(table: SymbolTable, ids: List<Int>, queries: List<String>): Unit {
+    emit("IDS\n"); emitNat(ids->length());
+    loop over (ids as id: Int) { emitNat(id); };
+    emit("SYMBOLS\n"); emitNat(table->entries->length());
+    loop over (table->entries as entry: Symbol) { emitNat(entry->id); emitText(entry->name); };
+    emit("LOOKUPS\n"); emitNat(queries->length());
+    loop over (queries as query: String) {
+        emitText(query);
+        branch on lookup(table, query) {
+            Lookup::Found(id: Int) => { emit("F\n"); emitNat(id); },
+            Lookup::NotFound => emit("N\n"),
+        };
+    };
+};
+public let emitScalars: Function(List<String>): Unit = function(values: List<String>): Unit {
+    emit("SCALARS\n"); emitNat(values->length());
+    loop over (values as value: String) { emitText(value); };
+};
+public let emitResult: Function(String): Unit = function(text: String): Unit {
+    emit("TEXT\n"); emitNat(1); emitText(text);
+};

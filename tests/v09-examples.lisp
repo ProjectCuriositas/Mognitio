@@ -2,7 +2,8 @@
 (deftest v010-distributed-examples
   (let ((paths (directory (merge-pathnames #p"examples/*/mognitio.toml" (root-path "")))))
     (is (>= (length paths) 13))
-    (dolist (path (remove-if (lambda (p) (or (search "file-converter/" (namestring p)) (search "directory-converter/" (namestring p)))) paths))
+    (dolist (path (remove-if (lambda (p) (or (search "compiler-workloads/" (namestring p))
+                                                         (search "file-converter/" (namestring p)) (search "directory-converter/" (namestring p)))) paths))
       (expect-project path)
       (multiple-value-bind (out err code)
           (process-result (list (namestring (root-path "bin/mgn")) "run" (namestring path)))

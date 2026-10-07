@@ -1,0 +1,68 @@
+namespace Workloads;
+use Workloads\Core\{scan, Token, TokenKind, SymbolTable, Registration, Lookup,
+    emptyTable, register, lookup, lines, decimal, natural};
+
+let tokenAt: Function(List<Token>, Int): Token = function(tokens: List<Token>, index: Int): Token {
+    branch on tokens->at(index) {
+        Result<Token, IndexError>::Ok(value: Token) => value,
+        Result<Token, IndexError>::Err => panic { "missing token" },
+    }
+};
+@test let fixedScanner: Function(): Unit = function(): Unit {
+    let tokens: List<Token> = scan("a=あ;a A");
+    assert tokens->length() == 6;
+    let first: Token = tokenAt(tokens, 0);
+    assert first->text == "a" && first->start == 0 && first->end == 1;
+    assert branch on first->kind { TokenKind::Word => true, TokenKind::Punctuation => false };
+    let punctuation: Token = tokenAt(tokens, 1);
+    assert punctuation->text == "=" && punctuation->start == 1 && punctuation->end == 2;
+    assert branch on punctuation->kind { TokenKind::Word => false, TokenKind::Punctuation => true };
+    let last: Token = tokenAt(tokens, 5);
+    assert last->text == "A" && last->start == 6 && last->end == 7;
+    assert scan("")->length() == 0;
+    assert scan(" \t\r\n")->length() == 0;
+};
+@test let unicodePositions: Function(): Unit = function(): Unit {
+    let words: List<Token> = scan("e\u{301}=\u{1f600}");
+    let first: Token = tokenAt(words, 0);
+    let last: Token = tokenAt(words, 2);
+    assert first->text == "e\u{301}" && first->end == 2;
+    assert last->text == "\u{1f600}" && last->start == 3 && last->end == 4;
+    let nul: Token = tokenAt(scan("\u{feff}a\u{0}"), 0);
+    assert nul->text == "\u{feff}a\u{0}" && nul->end == 3;
+};
+@test let symbolSnapshots: Function(): Unit = function(): Unit {
+    let old: SymbolTable = emptyTable();
+    let first: Registration = register(old, "a");
+    let second: Registration = register(first->table, "あ");
+    let duplicate: Registration = register(second->table, "a");
+    let upper: Registration = register(duplicate->table, "A");
+    let fork: Registration = register(first->table, "other");
+    assert first->id == 0 && second->id == 1 && duplicate->id == 0 && upper->id == 2;
+    assert fork->id == 1 && first->table->entries->length() == 1;
+    assert branch on lookup(old, "a") { Lookup::NotFound => true, Lookup::Found => false };
+    assert branch on lookup(second->table, "other") { Lookup::NotFound => true, Lookup::Found => false };
+    assert branch on lookup(fork->table, "あ") { Lookup::NotFound => true, Lookup::Found => false };
+    assert branch on lookup(upper->table, "A") { Lookup::Found(id: Int) => id == 2, Lookup::NotFound => false };
+};
+@test let retainedText: Function(): Unit = function(): Unit {
+    let make: Function(): List<Token> = function(): List<Token> {
+        var source: String = "hello" + "あ";
+        let result: List<Token> = scan(source);
+        source = "changed";
+        result
+    };
+    let kept: List<Token> = make();
+    var index: Int = 0;
+    loop while (index < 128) { discard scan("temporary=other;"); index = index + 1; };
+    let token: Token = tokenAt(kept, 0);
+    assert token->text == "helloあ" && token->start == 0 && token->end == 6;
+};
+@test let textAssembly: Function(): Unit = function(): Unit {
+    assert List<String>[]->join("|") == "";
+    assert List<String>["", "あ", ""]->join("😀") == "😀あ😀";
+    assert "\u{feff}a\u{0}\r\ne\u{301}"->scalars()->join("") == "\u{feff}a\u{0}\r\ne\u{301}";
+    assert lines("a\n\nb")->join("|") == "a||b";
+    assert decimal(0) == "0" && decimal(9223372036854775807) == "9223372036854775807";
+    assert natural("16384") == 16384;
+};
