@@ -26,6 +26,7 @@ use an extension version whose compatibility table explicitly includes 1.0.0.
 - [Implementation verification](verification/v0.14.0.md): evidence and limits.
 - [Verification commands](verification/README.md): reproduce the checks.
 - [Toolchain distribution](packaging/README.md): pinned builds, APT staging, and offline installation.
+- [Compatibility policy](COMPATIBILITY.md): backward compatibility within a major version.
 - [Contributing](CONTRIBUTING.md): public contribution conventions.
 
 ## Requirements and commands
@@ -205,8 +206,12 @@ entries must be regular files; FIFOs, sockets, and devices are rejected before
 reading. An empty directory named `ignored.mgn` is not a source input. If it
 contains a source, its directory name must satisfy the namespace identifier rules.
 
-Before v1.0.0, backwards compatibility is not guaranteed. The old Unit main, single-source
-CLI, and `bin/mognitio` command are removed. Package registries, external
+From 1.0.0 onward, backward source compatibility is guaranteed within each major
+version series. Replaced language features remain usable alongside their replacements
+for the rest of that series; support for the old forms ends at the next major release.
+See the [compatibility policy](COMPATIBILITY.md) for the scope and migration rules.
+Before 1.0.0, backward compatibility was not guaranteed. The old Unit main,
+single-source CLI, and `bin/mognitio` command are removed. Package registries, external
 dependencies, and separate compilation are outside this version's scope.
 
 ## Test
