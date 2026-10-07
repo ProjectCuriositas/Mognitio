@@ -32,13 +32,21 @@ def digest(path):
 
 
 def observe(image, cell, folder, prefix):
-    outpath, errpath, timer = [folder / (prefix + suffix) for suffix in (".out", ".err", ".time")]
+    original_prefix, attempt, earlier = prefix, 0, []
+    while True:
+        outpath, errpath, timer = [folder / (prefix + suffix) for suffix in (".out", ".err", ".time")]
+        existing = [p.name for p in (outpath, errpath, timer) if p.exists()]
+        if not existing:
+            break
+        earlier.extend(existing)
+        attempt += 1
+        prefix = f"{original_prefix}-retry-{attempt}"
     command = [str(image)]
     if cell["family"] == "workload":
         command += [cell["mode"], str(folder / "input"), str(cell["repeats"]), str(folder / "queries")]
     finished = threading.Event()
     result = {}
-    with outpath.open("wb") as out, errpath.open("wb") as err:
+    with outpath.open("xb") as out, errpath.open("xb") as err:
         start = time.monotonic()
         process = subprocess.Popen(["/usr/bin/time", "-f", "%M", "-o", str(timer), *command],
                                    stdout=out, stderr=err, cwd=folder, start_new_session=True,
@@ -50,18 +58,27 @@ def observe(image, cell, folder, prefix):
         waiter = threading.Thread(target=reap)
         waiter.start()
         outcome = "completed"
-        if not finished.wait(cell["timeout"]):
-            outcome = "timeout"
+        def terminate():
             try:
                 os.killpg(process.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-        waiter.join()
+            waiter.join()
+        try:
+            if not finished.wait(cell["timeout"]):
+                outcome = "timeout"
+                terminate()
+            else:
+                waiter.join()
+        except BaseException:
+            terminate()
+            raise
     lines = timer.read_text().splitlines() if timer.exists() else []
     result.update(outcome=outcome, verified=False, peak_rss_kib=int(lines[-1]) if lines and lines[-1].isdigit() else None,
                   command=command, cwd=str(folder), image_sha256=digest(image),
                   stdout_sha256=digest(outpath), stderr_sha256=digest(errpath),
-                  stdout_bytes=outpath.stat().st_size, stdout_file=outpath.name, stderr_file=errpath.name)
+                  stdout_bytes=outpath.stat().st_size, stdout_file=outpath.name, stderr_file=errpath.name,
+                  earlier_attempt_files=earlier)
     if outcome == "completed" and result["exit"] == 0:
         try:
             if errpath.stat().st_size:
@@ -85,6 +102,11 @@ def save(path, value):
 
 
 def main():
+    if not __debug__:
+        raise SystemExit("Do not disable verification assertions")
+    def interrupted(signum, frame):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, interrupted)
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)

@@ -4,6 +4,10 @@ from pathlib import Path
 import copy
 import importlib.util
 import tempfile
+import os
+import signal
+import threading
+import time
 
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("measurement", HERE / "v11-measure.py")
@@ -59,7 +63,36 @@ def main():
         image.write_text("#!/usr/bin/python3\nprint('unexpected')\n")
         row = m.observe(image, cell, root, "wrong-output")
         assert not row["verified"] and row["validation_error"] == "unexpected consumer stdout"
-    print("MEASUREMENT_CHECK_OK threshold_controls=12 matrix_cells=74 process_controls=3")
+        image.write_text("#!/usr/bin/python3\nimport os,time\nfrom pathlib import Path\nPath('child-pid').write_text(str(os.getpid()))\ntime.sleep(5)\n")
+        alarm = threading.Timer(0.1, lambda: os.kill(os.getpid(), signal.SIGINT))
+        alarm.start()
+        interrupted = False
+        try:
+            m.observe(image, dict(cell, timeout=10), root, "interrupted")
+        except KeyboardInterrupt:
+            interrupted = True
+        finally:
+            alarm.cancel()
+            alarm.join()
+        child_status = Path("/proc/" + (root / "child-pid").read_text() + "/stat")
+        deadline = time.monotonic() + 1
+        while child_status.exists() and child_status.read_text().split()[2] != "Z" and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert interrupted and (not child_status.exists() or child_status.read_text().split()[2] == "Z")
+        # The direct time-wrapper child was reaped. Its killed native child may
+        # briefly be a terminated zombie awaiting the system reaper.
+        try:
+            os.waitpid(-1, os.WNOHANG)
+        except ChildProcessError:
+            pass
+        else:
+            raise AssertionError("observer left an unreaped direct child")
+        original = (root / "interrupted.out").read_bytes()
+        row = m.observe(Path("/usr/bin/true"), cell, root, "interrupted")
+        assert row["verified"] and row["stdout_file"] != "interrupted.out"
+        assert "interrupted.out" in row["earlier_attempt_files"]
+        assert (root / "interrupted.out").read_bytes() == original
+    print("MEASUREMENT_CHECK_OK threshold_controls=12 matrix_cells=74 process_controls=5")
 
 
 if __name__ == "__main__":
