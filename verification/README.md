@@ -1,5 +1,8 @@
 # Verification
 
+The [1.1.0 native runtime record](v1.1.0-runtime.md) describes the free-list,
+worklist, independent membership index, and their verification boundaries.
+
 The [v0.14 review corrections](v0.14.0-review.md) cover first file close,
 scalar root lifetime, and primary-phase guard verification.
 

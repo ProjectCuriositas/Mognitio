@@ -15,6 +15,12 @@ The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=mogn
 is versioned independently. Extension 0.1.0 supports only language server 0.15.x;
 use an extension version whose compatibility table explicitly includes 1.0.0.
 
+The 1.1.0 development sources add compiler-oriented workloads and improve native
+allocation and collection while preserving the 1.x language API. Release assets
+remain separately versioned; these source changes do not publish a release.
+The existing VS Code extension 0.1.1 does not accept a 1.1.0 server. A compatible
+extension update is a separate project.
+
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).

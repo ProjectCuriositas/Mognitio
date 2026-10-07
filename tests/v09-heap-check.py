@@ -111,7 +111,7 @@ elif mode == "extracted":
     leaves = {address for address, (kind, children, _) in blocks.items() if kind == 1 and children == list(texts)}
     assert len(leaves) == 1
     assert not any(kind == 1 and leaves.intersection(children) for kind, children, _ in blocks.values()), "dead parent retained"
-elif mode in ("reverse", "forward"):
+elif mode in ("reverse", "forward", "cycle"):
     n = int(sys.argv[3])
     assert allocs == n and collections == 1 and reclaimed == 0
     nodes = [(address, data) for address, data in blocks.items() if data[0] == 5]
@@ -122,13 +122,17 @@ elif mode in ("reverse", "forward"):
         expected = nodes[i - 1][0] if mode == "reverse" and i else 0
         if mode == "forward":
             expected = nodes[i + 1][0] if i + 1 < n else 0
+        if mode == "cycle":
+            expected = nodes[(i + 1) % n][0]
         if expected:
             assert previous == expected
         else:
             assert previous not in blocks
     assert words[26] == n, ("object scans", words[26], n)
-    assert words[28] == (n + 1 if mode == "reverse" else 2), words[28]
-    assert words[27] >= n * words[28]
+    # Worklist tracing scans each reachable object once in either direction.
+    # Historical fixed-point counts remain in the versioned evidence.
+    assert words[28] == 1, words[28]
+    assert words[27] == n, ("worklist visits", words[27], n)
 else:
     raise AssertionError(mode)
 print(f"V09_HEAP_OK mode={mode} allocations={allocs} collections={collections} reclaimed={reclaimed} reused={reused} mapped={mapped} peak_live={words[23]} peak_roots={words[24]} scans={words[26]} headers={words[27]} passes={words[28]} sha256={hashlib.sha256(image).hexdigest()}")
