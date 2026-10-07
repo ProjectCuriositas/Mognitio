@@ -159,14 +159,15 @@
                (:file "tests/v014-proofs")
                (:file "tests/v014-review")
                (:file "tests/v11-heap-snapshot")
-               (:file "tests/v11-allocation"))
+               (:file "tests/v11-allocation")
+               (:file "tests/v11-workloads"))
   :perform (asdf:test-op (op system)
              (declare (ignore op system))
              (uiop:symbol-call :mognitio.tests :run-tests)
              (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" "tests/v010-projects.py"))) :output *standard-output* :error-output *error-output*)
              (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" "tests/v011-testing.py"))) :output *standard-output* :error-output *error-output*)
              (dolist (file '("tests/v012-entry.py" "tests/v012-io.py" "tests/v012-files.py" "tests/v012-execution.py" "tests/v012-reference.py" "tests/v012-review.py"
-                             "tests/v013-directory.py" "tests/v013-inheritance.py" "tests/v013-reference.py" "tests/v013-integration.py" "tests/v014-integration.py" "tests/v11-workloads.py"))
+                             "tests/v013-directory.py" "tests/v013-inheritance.py" "tests/v013-reference.py" "tests/v013-integration.py" "tests/v014-integration.py" "tests/v11-workloads.py" "tests/v11-measure-check.py"))
                (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" file)))
                                  :output *standard-output* :error-output *error-output*))))
 

@@ -230,6 +230,19 @@ def verify(image, folder):
                        folder, "standalone", cwd=standalone, env={"PATH": "/usr/bin:/bin", "LANG": "C"})
         assert isolated["verified"], isolated
         serial += 1
+        namespace = standalone / "data"
+        namespace.mkdir()
+        (namespace / "input").write_text("a=あ;a A")
+        (namespace / "queries").write_text("a\nmissing")
+        command = ["bwrap", "--unshare-all", "--die-with-parent", "--new-session",
+                   "--ro-bind", str(copied), "/app", "--ro-bind", str(namespace), "/data",
+                   "--chdir", "/data", "/app", "combined", "/data/input", "1", "/data/queries"]
+        process = subprocess.run(command, capture_output=True, timeout=30)
+        isolated_output = namespace / "output"
+        isolated_output.write_bytes(process.stdout)
+        assert process.returncode == 0 and process.stderr == b"", process
+        check(isolated_output, "combined", "a=あ;a A", ["a", "missing"], 1)
+        serial += 1
         invalid = Path(folder) / "invalid-utf8"
         for index, data in enumerate(map(bytes.fromhex, ("c0af", "eda080", "f09f"))):
             invalid.write_bytes(data)
