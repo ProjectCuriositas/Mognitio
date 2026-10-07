@@ -18,6 +18,15 @@ Keep public contributions free of personal or machine-specific context:
 - Review logs, screenshots, and generated artifacts for private information
   before including them.
 
+## Language compatibility
+
+Follow the [compatibility policy](COMPATIBILITY.md) when changing language
+features. Within a major version, preserve existing source compatibility and
+documented behavior alongside replacement features. Document the migration and
+next-major removal, and cover both forms with regression tests while both remain
+supported. A change that cannot preserve the old behavior must wait for the next
+major release.
+
 ## Validation
 
 Run the checks appropriate to the change. Compiler or test changes should run:
