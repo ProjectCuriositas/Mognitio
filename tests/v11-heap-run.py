@@ -17,8 +17,9 @@ spec.loader.exec_module(checker)
 
 def capture(image, profile, fail_fd=None):
     image = Path(image).resolve()
-    snapshot = image.with_suffix(".snapshot")
-    stdout, stderr = image.with_suffix(".stdout"), image.with_suffix(".stderr")
+    observation = image if fail_fd is None else image.with_name(image.stem + "-fd-" + fail_fd + image.suffix)
+    snapshot = observation.with_suffix(".snapshot")
+    stdout, stderr = observation.with_suffix(".stdout"), observation.with_suffix(".stderr")
     owned = []
     def high(fd):
         copy = fcntl.fcntl(fd, fcntl.F_DUPFD_CLOEXEC, 20)
@@ -115,6 +116,9 @@ def main():
             raise AssertionError("runtime head corruption escaped")
         faults.append(dict(artifact_sha256=hashlib.sha256(Path(fault_image).read_bytes()).hexdigest(),
                            snapshot_sha256=hashlib.sha256(bad).hexdigest()))
+    # Failure observations must not replace the successful raw evidence named
+    # by the manifest digest.
+    assert Path(image).with_suffix(".snapshot").read_bytes() == data
     manifest = dict(profile=profile, point=point, ordinal=ordinal, mapped=good["mapped"],
                     blocks=len(good["blocks"]), free=len(good["free"]),
                     artifact_sha256=hashlib.sha256(Path(image).read_bytes()).hexdigest(),

@@ -75,10 +75,15 @@ def main():
             alarm.cancel()
             alarm.join()
         child_status = Path("/proc/" + (root / "child-pid").read_text() + "/stat")
+        def terminated():
+            try:
+                return child_status.read_text().split()[2] == "Z"
+            except FileNotFoundError:
+                return True
         deadline = time.monotonic() + 1
-        while child_status.exists() and child_status.read_text().split()[2] != "Z" and time.monotonic() < deadline:
+        while not terminated() and time.monotonic() < deadline:
             time.sleep(0.01)
-        assert interrupted and (not child_status.exists() or child_status.read_text().split()[2] == "Z")
+        assert interrupted and terminated()
         # The direct time-wrapper child was reaped. Its killed native child may
         # briefly be a terminated zombie awaiting the system reaper.
         try:

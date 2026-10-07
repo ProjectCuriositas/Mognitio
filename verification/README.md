@@ -6,7 +6,8 @@ worklist, independent membership index, and their verification boundaries.
 The [v0.14 review corrections](v0.14.0-review.md) cover first file close,
 scalar root lifetime, and primary-phase guard verification.
 
-The current implementation record is [v0.14.0](v0.14.0.md), with its
+The current implementation record is [v1.1.0](v1.1.0.md), with complete
+[performance samples](v1.1.0-measurements.json). The retained [v0.14.0 record](v0.14.0.md) has its
 [coverage ledger](v0.14.0-conformance.md). The inherited [v0.13.0 record](v0.13.0.md)
 has a [42-condition ledger](v0.13.0-conformance.md) and [internal gates](v0.13.0-internals.md).
 The [v0.13 review corrections](v0.13.0-review.md) cover directory mmap errno
