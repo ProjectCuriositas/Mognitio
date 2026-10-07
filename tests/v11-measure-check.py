@@ -33,13 +33,14 @@ def main():
     timeout = samples(outcome="timeout")
     result = m.profile.decide(ordinary, timeout, candidate)
     assert result["status"] == "pass" and not result["relative_comparison"]
-    assert m.profile.decide(cell, timeout, candidate)["status"] == "fail"
+    assert m.profile.decide(cell, timeout, candidate)["status"] == "unresolved"
     mixed = copy.deepcopy(baseline)
     mixed[0] = timeout[0]
-    assert m.profile.decide(ordinary, mixed, candidate)["status"] == "fail"
+    assert m.profile.decide(ordinary, mixed, candidate)["status"] == "unresolved"
     incorrect = copy.deepcopy(candidate)
     incorrect[2]["verified"] = False
     assert m.profile.decide(ordinary, baseline, incorrect)["status"] == "fail"
+    assert m.profile.decide(ordinary, incorrect, candidate)["status"] == "fail"
     noisy = samples()
     noisy[0]["elapsed_seconds"] = 1.5
     assert m.profile.decide(ordinary, noisy, candidate)["status"] == "unresolved"
@@ -58,7 +59,7 @@ def main():
         image.write_text("#!/usr/bin/python3\nprint('unexpected')\n")
         row = m.observe(image, cell, root, "wrong-output")
         assert not row["verified"] and row["validation_error"] == "unexpected consumer stdout"
-    print("MEASUREMENT_CHECK_OK threshold_controls=11 matrix_cells=74 process_controls=3")
+    print("MEASUREMENT_CHECK_OK threshold_controls=12 matrix_cells=74 process_controls=3")
 
 
 if __name__ == "__main__":

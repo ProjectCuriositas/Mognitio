@@ -41,7 +41,10 @@ def summary(samples):
     if len(complete) != len(samples):
         if all(s["outcome"] == "timeout" for s in samples):
             return dict(status="timeout")
-        return dict(status="incomplete")
+        if all(s["outcome"] == "timeout" or
+               (s["outcome"] == "completed" and s["verified"]) for s in samples):
+            return dict(status="mixed")
+        return dict(status="failed")
     values = [s["elapsed_seconds"] for s in complete]
     median = statistics.median(values)
     return dict(status="complete", median=median, minimum=min(values), maximum=max(values),
@@ -70,8 +73,10 @@ def decide(cell, baseline, candidate):
             if cell["improvement"] and not (
                     after["median"] <= before["median"] * 0.70 and after["maximum"] < before["minimum"]):
                 reasons.append("improvement")
+    elif before["status"] == "failed":
+        reasons.append("baseline failed result")
     elif before["status"] != "timeout" or cell["improvement"]:
         reasons.append("baseline comparison unavailable")
-    return dict(status="pass" if not reasons else "unresolved" if all("noise" in r for r in reasons) else "fail",
+    return dict(status="pass" if not reasons else "unresolved" if all("noise" in r or r == "baseline comparison unavailable" for r in reasons) else "fail",
                 reasons=reasons, baseline=before, candidate=after,
                 relative_comparison=before["status"] == "complete")

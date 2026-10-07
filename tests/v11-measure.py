@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 import platform
+import resource
 import signal
 import subprocess
 import threading
@@ -105,6 +106,11 @@ def main():
                        os_release=Path("/etc/os-release").read_text(), load=os.getloadavg(),
                        time_version=subprocess.check_output(["/usr/bin/time", "--version"], text=True),
                        clock="monotonic; before Popen through blocking wait return; oracle after timer",
+                       rss_scope="GNU time maximum resident set size of the native child; KiB",
+                       cache="one warm-up per batch; no cache eviction",
+                       filesystem=subprocess.check_output(["findmnt", "-T", str(args.evidence), "-n", "-o", "FSTYPE,OPTIONS"], text=True).strip(),
+                       resource_limits={name: resource.getrlimit(getattr(resource, name))
+                                        for name in ("RLIMIT_AS", "RLIMIT_DATA", "RLIMIT_CPU", "RLIMIT_RSS", "RLIMIT_FSIZE", "RLIMIT_NOFILE")},
                        affinity=sorted(os.sched_getaffinity(0)), start_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
     available = int(next(line.split()[1] for line in environment["memory"].splitlines() if line.startswith("MemAvailable:")))
     assert available >= 8 * 1024 * 1024, "less than 8 GiB available"
