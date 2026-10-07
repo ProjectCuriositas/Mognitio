@@ -85,3 +85,29 @@
       (multiple-value-bind (out err code) (v11-driver manifest)
         (same 4 code) (is (search "errors=1" out))
         (is (search "allocation failure" err))))))
+
+(deftest v110-retry-reloads-free-head
+  ;; The old free head is the short tail of a soon-to-be-coalesced arena.
+  ;; Reusing that candidate after collection misses the newly reclaimed space.
+  (let ((forms (append (v06-raw-allocate 3500) (v06-raw-allocate 1000) '((:imm-rax 1))))
+        (options '(:arena-unit 4096 :cap 4096)))
+    (multiple-value-bind (out err code) (v06-raw-result forms options)
+      (same 0 code) (same (format nil "true~%") out) (same "" err))
+    (let ((runtime (fdefinition 'mognitio.native.runtime::runtime-unit)))
+      (replacing (mognitio.native.runtime::runtime-unit
+        (lambda (name instructions &optional (kind :runtime))
+          (funcall runtime name
+            (cond
+              ((eq name :allocate-block)
+               (loop for form in instructions append
+                 (append
+                   (when (equal form '(:call (:runtime :collect)))
+                     '((:load-word :rdx :r15 288) (:store-word :r15 136 :rdx)))
+                   (list form))))
+              ((eq name :find-free)
+               (substitute '(:load-word :r9 :r15 136)
+                           '(:load-word :r9 :r11 0) instructions :test #'equal :count 1))
+              (t instructions)) kind)))
+        (multiple-value-bind (out err code) (v06-raw-result forms options)
+          (same 4 code) (same "" out)
+          (same (format nil "runtime error: allocation failure~%") err))))))
