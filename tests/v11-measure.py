@@ -6,8 +6,6 @@ import hashlib
 import importlib.util
 import json
 import os
-import platform
-import resource
 import signal
 import subprocess
 import threading
@@ -25,6 +23,7 @@ def load(name, path):
 
 profile = load("profile", HERE / "v11-measure-profile.py")
 oracle = load("oracle", HERE / "v11-workloads.py")
+environments = load("environments", HERE / "v11-measure-environment.py")
 
 
 def digest(path):
@@ -119,24 +118,16 @@ def main():
     for side, identity in identities.items():
         for name, image in identity["images"].items():
             assert digest(roots[side] / name) == image["sha256"], "image changed"
-    tools = {p.name: digest(p) for p in (Path(__file__), HERE / "v11-measure-profile.py", HERE / "v11-workloads.py")}
+    tools = {p.name: digest(p) for p in (Path(__file__), HERE / "v11-measure-profile.py", HERE / "v11-workloads.py", HERE / "v11-measure-environment.py")}
     args.evidence = args.evidence.resolve()
     args.evidence.mkdir(parents=True, exist_ok=args.resume)
     checkpoint = args.evidence / "results.json"
-    environment = dict(platform=platform.platform(), python=platform.python_version(),
-                       cpu=Path("/proc/cpuinfo").read_text(), memory=Path("/proc/meminfo").read_text(),
-                       os_release=Path("/etc/os-release").read_text(), load=os.getloadavg(),
-                       time_version=subprocess.check_output(["/usr/bin/time", "--version"], text=True),
-                       clock="monotonic; before Popen through blocking wait return; oracle after timer",
-                       rss_scope="GNU time maximum resident set size of the native child; KiB",
-                       cache="one warm-up per batch; no cache eviction",
-                       filesystem=subprocess.check_output(["findmnt", "-T", str(args.evidence), "-n", "-o", "FSTYPE,OPTIONS"], text=True).strip(),
-                       resource_limits={name: resource.getrlimit(getattr(resource, name))
-                                        for name in ("RLIMIT_AS", "RLIMIT_DATA", "RLIMIT_CPU", "RLIMIT_RSS", "RLIMIT_FSIZE", "RLIMIT_NOFILE")},
-                       affinity=sorted(os.sched_getaffinity(0)), start_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+    environment = environments.capture(args.evidence)
+    environment_id = environment["environment_id"]
     available = int(next(line.split()[1] for line in environment["memory"].splitlines() if line.startswith("MemAvailable:")))
     assert available >= 8 * 1024 * 1024, "less than 8 GiB available"
-    record = json.loads(checkpoint.read_text()) if args.resume else dict(identities=identities, tools=tools, environments=[], cells=[])
+    record = json.loads(checkpoint.read_text()) if args.resume else dict(identities=identities, tools=tools, environment_id=environment_id, environments=[], cells=[])
+    environments.validate(record, environment)
     assert record["identities"] == identities and record["tools"] == tools, "resume identity mismatch"
     record["environments"].append(environment)
     save(checkpoint, record)
@@ -162,7 +153,7 @@ def main():
                 if "decision" in batch:
                     continue
             else:
-                batch = dict(warmups={}, samples={"baseline": [], "candidate": []}, order=[])
+                batch = dict(environment_id=environment_id, warmups={}, samples={"baseline": [], "candidate": []}, order=[])
                 entry["batches"].append(batch)
             for sample in range(-1, 5):
                 sides = ("baseline", "candidate") if (index + batch_index + sample) % 2 == 0 else ("candidate", "baseline")
@@ -173,7 +164,10 @@ def main():
                         continue
                     image = roots[side] / ("workloads" if cell["family"] == "workload" else cell["mode"])
                     prefix = f"batch-{batch_index}-{side}-" + ("warmup" if sample == -1 else str(sample))
+                    environments.require_current(args.evidence, environment_id)
                     row = observe(image, cell, folder, prefix)
+                    environments.require_current(args.evidence, environment_id)
+                    row["environment_id"] = environment_id
                     if sample == -1:
                         batch["warmups"][side] = row
                     else:
@@ -181,6 +175,7 @@ def main():
                     batch["order"].append(dict(side=side, sample=sample))
                     save(checkpoint, record)
                     print(cell["id"], batch_index, side, sample, row["outcome"], round(row["elapsed_seconds"], 6), flush=True)
+            environments.check_batch(batch, environment_id)
             decision = profile.decide(cell, **batch["samples"])
             warmup = batch["warmups"]["candidate"]
             if not warmup["verified"] or warmup["elapsed_seconds"] > cell["timeout"] or (warmup["peak_rss_kib"] or 0) > 32768:
@@ -207,6 +202,7 @@ def main():
             save(checkpoint, record)
             print("CELL", cell["id"], json.dumps(decision), flush=True)
             break
+    environments.validate(record, environment)
     retention = []
     by_id = {entry["cell"]["id"]: entry for entry in record["cells"]}
     for mode in ("scalars", "scan", "combined"):

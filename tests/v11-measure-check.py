@@ -97,6 +97,7 @@ def main():
         assert row["verified"] and row["stdout_file"] != "interrupted.out"
         assert "interrupted.out" in row["earlier_attempt_files"]
         assert (root / "interrupted.out").read_bytes() == original
+    m.load("resume_checks", HERE / "v11-measure-resume-check.py").main()
     print("MEASUREMENT_CHECK_OK threshold_controls=12 matrix_cells=74 process_controls=5")
 
 
