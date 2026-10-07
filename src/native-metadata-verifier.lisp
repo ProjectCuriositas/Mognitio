@@ -41,15 +41,16 @@
               (let ((expected (coerce (append '(72 184)
                                       (loop for i below 8 collect (ldb (byte 8 (* i 8)) word))) 'vector)))
                 (ensure (search expected bytes :start2 start :end2 end)))))))
-      ;; Independently pinned v6 layout; neither builder rows nor offsets are
+      ;; Independently pinned v7 layout; neither builder rows nor offsets are
       ;; trusted as the oracle. Each field has size, classification and zero state.
       (let* ((test-p (mognitio.ir::module-test-ordinal module))
              (rows (append '((0 240 0 0) (240 8 1 0) (248 16 2 0)
                              (264 8 3 0) (272 8 1 0) (280 8 1 0))
                      (when test-p '((288 8 5 0) (296 8 5 0) (304 8 5 0)
-                                    (312 8 5 0) (320 8 5 0) (328 8 4 0))))))
-        (record '(:runtime-context 6)
-          (append (list 6 (if test-p 1 0) (if test-p 336 288) (length rows))
+                                    (312 8 5 0) (320 8 5 0) (328 8 4 0)))
+                     (if test-p '((336 8 1 0) (344 8 4 0)) '((288 8 1 0) (296 8 4 0))))))
+        (record '(:runtime-context 7)
+          (append (list 7 (if test-p 1 0) (if test-p 352 304) (length rows))
                   (loop for row in rows for id from 0 append (cons id row)))))
       (loop for info across (mognitio.semantic:value-context-types context)
             for id = (mognitio.semantic:type-info-id info) do

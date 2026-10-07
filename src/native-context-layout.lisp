@@ -8,7 +8,8 @@
                              (:cleanup-head 8 1 0) (:report-mode 8 1 0))
                     (when test-p '((:test-stage 8 5 0) (:test-sequence 8 5 0)
                                    (:test-kind 8 5 0) (:test-site 8 5 0)
-                                   (:test-exit 8 5 0) (:test-padding 8 4 0)))))
+                                   (:test-exit 8 5 0) (:test-padding 8 4 0)))
+                    '((:free-head 8 1 0) (:allocation-padding 8 4 0))))
       (destructuring-bind (name size kind zero) field
         (push (list name offset size kind zero) fields) (incf offset size)))
     (make-runtime-context-layout :fields (nreverse fields) :size offset :profile (if test-p 1 0))))
@@ -19,12 +20,12 @@
 
 (defun context-metadata-unit ()
   (let* ((layout (build-runtime-context-layout (test-image-p)))
-         (words (append (list 6 (runtime-context-layout-profile layout) (runtime-context-layout-size layout)
+         (words (append (list 7 (runtime-context-layout-profile layout) (runtime-context-layout-size layout)
                               (length (runtime-context-layout-fields layout)))
                         (loop for field in (runtime-context-layout-fields layout) for id from 0 append
                           (cons id (rest field))))))
     (mognitio.object:make-code-unit :owner :runtime-context
       :instructions
       (mapcar (lambda (form) (mognitio.machine:make-instruction :opcode (car form) :operands (cdr form)))
-        (list '(:align 8) '(:label (:runtime-context 6))
+        (list '(:align 8) '(:label (:runtime-context 7))
               (cons :bytes (loop for word in words append (mognitio.amd64:little-endian word 8))))))))

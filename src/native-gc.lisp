@@ -1,28 +1,34 @@
 (in-package #:mognitio.native.runtime)
 
 (defun validate-root-unit (literal-count)
-  ;; Debug classification: compare against known literal object starts, then
-  ;; require an exact allocated arena block. Never dereference the candidate
-  ;; to decide whether it needs validation. Return 5 for static, 1 for dynamic.
+  ;; Match exact static starts, then the independently built physical index.
+  ;; Never dereference a candidate until its allocated-start marker is checked.
+  ;; Arguments: candidate and collection workspace. Return 5 static, 1 dynamic.
   (runtime-unit :validate
     (append
       '((:load-word :rdx :rsp 8))
       (loop for id below literal-count append
-        `((:lea-text (:text ,id)) (:cmp-rax-rdx) (:jz :static)))
+        (append (when (option :gc-counters) (bump 120))
+                `((:lea-text (:text ,id)) (:cmp-rax-rdx) (:jz :static))))
       (loop for object in (static-objects) append
-        `((:lea-object ,(first object)) (:cmp-rax-rdx) (:jz :static)))
-      '((:load-word :r8 :r15 8)
-        (:label :arena) (:cmp-imm :r8 0) (:jz :bad)
-        (:load-word :r10 :r8 8) (:add-reg :r10 :r8) (:lea-base :r9 :r8 32)
-        (:label :block) (:cmp-reg :r9 :r10) (:jz :next) (:ja :bad)
-        (:load-word :rax :r9 0) (:cmp-imm :rax 32) (:jb :bad)
+        (append (when (option :gc-counters) (bump 120))
+                `((:lea-object ,(first object)) (:cmp-rax-rdx) (:jz :static))))
+      '((:load-word :r8 :rsp 16) (:cmp-imm :r8 0) (:jz :bad)
+        (:load-word :r11 :r8 24) (:load-word :rax :r8 8)
+        (:add-reg :r8 :rax) (:add-imm :r8 32)
+        (:label :arena) (:cmp-imm :r11 0) (:jz :bad)
+        (:load-word :r9 :r8 0) (:cmp-reg :rdx :r9) (:jb :next)
+        (:load-word :r10 :r8 8) (:add-reg :r10 :r9)
+        (:cmp-reg :rdx :r10) (:jae :next)
+        (:mov-reg :rax :rdx) (:sub-reg :rax :r9)
         (:mov-reg :rcx :rax) (:and-imm :rcx 7) (:test-rcx) (:jnz :bad)
-        (:mov-reg :rcx :r9) (:add-reg :rcx :rax) (:jb :bad)
-        (:cmp-reg :rcx :r10) (:ja :bad)
-        (:cmp-reg :r9 :rdx) (:jz :found) (:mov-reg :r9 :rcx) (:jmp :block)
-        (:label :next) (:load-word :r8 :r8 0) (:jmp :arena)
-        (:label :found) (:load-word :rax :r9 8) (:and-imm :rax -123)
-        (:cmp-imm :rax 1) (:jnz :bad) (:ret))
+        (:shr-imm :rax 3) (:load-word :rcx :r8 16) (:add-reg :rax :rcx)
+        (:mov-reg :r9 :rax))
+      (when (option :gc-counters) (bump 128))
+      '((:load-byte :rax :r9 0) (:cmp-imm :rax 1) (:jnz :bad)
+        (:load-word :rax :rdx 8) (:and-imm :rax -123)
+        (:cmp-imm :rax 1) (:jnz :bad) (:ret)
+        (:label :next) (:add-imm :r8 24) (:add-imm :r11 -1) (:jmp :arena))
       '((:label :static) (:imm-rax 5) (:ret))
       '((:label :bad) (:mov-edi 3) (:mov-eax 60) (:syscall) (:ud2)))))
 
@@ -37,7 +43,8 @@
 
 (defun collect-unit (&optional context)
   (runtime-unit :collect
-    (append (helper-frame 20) (bump +collections+)
+    (append (helper-frame 32) (bump +collections+)
+      '((:call (:runtime :gc.workspace)) (:store-frame -168 :rax))
       `((:load-word :rax :r15 ,+root-head+) (:store-frame -8 :rax)
         (:label :frame) (:load-frame :rax -8) (:test) (:jz :trace-pass)
         (:load-word :rcx :rax 8) (:store-frame -16 :rcx)
@@ -47,9 +54,9 @@
         (:label :slot) (:load-frame :rcx -16) (:test-rcx) (:jz :next-frame)
         (:load-frame :rdx -24) (:load-word :rax :rdx 0) (:test) (:jz :next-slot))
       '((:store-frame -32 :rax) (:store-out 0 :rax)
-        (:call (:runtime :validate)) (:cmp-imm :rax 5) (:jz :next-slot))
-      '((:load-frame :rdx -32) (:load-word :rax :rdx 8) (:or-imm :rax 2) (:store-word :rdx 8 :rax)
-        (:label :next-slot) (:load-frame :rax -24) (:add-imm :rax 8) (:store-frame -24 :rax)
+        (:load-frame :rax -168) (:store-out 8 :rax)
+        (:call (:runtime :gc.mark)))
+      '((:label :next-slot) (:load-frame :rax -24) (:add-imm :rax 8) (:store-frame -24 :rax)
         (:load-frame :rcx -16) (:dec-rcx) (:store-frame -16 :rcx) (:jmp :slot)
         (:label :next-frame) (:load-frame :rax -8) (:load-word :rax :rax 0)
         (:store-frame -8 :rax) (:jmp :frame))
@@ -57,7 +64,9 @@
       '((:label :sweep))
       (unless (eq (option :mutation) :no-sweep)
         (append
-          `((:load-word :r8 :r15 ,+arena-head+)
+          `((:lea-base :rdi :r15 ,(context-field-offset :free-head (test-image-p)))
+            (:imm-rax 0) (:store-word :rdi 0 :rax)
+            (:load-word :r8 :r15 ,+arena-head+)
             (:label :arena) (:cmp-imm :r8 0) (:jz :done)
             (:load-word :r10 :r8 8) (:add-reg :r10 :r8) (:lea-base :r9 :r8 32)
             (:imm-reg :rsi 0)
@@ -72,7 +81,10 @@
             (:label :free) (:cmp-imm :rsi 0) (:jz :first-free)
             (:load-word :rax :rsi 0) (:load-word :rdx :r9 0) (:add-reg :rax :rdx)
             (:store-word :rsi 0 :rax) (:jmp :advance)
-            (:label :first-free) (:mov-reg :rsi :r9) (:jmp :advance)
+            (:label :first-free) (:mov-reg :rsi :r9)
+            (:store-word :rdi 0 :r9) (:lea-base :rdi :r9 16)
+            (:imm-rax 0) (:store-word :r9 16 :rax) (:store-word :r9 24 :rax)
+            (:jmp :advance)
             (:label :live) (:load-word :rax :r9 8) (:and-imm :rax -11) (:store-word :r9 8 :rax) (:imm-reg :rsi 0)
             (:load-word :rax :r9 0) (:load-frame :rdx -40) (:add-reg :rdx :rax) (:store-frame -40 :rdx)
             (:label :advance) (:load-word :rax :r9 0) (:add-reg :r9 :rax) (:jmp :block)
@@ -81,4 +93,5 @@
         (:cmp-rax-rdx) (:jbe :roots-peak) (:store-word :r15 ,+peak-live+ :rax)
         (:label :roots-peak) (:load-frame :rax -48) (:load-word :rdx :r15 ,+peak-roots+)
         (:cmp-rax-rdx) (:jbe :finish) (:store-word :r15 ,+peak-roots+ :rax)
-        (:label :finish) (:imm-rax 0)) (helper-return))))
+        (:label :finish) (:load-frame :rax -168) (:store-out 0 :rax)
+        (:call (:runtime :gc.release)) (:imm-rax 0)) (helper-return))))

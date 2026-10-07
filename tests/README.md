@@ -1,6 +1,6 @@
 # Test coverage
 
-The ASDF `mognitio/tests` system is the current v0.14.0 suite.
+The ASDF `mognitio/tests` system is the current cumulative compiler suite.
 Run it with `sbcl --noinform --script scripts/test.lisp`.
 A failed assertion or unavailable required facility fails the command.
 The Lisp summary counts test groups, assertions, and processes invoked through
@@ -15,6 +15,9 @@ cases to executable fixtures. Host/process audit details are recorded
 
 | Files | Independent observations |
 |---|---|
+| v11-workloads.py, fixtures/v11-checks.mgn | Ordinary scanner/symbol workloads, independent full-field oracle, UTF-8, snapshots, standalone execution, and output-corruption controls |
+| v11-heap-snapshot.lisp, v11-heap-check.py, v11-heap-run.py | Actual free-head/partition snapshots in both profiles, split/unlink/coalesce boundaries, runtime head faults, malformed records, and writer failures |
+| v11-allocation.lisp, v11-index-check.py, v11-map-check.py | Independent allocated-start index oracle, queue bounds, workspace failure classification, cycle reachability, and real mmap/munmap lifetimes |
 | v013-directory.py, v013-integration.py | Same host/native lexical paths, names/kinds/order, raw invalid UTF-8, links, permission failures, Function storage, try, static rejection, initialization and shared filesystem |
 | v013-inheritance.py | Separate-process umask, default ACL, setgid and a distinct supplementary parent GID, unchanged metadata and syscall policy |
 | v013-reference.py | Explicit breadth-first traversal, exact bytes, rerun, all later failure phases, language assertions and source-absent native execution |
@@ -80,7 +83,7 @@ Historical validation records preserve their original counts and results.
 | Slice bounds trap | Result<String,SliceError> with requested bounds and length |
 | Single-source CLI and Boolean output | Manifest project CLI with declaration-only modules and explicit argument/status main |
 | At-sign always rejected by lexer | At-sign introduces attributes; dollar-sign fixtures retain lexical-rejection coverage |
-| ABI v4 / non-reference Function | ABI v6 context, closure roots and code pointers, typed List/buffer tracing |
+| ABI v4 / non-reference Function | Context metadata v7 with retained value ABI, closure roots and code pointers, typed List/buffer tracing |
 
 Retained low-level tests were migrated only where source spelling or an explicit
 oracle changed. `v09-inherited.lisp` preserves original test names for

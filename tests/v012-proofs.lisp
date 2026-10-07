@@ -94,7 +94,7 @@
            (ir (mognitio.ir:lower-program checked)))
       (multiple-value-bind (bytes symbols) (mognitio.amd64:encode (mognitio.machine:lower-module ir))
         (is (mognitio.backend.native::verify-native-metadata ir bytes symbols))
-        (let ((at (mognitio.object:image-symbol-offset (gethash '(:runtime-context 6) symbols))))
+        (let ((at (mognitio.object:image-symbol-offset (gethash '(:runtime-context 7) symbols))))
           (dolist (offset '(0 16 48 96))
             (let ((bad (copy-seq bytes)))
               (incf (aref bad (+ at offset)))

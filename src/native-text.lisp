@@ -90,6 +90,8 @@
         (:load-frame :rcx 24) (:store-word :rax 24 :rcx)) (helper-return))))
 
 (defun text-helper-units (operations literal-count &optional context allocating-values)
+  (when (and (option :gc-counters) (option :trace))
+    (internal-error "GC counters and lifecycle trace use separate observation builds"))
   (append
     (loop for op in operations collect
       (ecase op
@@ -98,4 +100,4 @@
         (:text.concat (text-concat-unit)) (:text.slice (text-slice-unit))))
     (when (or allocating-values (intersection operations '(:text.concat :text.slice)))
       (list (checked-sum-unit) (physical-size-unit) (find-free-unit)
-            (validate-root-unit literal-count) (collect-unit context) (allocate-unit) (text-allocation-unit)))))
+            (validate-root-unit literal-count) (gc-workspace-unit) (gc-release-unit) (gc-mark-unit) (collect-unit context) (allocate-unit) (text-allocation-unit)))))
