@@ -2,30 +2,26 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-Version 1.0.0 is the first stable release, validating the complete static-site
-generation workflow with [Lévi](https://github.com/ProjectCuriositas/Levi).
-It retains the language, runtime, static analyzer, stdio language server,
-build identities, and Linux packaging contracts of 0.15.1.
+Version 1.1.0 adds compiler-oriented workloads and improves native allocation
+and collection while preserving the 1.x language API. The implementation and
+fixed performance comparison are recorded in [verification](verification/v1.1.0.md).
+The static analyzer, stdio language server, build identities and Linux packaging
+remain part of the toolchain.
 The compiler targets Linux amd64. Official Linux packages and installer bundles
 are published in [GitHub Releases](https://github.com/ProjectCuriositas/Mognitio/releases).
 Follow the [APT repository instructions](https://projectcuriositas.github.io/apt/)
 for Ubuntu 24.04 and 26.04 amd64. The packaged toolchain includes its fixed runtime;
 a host SBCL installation is required only for source development.
 The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=mognitio.mognitio)
-is versioned independently. Extension 0.1.0 supports only language server 0.15.x;
-use an extension version whose compatibility table explicitly includes 1.0.0.
-
-The 1.1.0 development sources add compiler-oriented workloads and improve native
-allocation and collection while preserving the 1.x language API. Release assets
-remain separately versioned; these source changes do not publish a release.
-The existing VS Code extension 0.1.1 does not accept a 1.1.0 server. A compatible
-extension update is a separate project.
+is versioned independently. The existing extension 0.1.1 does not accept a 1.1.0
+server. Use a client version whose compatibility table explicitly includes 1.1.0;
+a compatible extension update is a separate project.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
-- [Release validation](verification/v1.0.0-release.md): stable release checks.
+- [Release validation](verification/v1.1.0-release.md): frozen release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [File converter](examples/file-converter/README.md): arguments and text I/O.
 - [Directory converter](examples/directory-converter/README.md): explicit tree traversal.
