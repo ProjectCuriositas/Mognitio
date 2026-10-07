@@ -1,0 +1,67 @@
+namespace Workloads;
+use Std\Io\{readTextFile, IoError};
+use Workloads\Core\{scan, Token, TokenKind, SymbolTable, Registration, emptyTable, register,
+    lines, natural, emit, emitNat, emitTokens, emitTable, emitScalars, emitResult};
+
+let argument: Function(List<String>, Int): String = function(args: List<String>, index: Int): String {
+    branch on args->at(index) {
+        Result<String, IndexError>::Ok(value: String) => value,
+        Result<String, IndexError>::Err => panic { "argument count" },
+    }
+};
+let input: Function(String): String = function(path: String): String {
+    branch on readTextFile(path) {
+        Result<String, IoError>::Ok(value: String) => value,
+        Result<String, IoError>::Err => panic { "input failure" },
+    }
+};
+let runOnce: Function(String, String, List<String>): Unit =
+    function(mode: String, text: String, queries: List<String>): Unit {
+    branch when {
+        mode == "scalars" => emitScalars(text->scalars()),
+        mode == "join" => emitResult(lines(text)->join("|")),
+        mode == "scan" => emitTokens(scan(text)),
+        mode == "combined" || mode == "symbols" => {
+            var names: List<String> = List<String>[];
+            branch when {
+                mode == "combined" => {
+                    let tokens: List<Token> = scan(text);
+                    emitTokens(tokens);
+                    loop over (tokens as token: Token) {
+                        branch on token->kind {
+                            TokenKind::Word => { names = names->append(token->text); },
+                            TokenKind::Punctuation => unit,
+                        };
+                    };
+                },
+                else => { branch when { text->length() > 0 => { names = lines(text); }, else => unit }; },
+            };
+            var table: SymbolTable = emptyTable();
+            var ids: List<Int> = List<Int>[];
+            loop over (names as name: String) {
+                let added: Registration = register(table, name);
+                table = added->table; ids = ids->append(added->id);
+            };
+            emitTable(table, ids, queries);
+            branch when { mode == "combined" => emitResult(names->join("|")), else => unit };
+        },
+        else => panic { "unknown workload" },
+    };
+};
+let main: Function(List<String>): Int = function(args: List<String>): Int {
+    branch when { args->length() != 4 => { return 2; }, else => unit };
+    let mode: String = argument(args, 0);
+    let text: String = input(argument(args, 1));
+    let repeats: Int = natural(argument(args, 2));
+    let queryText: String = input(argument(args, 3));
+    let queries: List<String> = branch when { queryText->length() == 0 => List<String>[], else => lines(queryText) };
+    emit("MGN11R1\n");
+    var iteration: Int = 0;
+    loop while (iteration < repeats) {
+        emit("ITER\n"); emitNat(iteration);
+        runOnce(mode, text, queries);
+        iteration = iteration + 1;
+    };
+    emit("END\n");
+    0
+};

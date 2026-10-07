@@ -1,0 +1,35 @@
+namespace Workloads\Core;
+
+public type TokenKind = sum { Word; Punctuation; };
+public type Token = product { kind: TokenKind; text: String; start: Int; end: Int; };
+
+public let scan: Function(String): List<Token> = function(source: String): List<Token> {
+    var tokens: List<Token> = List<Token>[];
+    var fragments: List<String> = List<String>[];
+    var start: Int = 0;
+    var position: Int = 0;
+    loop over (source->scalars() as scalar: String) {
+        let whitespace: Bool = scalar == " " || scalar == "\t" || scalar == "\r" || scalar == "\n";
+        let punctuation: Bool = scalar == "(" || scalar == ")" || scalar == "=" || scalar == "," || scalar == ";";
+        branch when {
+            whitespace || punctuation => {
+                branch when { fragments->length() > 0 => {
+                    tokens = tokens->append(Token { kind: TokenKind::Word, text: fragments->join(""), start: start, end: position });
+                    fragments = List<String>[];
+                }, else => unit };
+                branch when { punctuation => {
+                    tokens = tokens->append(Token { kind: TokenKind::Punctuation, text: scalar, start: position, end: position + 1 });
+                }, else => unit };
+            },
+            else => {
+                branch when { fragments->length() == 0 => { start = position; }, else => unit };
+                fragments = fragments->append(scalar);
+            },
+        };
+        position = position + 1;
+    };
+    branch when { fragments->length() > 0 => {
+        tokens = tokens->append(Token { kind: TokenKind::Word, text: fragments->join(""), start: start, end: position });
+    }, else => unit };
+    tokens
+};
