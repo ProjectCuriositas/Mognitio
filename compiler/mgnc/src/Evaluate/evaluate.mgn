@@ -1,0 +1,160 @@
+namespace Mgnc\Evaluate;
+use Mgnc\Data\{Paged,lookup,Diagnostic,problem};
+use Mgnc\Syntax\{Node,Parent,Program,Declaration,Parameter};
+use Mgnc\Checked\{Symbol,Value};
+use Mgnc\CheckSupport\{value,find,childId,direct,context,literal,operation};
+let childValue:Function(Node,Int,Paged<Value>):Result<Value,Diagnostic>=
+function(node:Node,index:Int,values:Paged<Value>):Result<Value,Diagnostic>{
+ lookup<Value>(values,try childId(node,index))
+};
+public let evaluate:Function(Program,Node,Paged<Value>,Paged<Symbol>,Parent,Parent,Int,Bool):Result<Value,Diagnostic>=
+function(program:Program,node:Node,values:Paged<Value>,symbols:Paged<Symbol>,environment:Parent,loopTarget:Parent,returnType:Int,allowMinimum:Bool):Result<Value,Diagnostic>{
+ branch when{
+  node->kind==1=>{return literal(node,allowMinimum);},
+  node->kind==2=>{
+   let reference:Parent=try find(symbols,environment,node->text);
+   branch on reference{
+    Parent::None=>{return Result<Value,Diagnostic>::Err(problem("semantic",node->span,"name is not visible"));},
+    Parent::Some(id:Int)=>{
+     let symbol:Symbol=try lookup<Symbol>(symbols,id);
+     branch when{!symbol->visible=>{
+      return Result<Value,Diagnostic>::Err(problem(
+       branch when{symbol->name=="main"=>"unsupported",else=>"semantic"},node->span,"binding is not visible in its initializer"));
+     },else=>unit};
+     return Result<Value,Diagnostic>::Ok(Value{valueType:symbol->valueType,normal:true,symbol:reference,target:Parent::None,integer:0,minimum:false});
+    },
+   };
+  },
+  node->kind==3=>{return childValue(node,0,values);},
+  node->kind==4=>{
+   let operand:Value=try childValue(node,0,values);
+   return operation(node->text,operand,value(0,true),node->span);
+  },
+  node->kind==5=>{
+   let left:Value=try childValue(node,0,values);
+   let right:Value=try childValue(node,1,values);
+   return operation(node->text,left,right,node->span);
+  },
+  node->kind==6=>{
+   let callee:Value=try childValue(node,0,values);
+   let syntax:Node=try direct(program->nodes,try childId(node,0));
+   branch when{syntax->kind!=2=>{return Result<Value,Diagnostic>::Err(problem("unsupported",node->span,"call requires a direct helper name"));},else=>unit};
+   branch when{callee->valueType!=5=>{return Result<Value,Diagnostic>::Err(problem("type",node->span,"callee is not a helper function"));},else=>unit};
+   let symbolId:Int=branch on callee->symbol{Parent::Some(id:Int)=>id,Parent::None=>{
+    return Result<Value,Diagnostic>::Err(problem("internal",node->span,"missing callee symbol"));
+   }};
+   let symbol:Symbol=try lookup<Symbol>(symbols,symbolId);
+   branch when{symbol->name=="main"=>{return Result<Value,Diagnostic>::Err(problem("unsupported",node->span,"main cannot be called"));},else=>unit};
+   let declaration:Declaration=branch on program->declarations->at(symbol->functionId){
+    Result<Declaration,IndexError>::Ok(declared:Declaration)=>declared,
+    Result<Declaration,IndexError>::Err(error:IndexError)=>{return Result<Value,Diagnostic>::Err(problem("internal",node->span,"invalid helper identity"));},
+   };
+   branch when{node->children->length()!=declaration->parameters->length()+1=>{
+    return Result<Value,Diagnostic>::Err(problem("type",node->span,"call arity mismatch"));
+   },else=>unit};
+   var normal:Bool=callee->normal;var argument:Int=1;
+   loop over(declaration->parameters as parameter:Parameter){
+    let actual:Value=try childValue(node,argument,values);
+    try context(actual,parameter->valueType,node->span);
+    normal=normal && actual->normal;argument=argument+1;
+   };
+   return Result<Value,Diagnostic>::Ok(Value{valueType:declaration->result,normal:normal,
+    symbol:Parent::None,target:Parent::Some(symbol->functionId),integer:0,minimum:false});
+  },
+  node->kind==7=>{
+   let receiver:Value=try childValue(node,0,values);
+   let syntax:Node=try direct(program->nodes,try childId(node,0));
+   branch when{syntax->kind!=2=>{return Result<Value,Diagnostic>::Err(problem("unsupported",node->span,"length requires the direct entry parameter"));},else=>unit};
+   branch when{receiver->valueType!=4=>{return Result<Value,Diagnostic>::Err(problem("type",node->span,"length requires entry arguments"));},else=>unit};
+   return Result<Value,Diagnostic>::Ok(Value{valueType:1,normal:receiver->normal,
+    symbol:receiver->symbol,target:Parent::None,integer:0,minimum:false});
+  },
+  node->kind==8=>{
+   var normal:Bool=true;
+   loop over(node->children as id:Int){let child:Value=try lookup<Value>(values,id);normal=normal && child->normal;};
+   branch when{node->flag=>{
+    let tail:Value=try childValue(node,node->children->length()-1,values);
+    return Result<Value,Diagnostic>::Ok(Value{valueType:tail->valueType,normal:normal,
+     symbol:Parent::None,target:Parent::None,integer:0,minimum:false});
+   },else=>unit};
+   return Result<Value,Diagnostic>::Ok(value(branch when{normal=>3,else=>0},normal));
+  },
+  node->kind==9=>{
+   let initializer:Value=try childValue(node,0,values);
+   try context(initializer,node->annotation,node->span);
+   return Result<Value,Diagnostic>::Ok(value(3,initializer->normal));
+  },
+  node->kind==10=>{
+   let reference:Parent=try find(symbols,environment,node->text);
+   let id:Int=branch on reference{Parent::Some(index:Int)=>index,Parent::None=>{
+    return Result<Value,Diagnostic>::Err(problem("semantic",node->span,"assignment name is not visible"));
+   }};
+   let symbol:Symbol=try lookup<Symbol>(symbols,id);
+   branch when{!symbol->visible || !symbol->mutable=>{return Result<Value,Diagnostic>::Err(problem("semantic",node->span,"assignment requires a visible var"));},else=>unit};
+   let operand:Value=try childValue(node,0,values);
+   try context(operand,symbol->valueType,node->span);
+   return Result<Value,Diagnostic>::Ok(Value{valueType:3,normal:operand->normal,symbol:reference,target:Parent::None,integer:0,minimum:false});
+  },
+  node->kind==11=>{
+   try context(try childValue(node,0,values),returnType,node->span);
+   return Result<Value,Diagnostic>::Ok(value(0,false));
+  },
+  node->kind==12 || node->kind==13=>{
+   branch on loopTarget{
+    Parent::None=>{return Result<Value,Diagnostic>::Err(problem("semantic",node->span,"control requires an enclosing loop"));},
+    Parent::Some(id:Int)=>{return Result<Value,Diagnostic>::Ok(Value{valueType:0,normal:false,
+     symbol:Parent::None,target:loopTarget,integer:0,minimum:false});},
+   };
+  },
+  node->kind==14 || node->kind==15=>{
+   let operand:Value=try childValue(node,0,values);
+   branch when{
+    node->kind==14 && (!operand->normal || operand->valueType==3)=>{
+     return Result<Value,Diagnostic>::Err(problem("type",node->span,"discard requires a normal non-Unit result"));
+    },
+    node->kind==15 && operand->normal && operand->valueType!=3=>{
+     return Result<Value,Diagnostic>::Err(problem("type",node->span,"non-Unit expression requires discard"));
+    },
+    else=>unit,
+   };
+   branch when{operand->normal && operand->valueType>=4=>{
+    return Result<Value,Diagnostic>::Err(problem("unsupported",node->span,"general value use is outside the native profile"));
+   },else=>unit};
+   return Result<Value,Diagnostic>::Ok(value(3,operand->normal));
+  },
+  node->kind==16=>{
+   var index:Int=0;var reachable:Bool=true;var normal:Bool=false;
+   var normalType:Int=0;var common:Int=0;var commonKnown:Bool=true;
+   loop over(node->children as id:Int){
+    let child:Value=try lookup<Value>(values,id);
+    let isElse:Bool=index==node->children->length()-1;
+    branch when{index%2==0 && !isElse=>{
+     try context(child,2,node->span);reachable=reachable && child->normal;
+    },else=>{
+     normal=normal || (reachable && child->normal);
+     branch when{child->normal=>{
+      branch when{normalType!=0 && normalType!=child->valueType=>{
+       return Result<Value,Diagnostic>::Err(problem("type",node->span,"branch arm types differ"));
+      },else=>unit};
+      normalType=child->valueType;
+     },else=>unit};
+     branch when{index==1 || node->children->length()==1=>{common=child->valueType;},else=>{
+      commonKnown=commonKnown && common==child->valueType;
+     }};
+     commonKnown=commonKnown && child->valueType!=0;
+    }};
+    index=index+1;
+   };
+   let structure:Int=branch when{normalType!=0=>normalType,commonKnown=>common,else=>0};
+   return Result<Value,Diagnostic>::Ok(value(structure,normal));
+  },
+  node->kind==17=>{
+   let condition:Value=try childValue(node,0,values);
+   try context(condition,2,node->span);
+   try context(try childValue(node,1,values),3,node->span);
+   return Result<Value,Diagnostic>::Ok(value(3,condition->normal));
+  },
+  else=>unit,
+ };
+ Result<Value,Diagnostic>::Err(problem("internal",node->span,"unknown syntax node"))
+};

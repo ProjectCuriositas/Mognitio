@@ -1,0 +1,19 @@
+namespace Mgnc\Checked;
+use Mgnc\Data\{Paged};
+use Mgnc\Syntax\{Parent,Program};
+public type Symbol = product {
+    parent: Parent; name: String; valueType: Int; mutable: Bool; visible: Bool; functionId: Int;
+};
+public type Value = product {
+    valueType: Int; normal: Bool; symbol: Parent; target: Parent; integer: Int; minimum: Bool;
+};
+public type Frame = product {
+    parent: Parent; node: Int; child: Int; environment: Parent; loopTarget: Parent; allowMinimum: Bool;
+};
+public type Body = product {
+    values: Paged<Value>; symbols: Paged<Symbol>;
+};
+public type CheckedFunction = product { declaration: Int; parameters: List<Int>; firstSymbol: Int; endSymbol: Int; };
+public type CheckedProgram = product {
+    syntax: Program; values: Paged<Value>; symbols: Paged<Symbol>; functions: List<CheckedFunction>;
+};

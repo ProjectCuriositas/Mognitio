@@ -1,0 +1,102 @@
+namespace Mgnc\CheckSupport;
+use Mgnc\Data\{Paged,lookup,Diagnostic,problem,Span};
+use Mgnc\Syntax\{Parent,Node};
+use Mgnc\Checked\{Symbol,Value};
+public let value:Function(Int,Bool):Value=function(valueType:Int,normal:Bool):Value{
+ Value{valueType:valueType,normal:normal,symbol:Parent::None,target:Parent::None,integer:0,minimum:false}
+};
+public let reserved:Function(String):Bool=function(name:String):Bool{
+ name=="Int" || name=="Bool" || name=="Unit" || name=="String" || name=="List" ||
+ name=="Function" || name=="Result" || name=="IndexError" || name=="SliceError" || name=="Self"
+};
+public let find:Function(Paged<Symbol>,Parent,String):Result<Parent,Diagnostic>=
+function(symbols:Paged<Symbol>,top:Parent,name:String):Result<Parent,Diagnostic>{
+ var current:Parent=top;
+ loop while(true){
+  branch on current{
+   Parent::None=>{return Result<Parent,Diagnostic>::Ok(Parent::None);},
+   Parent::Some(index:Int)=>{
+    let symbol:Symbol=try lookup<Symbol>(symbols,index);
+    branch when{symbol->name==name=>{return Result<Parent,Diagnostic>::Ok(current);},else=>unit};
+    current=symbol->parent;
+   },
+  };
+ };
+ panic {"unreachable name search"}
+};
+public let available:Function(Paged<Symbol>,Parent,String,Span):Result<Unit,Diagnostic>=
+function(symbols:Paged<Symbol>,top:Parent,name:String,span:Span):Result<Unit,Diagnostic>{
+ branch when{reserved(name)=>{return Result<Unit,Diagnostic>::Err(problem("semantic",span,"reserved name"));},else=>unit};
+ branch on (try find(symbols,top,name)){
+  Parent::None=>Result<Unit,Diagnostic>::Ok(unit),
+  Parent::Some(index:Int)=>Result<Unit,Diagnostic>::Err(problem("semantic",span,"name is already visible or reserved")),
+ }
+};
+public let childId:Function(Node,Int):Result<Int,Diagnostic>=function(node:Node,index:Int):Result<Int,Diagnostic>{
+ branch on node->children->at(index){
+  Result<Int,IndexError>::Ok(id:Int)=>Result<Int,Diagnostic>::Ok(id),
+  Result<Int,IndexError>::Err(error:IndexError)=>Result<Int,Diagnostic>::Err(problem("internal",node->span,"missing syntax child")),
+ }
+};
+public let direct:Function(Paged<Node>,Int):Result<Node,Diagnostic>=
+function(nodes:Paged<Node>,id:Int):Result<Node,Diagnostic>{
+ var current:Int=id;
+ loop while(true){
+  let node:Node=try lookup<Node>(nodes,current);
+  branch when{node->kind!=3=>{return Result<Node,Diagnostic>::Ok(node);},else=>unit};
+  current=try childId(node,0);
+ };
+ panic {"unreachable grouping"}
+};
+public let context:Function(Value,Int,Span):Result<Unit,Diagnostic>=
+function(actual:Value,expected:Int,span:Span):Result<Unit,Diagnostic>{
+ branch when{
+  actual->normal && actual->valueType!=expected=>Result<Unit,Diagnostic>::Err(problem("type",span,"type mismatch")),
+  else=>Result<Unit,Diagnostic>::Ok(unit),
+ }
+};
+public let literal:Function(Node,Bool):Result<Value,Diagnostic>=function(node:Node,allowMinimum:Bool):Result<Value,Diagnostic>{
+ branch when{
+  node->text=="true"=>{return Result<Value,Diagnostic>::Ok(Value{valueType:2,normal:true,symbol:Parent::None,target:Parent::None,integer:1,minimum:false});},
+  node->text=="false"=>{return Result<Value,Diagnostic>::Ok(value(2,true));},
+  node->text=="unit"=>{return Result<Value,Diagnostic>::Ok(value(3,true));},
+  else=>unit,
+ };
+ var accumulator:Int=0;
+ loop over(node->text->scalars() as scalar:String){
+  var digit:Int=0;
+  loop over("0123456789"->scalars() as candidate:String){
+   branch when{candidate==scalar=>{break;},else=>unit};digit=digit+1;
+  };
+  branch when{digit==10 || accumulator < -922337203685477580 ||
+   (accumulator == -922337203685477580 && digit > branch when{allowMinimum=>8,else=>7})=>{
+   return Result<Value,Diagnostic>::Err(problem("type",node->span,"integer literal out of range"));
+  },else=>unit};
+  accumulator=accumulator*10-digit;
+ };
+ let minimum:Bool=accumulator == -9223372036854775808;
+ Result<Value,Diagnostic>::Ok(Value{valueType:1,normal:true,symbol:Parent::None,target:Parent::None,
+  integer:branch when{minimum=>accumulator,else=>-accumulator},minimum:minimum})
+};
+public let operation:Function(String,Value,Value,Span):Result<Value,Diagnostic>=
+function(operator:String,left:Value,right:Value,span:Span):Result<Value,Diagnostic>{
+ var candidates:List<Int>=List<Int>[];
+ branch when{
+  operator=="+"=>{candidates=List<Int>[1,6];},
+  operator=="==" || operator=="!="=>{candidates=List<Int>[1,2,3,6];},
+  operator=="&&" || operator=="||" || operator=="!"=>{candidates=List<Int>[2];},
+  else=>{candidates=List<Int>[1];},
+ };
+ var matches:Int=0;var chosen:Int=0;
+ loop over(candidates as candidate:Int){
+  branch when{(left->valueType==0 || left->valueType==candidate) &&
+    (right->valueType==0 || right->valueType==candidate)=>{
+    matches=matches+1;chosen=candidate;
+  },else=>unit};
+ };
+ branch when{matches!=1=>{return Result<Value,Diagnostic>::Err(problem("type",span,"operator has no unique type"));},else=>unit};
+ let comparison:Bool=operator=="==" || operator=="!=" || operator=="<" || operator==">" || operator=="<=" || operator==">=";
+ let result:Int=branch when{comparison=>2,else=>chosen};
+ let normal:Bool=left->normal && (operator=="&&" || operator=="||" || right->normal);
+ Result<Value,Diagnostic>::Ok(value(result,normal))
+};

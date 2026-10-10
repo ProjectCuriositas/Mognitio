@@ -1,0 +1,18 @@
+namespace Mgnc\IR;
+use Mgnc\Data\{Paged,Span};
+use Mgnc\Syntax\{Parent};
+public type Instruction=product{
+ kind:Int;slot:Int;inputs:List<Int>;immediate:Int;targets:List<Int>;span:Span;
+};
+public type Block=product{
+ id:Int;start:Int;end:Int;terminator:Instruction;
+};
+public type FunctionIR=product{
+ id:Int;parameters:List<Int>;result:Int;slots:Paged<Int>;
+ instructions:Paged<Instruction>;blocks:Paged<Block>;
+};
+public type ModuleIR=product{functions:List<FunctionIR>;entry:Int;};
+public type LoopTarget=product{node:Int;condition:Int;exit:Int;};
+public type Frame=product{
+ parent:Parent;node:Int;stage:Int;child:Int;join:Int;other:Int;used:Bool;
+};

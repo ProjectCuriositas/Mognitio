@@ -1,0 +1,97 @@
+namespace Mgnc\IRShape;
+use Mgnc\Data\{Paged,lookup,Diagnostic,problem,Span};
+use Mgnc\IR\{Instruction,Block,FunctionIR,ModuleIR};
+public let integerAt:Function(List<Int>,Int,Span):Result<Int,Diagnostic>=
+function(values:List<Int>,index:Int,span:Span):Result<Int,Diagnostic>{
+ branch on values->at(index){
+  Result<Int,IndexError>::Ok(value:Int)=>Result<Int,Diagnostic>::Ok(value),
+  Result<Int,IndexError>::Err(error:IndexError)=>Result<Int,Diagnostic>::Err(problem("internal",span,"IR operand bounds")),
+ }
+};
+public let blockIndex:Function(FunctionIR,Int,Span):Result<Int,Diagnostic>=
+function(functionInfo:FunctionIR,id:Int,span:Span):Result<Int,Diagnostic>{
+ var index:Int=0;
+ loop while(index<functionInfo->blocks->count){
+  let block:Block=try lookup<Block>(functionInfo->blocks,index);
+  branch when{block->id==id=>{return Result<Int,Diagnostic>::Ok(index);},else=>unit};index=index+1;
+ };
+ Result<Int,Diagnostic>::Err(problem("internal",span,"undefined IR block"))
+};
+public let shape:Function(ModuleIR,FunctionIR,Instruction,Bool):Result<Unit,Diagnostic>=
+function(module:ModuleIR,functionInfo:FunctionIR,instruction:Instruction,terminal:Bool):Result<Unit,Diagnostic>{
+ let kind:Int=instruction->kind;
+ let span:Span=instruction->span;
+ var inputTypes:List<Int>=List<Int>[];
+ loop over(instruction->inputs as slot:Int){
+  let valueType:Int=try lookup<Int>(functionInfo->slots,slot);
+  branch when{valueType<1 || valueType>3=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"IR reads a non-scalar slot"));},else=>unit};
+  inputTypes=inputTypes->append(valueType);
+ };
+ branch when{terminal=>{
+  branch when{
+   kind==17=>{
+    branch when{inputTypes->length()!=0 || instruction->targets->length()!=1=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"jump shape"));},else=>unit};
+   },
+   kind==18=>{
+    branch when{inputTypes->length()!=1 || instruction->targets->length()!=2=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"branch shape"));},else=>unit};
+    branch when{(try integerAt(inputTypes,0,span))!=2=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"branch condition type"));},else=>unit};
+   },
+   kind==19=>{
+    branch when{inputTypes->length()!=1 || instruction->targets->length()!=0=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"return shape"));},else=>unit};
+    branch when{(try integerAt(inputTypes,0,span))!=functionInfo->result=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"return type"));},else=>unit};
+   },
+   else=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"missing terminator"));},
+  };
+  loop over(instruction->targets as id:Int){
+   branch when{id==0=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"edge enters function boundary"));},else=>unit};
+   discard try blockIndex(functionInfo,id,span);
+  };
+  return Result<Unit,Diagnostic>::Ok(unit);
+ },else=>unit};
+ let destination:Int=try lookup<Int>(functionInfo->slots,instruction->slot);
+ branch when{destination<1 || destination>3=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"IR writes a non-scalar slot"));},else=>unit};
+ branch when{
+  kind==1=>{
+   branch when{inputTypes->length()!=0 || (destination==2 && instruction->immediate!=0 && instruction->immediate!=1) ||
+     (destination==3 && instruction->immediate!=0)=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"constant shape"));},else=>unit};
+  },
+  kind==2 || kind==6 || kind==15=>{
+   branch when{inputTypes->length()!=1=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"unary shape"));},else=>unit};
+   let operand:Int=try integerAt(inputTypes,0,span);
+   branch when{operand!=destination || (kind==6 && destination!=1) || (kind==15 && destination!=2)=>{
+    return Result<Unit,Diagnostic>::Err(problem("internal",span,"unary type"));
+   },else=>unit};
+  },
+  kind>=3 && kind<=14=>{
+   branch when{inputTypes->length()!=2=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"binary shape"));},else=>unit};
+   let left:Int=try integerAt(inputTypes,0,span);let right:Int=try integerAt(inputTypes,1,span);
+   let result:Int=branch when{kind>=9=>2,else=>1};
+   branch when{left!=right || destination!=result || ((kind<9 || kind>10) && left!=1)=>{
+    return Result<Unit,Diagnostic>::Err(problem("internal",span,"binary type"));
+   },else=>unit};
+  },
+  kind==16=>{
+   branch when{instruction->targets->length()!=1=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"call target shape"));},else=>unit};
+   let target:Int=try integerAt(instruction->targets,0,span);
+   branch when{target<0 || target>=functionInfo->id || target==module->entry=>{
+    return Result<Unit,Diagnostic>::Err(problem("internal",span,"call must target a prior helper"));
+   },else=>unit};
+   let callee:FunctionIR=branch on module->functions->at(target){
+    Result<FunctionIR,IndexError>::Ok(value:FunctionIR)=>value,
+    Result<FunctionIR,IndexError>::Err(error:IndexError)=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"call target bounds"));},
+   };
+   branch when{inputTypes->length()!=callee->parameters->length() || destination!=callee->result=>{
+    return Result<Unit,Diagnostic>::Err(problem("internal",span,"call signature"));
+   },else=>unit};
+   var index:Int=0;
+   loop over(callee->parameters as slot:Int){
+    branch when{(try integerAt(inputTypes,index,span))!=(try lookup<Int>(callee->slots,slot))=>{
+     return Result<Unit,Diagnostic>::Err(problem("internal",span,"call argument type"));
+    },else=>unit};index=index+1;
+   };
+  },
+  else=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"unknown instruction"));},
+ };
+ branch when{kind!=16 && instruction->targets->length()!=0=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"unexpected instruction target"));},else=>unit};
+ Result<Unit,Diagnostic>::Ok(unit)
+};
