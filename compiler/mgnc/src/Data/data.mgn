@@ -1,0 +1,77 @@
+namespace Mgnc\Data;
+
+// The compiler owns these append-only, acyclic tables. IDs are never pointers.
+public type Paged<T> = product {
+    pages: List<List<T>>;
+    tail: List<T>;
+    count: Int;
+};
+public template empty<T> = function(): Paged<T> {
+    Paged<T>{pages: List<List<T>>[], tail: List<T>[], count: 0}
+};
+public template push<T> = function(table: Paged<T>, value: T): Paged<T> {
+    branch when {
+        table->tail->length() == 64 => Paged<T>{
+            pages: table->pages->append(table->tail),
+            tail: List<T>[value], count: table->count + 1},
+        else => Paged<T>{pages: table->pages,
+            tail: table->tail->append(value), count: table->count + 1},
+    }
+};
+public template item<T> = function(table: Paged<T>, index: Int): Result<T, IndexError> {
+    branch when {
+        index < 0 || index >= table->count => List<T>[]->at(0),
+        index / 64 == table->pages->length() => table->tail->at(index % 64),
+        else => {
+            let page: List<T> = try table->pages->at(index / 64);
+            page->at(index % 64)
+        },
+    }
+};
+public type Span = product {
+    start: Int; end: Int; line: Int; column: Int;
+};
+public type Diagnostic = product {
+    phase: String; span: Span; message: String;
+};
+public type Token = product {
+    text: String; kind: Int; span: Span;
+};
+public let problem: Function(String, Span, String): Diagnostic =
+function(phase: String, span: Span, message: String): Diagnostic {
+    Diagnostic{phase: phase, span: span, message: message}
+};
+public template lookup<T> = function(table: Paged<T>, index: Int): Result<T, Diagnostic> {
+    branch on item<T>(table, index) {
+        Result<T, IndexError>::Ok(value: T) => Result<T, Diagnostic>::Ok(value),
+        Result<T, IndexError>::Err(error: IndexError) => Result<T, Diagnostic>::Err(
+            Diagnostic{phase: "internal", span: Span{start: 0, end: 0, line: 1, column: 1}, message: "invalid arena index"}),
+    }
+};
+public let contains: Function(String, String): Bool = function(text: String, scalar: String): Bool {
+    loop over (text->scalars() as element: String) {
+        branch when { element == scalar => { return true; }, else => unit };
+    };
+    false
+};
+public let number: Function(Int): String = function(value: Int): String {
+    let digits: List<String> = "0123456789"->scalars();
+    var remaining: Int = value;
+    var result: String = "";
+    loop while (true) {
+        let digit: String = branch on digits->at(remaining % 10) {
+            Result<String, IndexError>::Ok(text: String) => text,
+            Result<String, IndexError>::Err(error: IndexError) => "?",
+        };
+        result = digit + result;
+        remaining = remaining / 10;
+        branch when { remaining == 0 => { break; }, else => unit };
+    };
+    result
+};
+public let describe: Function(String, Diagnostic): String = function(path: String, diagnostic: Diagnostic): String {
+    "mgnc: " + diagnostic->phase + ": " + path + ":" +
+    number(diagnostic->span->line) + ":" + number(diagnostic->span->column) +
+    " [" + number(diagnostic->span->start) + "," + number(diagnostic->span->end) +
+    "): " + diagnostic->message + "\n"
+};
