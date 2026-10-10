@@ -3,6 +3,7 @@
 import argparse,hashlib,json,os,stat,subprocess,tempfile
 from pathlib import Path
 from native import cases,elf
+from workloads import fixtures
 def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def prefix(root,image,output):
     assert os.getuid()!=0
@@ -29,7 +30,7 @@ def main():
                 elif path.is_file():inventory.append([str(path.relative_to(environment)),stat.S_IMODE(path.stat().st_mode),digest(path)])
             identity=hashlib.sha256(json.dumps(inventory,sort_keys=True).encode()).hexdigest()
             environments.append(dict(name=environment.name,os_release=release,inventory_sha256=identity,files=len(inventory)))
-            for name,source,want,stderr in cases():
+            for name,source,want,stderr in cases()+fixtures():
                 output=work/(environment.name+"-"+name);output.mkdir()
                 path=output/"input.mgn";path.write_text(source);image=output/"program"
                 build=subprocess.run(prefix(environment,args.compiler.resolve(),output)+["/emitter","build","input.mgn","-o","program"],

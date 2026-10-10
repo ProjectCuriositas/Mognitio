@@ -16,10 +16,15 @@ Run foundation.py, frontend.py, parser.py, checker.py, ir.py,
 ir-definitions.py, encoding.py and driver-internal.py with --seed SEED.
 Check generated width data with generate-width.py --check.
 
-Run source_profile.py, native.py, driver.py and faults.py with
+Run source_profile.py, native.py, workloads.py, driver.py and faults.py with
 --compiler COMPILER. Native execution can also compare against the independent
 fixed seed using --seed SEED. Tests cover immutable operands, non-completion,
 loop control boundaries, UTF-8 startup, primary diagnostics and publication.
+Source_profile.py, native.py and workloads.py accept --evidence RESULT.json
+for source/artifact hashes and per-case observations. Workloads.py exercises
+runtime argument branching and accumulation with the same executable across
+empty, spaced, non-ASCII and option-like arguments.
+
 The syscall injector operates on an unchanged compiler executable. It can
 replace a successful syscall reply after the side effect, which distinguishes
 Unknown publication with an existing artifact from a rejected commit.
