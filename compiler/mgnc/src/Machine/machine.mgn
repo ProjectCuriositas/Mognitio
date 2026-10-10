@@ -1,0 +1,24 @@
+namespace Mgnc\Machine;
+use Mgnc\Data\{Paged,push};
+public type Record=product{kind:Int;bytes:List<Int>;value:Int;target:Int;};
+public type Code=product{records:Paged<Record>;nextLabel:Int;};
+public type Label=product{id:Int;offset:Int;};
+public type Layout=product{entry:Int;epilogue:Int;blocks:Int;frame:Int;};
+public let raw:Function(Code,List<Int>):Code=function(code:Code,bytes:List<Int>):Code{
+ Code{records:push<Record>(code->records,Record{kind:0,bytes:bytes,value:0,target:0}),nextLabel:code->nextLabel}
+};
+public let label:Function(Code,Int):Code=function(code:Code,id:Int):Code{
+ Code{records:push<Record>(code->records,Record{kind:1,bytes:List<Int>[],value:0,target:id}),nextLabel:code->nextLabel}
+};
+public let field:Function(Code,Int,Int):Code=function(code:Code,kind:Int,value:Int):Code{
+ Code{records:push<Record>(code->records,Record{kind:kind,bytes:List<Int>[],value:value,target:0}),nextLabel:code->nextLabel}
+};
+public let reference:Function(Code,Int,Int):Code=function(code:Code,kind:Int,target:Int):Code{
+ Code{records:push<Record>(code->records,Record{kind:kind,bytes:List<Int>[],value:0,target:target}),nextLabel:code->nextLabel}
+};
+public let jump:Function(Code,List<Int>,Int):Code=function(code:Code,opcode:List<Int>,target:Int):Code{
+ reference(raw(code,opcode),2,target)
+};
+public let fresh:Function(Code,Int):Code=function(code:Code,count:Int):Code{
+ Code{records:code->records,nextLabel:code->nextLabel+count}
+};

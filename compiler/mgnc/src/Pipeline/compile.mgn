@@ -1,0 +1,18 @@
+namespace Mgnc\Pipeline;
+use Std\Binary\{Bytes};
+use Mgnc\Data\{Diagnostic};
+use Mgnc\Checked\{CheckedProgram};
+use Mgnc\IR\{ModuleIR};
+use Mgnc\Frontend\{scan};
+use Mgnc\Module\{parse};
+use Mgnc\Check\{check};
+use Mgnc\Lower\{lower};
+use Mgnc\Verify\{verify};
+use Mgnc\Native\{generate};
+use Mgnc\Encode\{encode};
+public let compile:Function(String):Result<Bytes,Diagnostic>=function(source:String):Result<Bytes,Diagnostic>{
+ let checked:CheckedProgram=try check(try parse(try scan(source)));
+ let module:ModuleIR=try lower(checked);
+ try verify(module);
+ encode(try generate(module))
+};

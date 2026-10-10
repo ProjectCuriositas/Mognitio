@@ -1,0 +1,72 @@
+namespace Mgnc\Fields;
+use Std\Numeric\{Bits,Signed,Unsigned,IntegerConversionError};
+use Std\Binary\{Bytes,ByteOrder,BitWidthError};
+use Mgnc\Data\{Diagnostic,problem,Span};
+public let i32:Function(Int,Span):Result<Bytes,Diagnostic>=function(value:Int,span:Span):Result<Bytes,Diagnostic>{
+ let fixed:Int<32,Signed>=branch on value->convertTo<Int<32,Signed>>(){
+  Result<Int<32,Signed>,IntegerConversionError>::Ok(converted:Int<32,Signed>)=>converted,
+  Result<Int<32,Signed>,IntegerConversionError>::Err(error:IntegerConversionError)=>{return Result<Bytes,Diagnostic>::Err(problem("internal",span,"encoding field out of range"));},
+ };
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+  Result<Bytes,BitWidthError>::Ok(bytes:Bytes)=>Result<Bytes,Diagnostic>::Ok(bytes),
+  Result<Bytes,BitWidthError>::Err(error:BitWidthError)=>Result<Bytes,Diagnostic>::Err(problem("internal",span,"invalid encoding field width")),
+ }
+};
+public let i64:Function(Int,Span):Result<Bytes,Diagnostic>=function(value:Int,span:Span):Result<Bytes,Diagnostic>{
+ let fixed:Int<64,Signed>=branch on value->convertTo<Int<64,Signed>>(){
+  Result<Int<64,Signed>,IntegerConversionError>::Ok(converted:Int<64,Signed>)=>converted,
+  Result<Int<64,Signed>,IntegerConversionError>::Err(error:IntegerConversionError)=>{return Result<Bytes,Diagnostic>::Err(problem("internal",span,"encoding field out of range"));},
+ };
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+  Result<Bytes,BitWidthError>::Ok(bytes:Bytes)=>Result<Bytes,Diagnostic>::Ok(bytes),
+  Result<Bytes,BitWidthError>::Err(error:BitWidthError)=>Result<Bytes,Diagnostic>::Err(problem("internal",span,"invalid encoding field width")),
+ }
+};
+public let u16:Function(Int,Span):Result<Bytes,Diagnostic>=function(value:Int,span:Span):Result<Bytes,Diagnostic>{
+ let fixed:Int<16,Unsigned>=branch on value->convertTo<Int<16,Unsigned>>(){
+  Result<Int<16,Unsigned>,IntegerConversionError>::Ok(converted:Int<16,Unsigned>)=>converted,
+  Result<Int<16,Unsigned>,IntegerConversionError>::Err(error:IntegerConversionError)=>{return Result<Bytes,Diagnostic>::Err(problem("internal",span,"encoding field out of range"));},
+ };
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+  Result<Bytes,BitWidthError>::Ok(bytes:Bytes)=>Result<Bytes,Diagnostic>::Ok(bytes),
+  Result<Bytes,BitWidthError>::Err(error:BitWidthError)=>Result<Bytes,Diagnostic>::Err(problem("internal",span,"invalid encoding field width")),
+ }
+};
+public let u32:Function(Int,Span):Result<Bytes,Diagnostic>=function(value:Int,span:Span):Result<Bytes,Diagnostic>{
+ let fixed:Int<32,Unsigned>=branch on value->convertTo<Int<32,Unsigned>>(){
+  Result<Int<32,Unsigned>,IntegerConversionError>::Ok(converted:Int<32,Unsigned>)=>converted,
+  Result<Int<32,Unsigned>,IntegerConversionError>::Err(error:IntegerConversionError)=>{return Result<Bytes,Diagnostic>::Err(problem("internal",span,"encoding field out of range"));},
+ };
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+  Result<Bytes,BitWidthError>::Ok(bytes:Bytes)=>Result<Bytes,Diagnostic>::Ok(bytes),
+  Result<Bytes,BitWidthError>::Err(error:BitWidthError)=>Result<Bytes,Diagnostic>::Err(problem("internal",span,"invalid encoding field width")),
+ }
+};
+public let u64:Function(Int,Span):Result<Bytes,Diagnostic>=function(value:Int,span:Span):Result<Bytes,Diagnostic>{
+ let fixed:Int<64,Unsigned>=branch on value->convertTo<Int<64,Unsigned>>(){
+  Result<Int<64,Unsigned>,IntegerConversionError>::Ok(converted:Int<64,Unsigned>)=>converted,
+  Result<Int<64,Unsigned>,IntegerConversionError>::Err(error:IntegerConversionError)=>{return Result<Bytes,Diagnostic>::Err(problem("internal",span,"encoding field out of range"));},
+ };
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+  Result<Bytes,BitWidthError>::Ok(bytes:Bytes)=>Result<Bytes,Diagnostic>::Ok(bytes),
+  Result<Bytes,BitWidthError>::Err(error:BitWidthError)=>Result<Bytes,Diagnostic>::Err(problem("internal",span,"invalid encoding field width")),
+ }
+};
+public let byte:Function(Int,Span):Result<Bits<8>,Diagnostic>=function(value:Int,span:Span):Result<Bits<8>,Diagnostic>{
+ branch on value->convertTo<Int<8,Unsigned>>(){
+  Result<Int<8,Unsigned>,IntegerConversionError>::Ok(fixed:Int<8,Unsigned>)=>Result<Bits<8>,Diagnostic>::Ok(fixed->toBits()),
+  Result<Int<8,Unsigned>,IntegerConversionError>::Err(error:IntegerConversionError)=>Result<Bits<8>,Diagnostic>::Err(problem("internal",span,"opcode byte out of range")),
+ }
+};
+public let appendField:Function(List<Bits<8>>,Bytes,Span):Result<List<Bits<8>>,Diagnostic>=
+function(initial:List<Bits<8>>,field:Bytes,span:Span):Result<List<Bits<8>>,Diagnostic>{
+ var result:List<Bits<8>>=initial;var index:Int=0;
+ loop while(index<field->length()){
+  let value:Bits<8>=branch on field->at(index){
+   Result<Bits<8>,IndexError>::Ok(octet:Bits<8>)=>octet,
+   Result<Bits<8>,IndexError>::Err(error:IndexError)=>{return Result<List<Bits<8>>,Diagnostic>::Err(problem("internal",span,"encoded field bounds"));},
+  };
+  result=result->append(value);index=index+1;
+ };
+ Result<List<Bits<8>>,Diagnostic>::Ok(result)
+};

@@ -1,0 +1,144 @@
+namespace Mgnc\Native;
+use Mgnc\Data\{Paged,empty,lookup,Diagnostic,problem,Span};
+use Mgnc\IR\{ModuleIR,FunctionIR,Instruction,Block};
+use Mgnc\IRShape\{integerAt};
+use Mgnc\Machine\{Code,Record,Layout,raw,label,field,reference,jump,fresh};
+use Mgnc\Runtime\{startup,failures,messages};
+type Plan=product{layouts:List<Layout>;nextLabel:Int;};
+let plan:Function(ModuleIR):Result<Plan,Diagnostic>=function(module:ModuleIR):Result<Plan,Diagnostic>{
+ var layouts:List<Layout>=List<Layout>[];var next:Int=32;
+ loop over(module->functions as functionInfo:FunctionIR){
+  var maxBlock:Int=0;var maxArguments:Int=0;var index:Int=0;
+  loop while(index<functionInfo->blocks->count){
+   let block:Block=try lookup<Block>(functionInfo->blocks,index);
+   branch when{block->id>maxBlock=>{maxBlock=block->id;},else=>unit};index=index+1;
+  };
+  loop over(functionInfo->instructions->pages->append(functionInfo->instructions->tail) as page:List<Instruction>){
+   loop over(page as instruction:Instruction){
+    branch when{instruction->kind==16 && instruction->inputs->length()>maxArguments=>{maxArguments=instruction->inputs->length();},else=>unit};
+   };
+  };
+  let frame:Int=((functionInfo->slots->count+maxArguments)*8+15)/16*16;
+  layouts=layouts->append(Layout{entry:next,epilogue:next+1,blocks:next+2,frame:frame});
+  next=next+maxBlock+3;
+ };
+ Result<Plan,Diagnostic>::Ok(Plan{layouts:layouts,nextLabel:next})
+};
+let layoutAt:Function(List<Layout>,Int,Span):Result<Layout,Diagnostic>=
+function(layouts:List<Layout>,id:Int,span:Span):Result<Layout,Diagnostic>{
+ branch on layouts->at(id){
+  Result<Layout,IndexError>::Ok(layout:Layout)=>Result<Layout,Diagnostic>::Ok(layout),
+  Result<Layout,IndexError>::Err(error:IndexError)=>Result<Layout,Diagnostic>::Err(problem("internal",span,"machine function layout")),
+ }
+};
+let loadRax:Function(Code,Int):Code=function(code:Code,slot:Int):Code{
+ field(raw(code,List<Int>[72,139,133]),3,-8*(slot+1))
+};
+let loadRcx:Function(Code,Int):Code=function(code:Code,slot:Int):Code{
+ field(raw(code,List<Int>[72,139,141]),3,-8*(slot+1))
+};
+let storeRax:Function(Code,Int):Code=function(code:Code,slot:Int):Code{
+ field(raw(code,List<Int>[72,137,133]),3,-8*(slot+1))
+};
+let emitOperation:Function(Code,Instruction,List<Layout>):Result<Code,Diagnostic>=
+function(initial:Code,instruction:Instruction,layouts:List<Layout>):Result<Code,Diagnostic>{
+ var code:Code=initial;let kind:Int=instruction->kind;let span:Span=instruction->span;
+ branch when{
+  kind==1=>{code=field(raw(code,List<Int>[72,184]),4,instruction->immediate);},
+  kind==16=>{
+   var index:Int=0;
+   loop over(instruction->inputs as slot:Int){
+    code=loadRax(code,slot);
+    code=field(raw(code,List<Int>[72,137,132,36]),3,index*8);index=index+1;
+   };
+   let callee:Layout=try layoutAt(layouts,try integerAt(instruction->targets,0,span),span);
+   code=jump(code,List<Int>[232],callee->entry);
+  },
+  else=>{
+   code=loadRax(code,try integerAt(instruction->inputs,0,span));
+   branch when{kind==2=>unit,kind==6=>{
+    code=raw(code,List<Int>[72,247,216]);code=jump(code,List<Int>[15,128],1);
+   },kind==15=>{code=raw(code,List<Int>[131,240,1]);},else=>{
+    code=loadRcx(code,try integerAt(instruction->inputs,1,span));
+    branch when{
+     kind==3=>{code=raw(code,List<Int>[72,1,200]);code=jump(code,List<Int>[15,128],1);},
+     kind==4=>{code=raw(code,List<Int>[72,41,200]);code=jump(code,List<Int>[15,128],1);},
+     kind==5=>{code=raw(code,List<Int>[72,15,175,193]);code=jump(code,List<Int>[15,128],1);},
+     kind==7 || kind==8=>{
+      let normal:Int=code->nextLabel;let end:Int=normal+1;code=fresh(code,2);
+      code=raw(code,List<Int>[72,133,201]);code=jump(code,List<Int>[15,132],2);
+      code=field(raw(code,List<Int>[72,186]),4,-9223372036854775808);
+      code=raw(code,List<Int>[72,57,208]);code=jump(code,List<Int>[15,133],normal);
+      code=raw(code,List<Int>[72,131,249,255]);code=jump(code,List<Int>[15,133],normal);
+      branch when{
+       kind==7=>{code=jump(code,List<Int>[233],1);},
+       else=>{code=raw(code,List<Int>[49,192]);code=jump(code,List<Int>[233],end);},
+      };
+      code=label(code,normal);code=raw(code,List<Int>[72,153,72,247,249]);
+      branch when{kind==8=>{code=raw(code,List<Int>[72,137,208]);},else=>unit};
+      code=label(code,end);
+     },
+     kind>=9 && kind<=14=>{
+      let condition:Int=branch when{kind==9=>148,kind==10=>149,kind==11=>156,kind==12=>158,kind==13=>159,else=>157};
+      code=raw(code,List<Int>[72,57,200,15,condition,192,72,15,182,192]);
+     },
+     else=>{return Result<Code,Diagnostic>::Err(problem("internal",span,"unknown scalar machine operation"));},
+    };
+   }};
+  },
+ };
+ code=storeRax(code,instruction->slot);
+ Result<Code,Diagnostic>::Ok(code)
+};
+let emitTerminator:Function(Code,Instruction,Layout):Result<Code,Diagnostic>=
+function(initial:Code,instruction:Instruction,layout:Layout):Result<Code,Diagnostic>{
+ var code:Code=initial;let span:Span=instruction->span;
+ branch when{
+  instruction->kind==17=>{
+   code=jump(code,List<Int>[233],layout->blocks+(try integerAt(instruction->targets,0,span)));
+  },
+  instruction->kind==18=>{
+   code=loadRax(code,try integerAt(instruction->inputs,0,span));
+   code=raw(code,List<Int>[72,133,192]);
+   code=jump(code,List<Int>[15,133],layout->blocks+(try integerAt(instruction->targets,0,span)));
+   code=jump(code,List<Int>[233],layout->blocks+(try integerAt(instruction->targets,1,span)));
+  },
+  instruction->kind==19=>{
+   code=loadRax(code,try integerAt(instruction->inputs,0,span));
+   code=jump(code,List<Int>[233],layout->epilogue);
+  },
+  else=>{return Result<Code,Diagnostic>::Err(problem("internal",span,"unknown machine terminator"));},
+ };
+ Result<Code,Diagnostic>::Ok(code)
+};
+public let generate:Function(ModuleIR):Result<Code,Diagnostic>=function(module:ModuleIR):Result<Code,Diagnostic>{
+ let span:Span=Span{start:0,end:0,line:1,column:1};
+ let planned:Plan=try plan(module);
+ let entry:Layout=try layoutAt(planned->layouts,module->entry,span);
+ var code:Code=Code{records:empty<Record>(),nextLabel:planned->nextLabel};
+ code=startup(code,entry->entry);code=failures(code);
+ loop over(module->functions as functionInfo:FunctionIR){
+  let layout:Layout=try layoutAt(planned->layouts,functionInfo->id,span);
+  code=label(code,layout->entry);
+  code=field(raw(code,List<Int>[85,72,137,229,72,129,236]),3,layout->frame);
+  var parameter:Int=0;
+  loop over(functionInfo->parameters as slot:Int){
+   code=field(raw(code,List<Int>[72,139,133]),3,16+8*parameter);
+   code=storeRax(code,slot);parameter=parameter+1;
+  };
+  var blockIndex:Int=0;
+  loop while(blockIndex<functionInfo->blocks->count){
+   let block:Block=try lookup<Block>(functionInfo->blocks,blockIndex);
+   code=label(code,layout->blocks+block->id);
+   var index:Int=block->start;
+   loop while(index<block->end){
+    code=try emitOperation(code,try lookup<Instruction>(functionInfo->instructions,index),planned->layouts);
+    index=index+1;
+   };
+   code=try emitTerminator(code,block->terminator,layout);blockIndex=blockIndex+1;
+  };
+  code=label(code,layout->epilogue);code=raw(code,List<Int>[201,195]);
+ };
+ code=messages(code);
+ Result<Code,Diagnostic>::Ok(code)
+};
