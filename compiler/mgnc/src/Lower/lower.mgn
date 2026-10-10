@@ -1,0 +1,224 @@
+namespace Mgnc\Lower;
+use Mgnc\Data\{Paged,empty,push,lookup,Diagnostic,problem};
+use Mgnc\Syntax\{Node,Parent,Declaration};
+use Mgnc\Checked\{CheckedProgram,CheckedFunction,Value,Symbol};
+use Mgnc\CheckSupport\{childId};
+use Mgnc\IR\{Instruction,Block,FunctionIR,ModuleIR,LoopTarget,Frame};
+let operandSlot:Function(Node,Int,Int,Int):Result<Int,Diagnostic>=
+function(node:Node,index:Int,localCount:Int,firstNode:Int):Result<Int,Diagnostic>{
+ Result<Int,Diagnostic>::Ok(localCount+(try childId(node,index))-firstNode)
+};
+let operationCode:Function(String):Int=function(text:String):Int{
+ branch when{text=="+"=>3,text=="-"=>4,text=="*"=>5,text=="/"=>7,text=="%"=>8,
+ text=="=="=>9,text=="!="=>10,text=="<"=>11,text=="<="=>12,text==">"=>13,text==">="=>14,else=>15}
+};
+public let lowerFunction:Function(CheckedProgram,CheckedFunction,Int):Result<FunctionIR,Diagnostic>=
+function(program:CheckedProgram,functionInfo:CheckedFunction,firstNode:Int):Result<FunctionIR,Diagnostic>{
+ let declaration:Declaration=branch on program->syntax->declarations->at(functionInfo->declaration){
+  Result<Declaration,IndexError>::Ok(value:Declaration)=>value,
+  Result<Declaration,IndexError>::Err(error:IndexError)=>{return Result<FunctionIR,Diagnostic>::Err(problem("internal",program->syntax->end,"function identity"));},
+ };
+ let localCount:Int=functionInfo->endSymbol-functionInfo->firstSymbol;
+ var slots:Paged<Int>=empty<Int>();
+ var i:Int=functionInfo->firstSymbol;
+ loop while(i<functionInfo->endSymbol){
+  let symbol:Symbol=try lookup<Symbol>(program->symbols,i);
+  slots=push<Int>(slots,branch when{symbol->valueType==4=>1,symbol->valueType==5=>0,else=>symbol->valueType});
+  i=i+1;
+ };
+ i=firstNode;
+ loop while(i<=declaration->body){
+  let checked:Value=try lookup<Value>(program->values,i);
+  slots=push<Int>(slots,branch when{checked->valueType>=4=>0,else=>checked->valueType});i=i+1;
+ };
+ var parameters:List<Int>=List<Int>[];
+ loop over(functionInfo->parameters as id:Int){parameters=parameters->append(id-functionInfo->firstSymbol);};
+ var instructions:Paged<Instruction>=empty<Instruction>();
+ var blocks:Paged<Block>=empty<Block>();
+ var targets:List<LoopTarget>=List<LoopTarget>[];
+ var label:Int=0;var nextLabel:Int=1;var blockStart:Int=0;var active:Bool=true;
+ var frames:Paged<Frame>=empty<Frame>();var parent:Parent=Parent::None;
+ var nodeId:Int=declaration->body;var stage:Int=0;var child:Int=0;
+ var join:Int=0;var other:Int=0;var used:Bool=false;var ready:Bool=false;
+ loop while(true){
+  branch when{ready=>{
+   branch on parent{
+    Parent::None=>{break;},
+    Parent::Some(index:Int)=>{
+     let frame:Frame=try lookup<Frame>(frames,index);
+     parent=frame->parent;nodeId=frame->node;stage=frame->stage;child=frame->child;
+     join=frame->join;other=frame->other;used=frame->used;
+    },
+   };ready=false;
+  },else=>unit};
+  let node:Node=try lookup<Node>(program->syntax->nodes,nodeId);
+  let checked:Value=try lookup<Value>(program->values,nodeId);
+  let output:Int=localCount+nodeId-firstNode;
+  branch when{stage==0 && !active=>{ready=true;continue;},else=>unit};
+  branch when{
+   stage==0 && node->kind==17=>{
+    let condition:Int=nextLabel;let body:Int=nextLabel+1;
+    join=nextLabel+2;nextLabel=nextLabel+3;other=body;
+    targets=targets->append(LoopTarget{node:nodeId,condition:condition,exit:join});
+    blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:17,slot:0,inputs:List<Int>[],immediate:0,targets:List<Int>[condition],span:node->span}});active=false;label=condition;blockStart=instructions->count;active=true;frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,stage:20,child:child,join:join,other:other,used:used});parent=Parent::Some(frames->count-1);nodeId=(try childId(node,0));stage=0;child=0;join=0;other=0;used=false;continue;
+   },
+   stage==20=>{
+    branch when{!active=>{ready=true;continue;},else=>unit};
+    let conditionSlot:Int=try operandSlot(node,0,localCount,firstNode);
+    blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:18,slot:0,inputs:List<Int>[conditionSlot],immediate:0,targets:List<Int>[other,join],span:node->span}});active=false;label=other;blockStart=instructions->count;active=true;frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,stage:21,child:child,join:join,other:other,used:used});parent=Parent::Some(frames->count-1);nodeId=(try childId(node,1));stage=0;child=0;join=0;other=0;used=false;continue;
+   },
+   stage==21=>{
+    var condition:Int=0;
+    loop over(targets as target:LoopTarget){branch when{target->node==nodeId=>{condition=target->condition;break;},else=>unit};};
+    branch when{active=>{blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:17,slot:0,inputs:List<Int>[],immediate:0,targets:List<Int>[condition],span:node->span}});active=false;},else=>unit};
+    label=join;blockStart=instructions->count;active=true;instructions=push<Instruction>(instructions,Instruction{kind:1,slot:output,inputs:List<Int>[],immediate:0,targets:List<Int>[],span:node->span});ready=true;continue;
+   },
+   stage==0 && node->kind==16=>{
+    join=nextLabel;nextLabel=nextLabel+1;used=false;child=0;stage=30;continue;
+   },
+   stage==30=>{
+    branch when{child==node->children->length()-1=>{
+     frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,stage:33,child:child,join:join,other:other,used:used});parent=Parent::Some(frames->count-1);nodeId=(try childId(node,child));stage=0;child=0;join=0;other=0;used=false;continue;
+    },else=>unit};
+    frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,stage:31,child:child,join:join,other:other,used:used});parent=Parent::Some(frames->count-1);nodeId=(try childId(node,child));stage=0;child=0;join=0;other=0;used=false;continue;
+   },
+   stage==31=>{
+    branch when{!active=>{
+     branch when{used=>{label=join;blockStart=instructions->count;active=true;},else=>unit};ready=true;continue;
+    },else=>unit};
+    let yes:Int=nextLabel;other=nextLabel+1;nextLabel=nextLabel+2;
+    let conditionSlot:Int=try operandSlot(node,child,localCount,firstNode);
+    blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:18,slot:0,inputs:List<Int>[conditionSlot],immediate:0,targets:List<Int>[yes,other],span:node->span}});active=false;label=yes;blockStart=instructions->count;active=true;frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,stage:32,child:child,join:join,other:other,used:used});parent=Parent::Some(frames->count-1);nodeId=(try childId(node,child+1));stage=0;child=0;join=0;other=0;used=false;continue;
+   },
+   stage==32=>{
+    branch when{active=>{
+     let result:Int=try operandSlot(node,child+1,localCount,firstNode);
+     instructions=push<Instruction>(instructions,Instruction{kind:2,slot:output,inputs:List<Int>[result],immediate:0,targets:List<Int>[],span:node->span});blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:17,slot:0,inputs:List<Int>[],immediate:0,targets:List<Int>[join],span:node->span}});active=false;used=true;
+    },else=>unit};
+    label=other;blockStart=instructions->count;active=true;child=child+2;stage=30;continue;
+   },
+   stage==33=>{
+    branch when{active=>{
+     let result:Int=try operandSlot(node,child,localCount,firstNode);
+     instructions=push<Instruction>(instructions,Instruction{kind:2,slot:output,inputs:List<Int>[result],immediate:0,targets:List<Int>[],span:node->span});blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:17,slot:0,inputs:List<Int>[],immediate:0,targets:List<Int>[join],span:node->span}});active=false;used=true;
+    },else=>unit};
+    branch when{used=>{label=join;blockStart=instructions->count;active=true;},else=>unit};
+    ready=true;continue;
+   },
+   stage==0 && node->kind==5 && (node->text=="&&" || node->text=="||")=>{
+    frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,stage:40,child:child,join:join,other:other,used:used});parent=Parent::Some(frames->count-1);nodeId=(try childId(node,0));stage=0;child=0;join=0;other=0;used=false;continue;
+   },
+   stage==40=>{
+    branch when{!active=>{ready=true;continue;},else=>unit};
+    let rhs:Int=nextLabel;let shortcut:Int=nextLabel+1;join=nextLabel+2;nextLabel=nextLabel+3;
+    let operand:Int=try operandSlot(node,0,localCount,firstNode);
+    let yes:Int=branch when{node->text=="&&"=>rhs,else=>shortcut};
+    let no:Int=branch when{node->text=="&&"=>shortcut,else=>rhs};
+    blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:18,slot:0,inputs:List<Int>[operand],immediate:0,targets:List<Int>[yes,no],span:node->span}});active=false;label=shortcut;blockStart=instructions->count;active=true;instructions=push<Instruction>(instructions,Instruction{kind:1,slot:output,inputs:List<Int>[],immediate:branch when{node->text=="&&"=>0,else=>1},targets:List<Int>[],span:node->span});blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:17,slot:0,inputs:List<Int>[],immediate:0,targets:List<Int>[join],span:node->span}});active=false;label=rhs;blockStart=instructions->count;active=true;frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,stage:41,child:child,join:join,other:other,used:used});parent=Parent::Some(frames->count-1);nodeId=(try childId(node,1));stage=0;child=0;join=0;other=0;used=false;continue;
+   },
+   stage==41=>{
+    branch when{active=>{
+     let operand:Int=try operandSlot(node,1,localCount,firstNode);
+     instructions=push<Instruction>(instructions,Instruction{kind:2,slot:output,inputs:List<Int>[operand],immediate:0,targets:List<Int>[],span:node->span});blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:17,slot:0,inputs:List<Int>[],immediate:0,targets:List<Int>[join],span:node->span}});active=false;
+    },else=>unit};
+    label=join;blockStart=instructions->count;active=true;ready=true;continue;
+   },
+   else=>unit,
+  };
+  branch when{!active=>{ready=true;continue;},else=>unit};
+  branch when{child<node->children->length()=>{
+   let id:Int=try childId(node,child);child=child+1;
+   frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,stage:1,child:child,join:join,other:other,used:used});parent=Parent::Some(frames->count-1);nodeId=id;stage=0;child=0;join=0;other=0;used=false;continue;
+  },else=>unit};
+  branch when{
+   node->kind==1=>{instructions=push<Instruction>(instructions,Instruction{kind:1,slot:output,inputs:List<Int>[],immediate:checked->integer,targets:List<Int>[],span:node->span});},
+   node->kind==2 || node->kind==7=>{
+    branch when{checked->valueType>=1 && checked->valueType<=3=>{
+     let id:Int=branch on checked->symbol{Parent::Some(index:Int)=>index,Parent::None=>{
+      return Result<FunctionIR,Diagnostic>::Err(problem("internal",node->span,"missing local symbol"));
+     }};
+     let source:Int=id-functionInfo->firstSymbol;
+     instructions=push<Instruction>(instructions,Instruction{kind:2,slot:output,inputs:List<Int>[source],immediate:0,targets:List<Int>[],span:node->span});
+    },else=>unit};
+   },
+   node->kind==3=>{
+    branch when{checked->valueType>=1 && checked->valueType<=3=>{
+     let source:Int=try operandSlot(node,0,localCount,firstNode);
+     instructions=push<Instruction>(instructions,Instruction{kind:2,slot:output,inputs:List<Int>[source],immediate:0,targets:List<Int>[],span:node->span});
+    },else=>unit};
+   },
+   node->kind==4=>{
+    let operand:Int=try operandSlot(node,0,localCount,firstNode);
+    let original:Value=try lookup<Value>(program->values,try childId(node,0));
+    let code:Int=branch when{node->text=="!"=>15,original->minimum=>2,else=>6};
+    instructions=push<Instruction>(instructions,Instruction{kind:code,slot:output,inputs:List<Int>[operand],immediate:0,targets:List<Int>[],span:node->span});
+   },
+   node->kind==5=>{
+    let left:Int=try operandSlot(node,0,localCount,firstNode);
+    let right:Int=try operandSlot(node,1,localCount,firstNode);
+    instructions=push<Instruction>(instructions,Instruction{kind:operationCode(node->text),slot:output,inputs:List<Int>[left,right],immediate:0,targets:List<Int>[],span:node->span});
+   },
+   node->kind==6=>{
+    var arguments:List<Int>=List<Int>[];var index:Int=1;
+    loop while(index<node->children->length()){
+     arguments=arguments->append(try operandSlot(node,index,localCount,firstNode));index=index+1;
+    };
+    let callee:Int=branch on checked->target{Parent::Some(id:Int)=>id,Parent::None=>{
+     return Result<FunctionIR,Diagnostic>::Err(problem("internal",node->span,"missing helper target"));
+    }};
+    instructions=push<Instruction>(instructions,Instruction{kind:16,slot:output,inputs:arguments,immediate:0,targets:List<Int>[callee],span:node->span});
+   },
+   node->kind==8=>{
+    branch when{node->flag=>{
+     let source:Int=try operandSlot(node,node->children->length()-1,localCount,firstNode);
+     instructions=push<Instruction>(instructions,Instruction{kind:2,slot:output,inputs:List<Int>[source],immediate:0,targets:List<Int>[],span:node->span});
+    },else=>{instructions=push<Instruction>(instructions,Instruction{kind:1,slot:output,inputs:List<Int>[],immediate:0,targets:List<Int>[],span:node->span});}};
+   },
+   node->kind==9 || node->kind==10=>{
+    let id:Int=branch on checked->symbol{Parent::Some(index:Int)=>index,Parent::None=>{
+     return Result<FunctionIR,Diagnostic>::Err(problem("internal",node->span,"missing store symbol"));
+    }};
+    let source:Int=try operandSlot(node,0,localCount,firstNode);
+    instructions=push<Instruction>(instructions,Instruction{kind:2,slot:id-functionInfo->firstSymbol,inputs:List<Int>[source],immediate:0,targets:List<Int>[],span:node->span});instructions=push<Instruction>(instructions,Instruction{kind:1,slot:output,inputs:List<Int>[],immediate:0,targets:List<Int>[],span:node->span});
+   },
+   node->kind==11=>{
+    let source:Int=try operandSlot(node,0,localCount,firstNode);
+    blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:19,slot:0,inputs:List<Int>[source],immediate:0,targets:List<Int>[],span:node->span}});active=false;
+   },
+   node->kind==12 || node->kind==13=>{
+    let targetNode:Int=branch on checked->target{Parent::Some(id:Int)=>id,Parent::None=>{
+     return Result<FunctionIR,Diagnostic>::Err(problem("internal",node->span,"missing loop target"));
+    }};
+    var destination:Int=0;var found:Bool=false;
+    loop over(targets as target:LoopTarget){branch when{target->node==targetNode=>{
+     destination=branch when{node->kind==12=>target->exit,else=>target->condition};found=true;break;
+    },else=>unit};};
+    branch when{!found=>{return Result<FunctionIR,Diagnostic>::Err(problem("internal",node->span,"loop target is not active"));},else=>unit};
+    blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:17,slot:0,inputs:List<Int>[],immediate:0,targets:List<Int>[destination],span:node->span}});active=false;
+   },
+   node->kind==14 || node->kind==15=>{instructions=push<Instruction>(instructions,Instruction{kind:1,slot:output,inputs:List<Int>[],immediate:0,targets:List<Int>[],span:node->span});},
+   else=>{return Result<FunctionIR,Diagnostic>::Err(problem("internal",node->span,"unsupported checked operation"));},
+  };
+  ready=true;continue;
+ };
+ branch when{active=>{
+  let node:Node=try lookup<Node>(program->syntax->nodes,declaration->body);
+  let result:Int=localCount+declaration->body-firstNode;
+  blocks=push<Block>(blocks,Block{id:label,start:blockStart,end:instructions->count,terminator:Instruction{kind:19,slot:0,inputs:List<Int>[result],immediate:0,targets:List<Int>[],span:node->span}});active=false;
+ },else=>unit};
+ Result<FunctionIR,Diagnostic>::Ok(FunctionIR{id:functionInfo->declaration,parameters:parameters,
+  result:declaration->result,slots:slots,instructions:instructions,blocks:blocks})
+};
+public let lower:Function(CheckedProgram):Result<ModuleIR,Diagnostic>=function(program:CheckedProgram):Result<ModuleIR,Diagnostic>{
+ var functions:List<FunctionIR>=List<FunctionIR>[];var firstNode:Int=0;var entry:Int=0;
+ loop over(program->functions as functionInfo:CheckedFunction){
+  let result:FunctionIR=try lowerFunction(program,functionInfo,firstNode);functions=functions->append(result);
+  let declaration:Declaration=branch on program->syntax->declarations->at(functionInfo->declaration){
+   Result<Declaration,IndexError>::Ok(value:Declaration)=>value,
+   Result<Declaration,IndexError>::Err(error:IndexError)=>{return Result<ModuleIR,Diagnostic>::Err(problem("internal",program->syntax->end,"function identity"));},
+  };
+  branch when{declaration->name=="main"=>{entry=functionInfo->declaration;},else=>unit};
+  firstNode=declaration->body+1;
+ };
+ Result<ModuleIR,Diagnostic>::Ok(ModuleIR{functions:functions,entry:entry})
+};

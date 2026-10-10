@@ -1,0 +1,65 @@
+namespace Mgnc\Check;
+use Mgnc\Data\{Paged,empty,push,lookup,Diagnostic,problem};
+use Mgnc\Syntax\{Parent,Program,Declaration,Parameter};
+use Mgnc\Checked\{Symbol,Value,Body,CheckedProgram,CheckedFunction};
+use Mgnc\CheckSupport\{available,context};
+use Mgnc\CheckBody\{checkBody};
+public let check:Function(Program):Result<CheckedProgram,Diagnostic>=
+function(program:Program):Result<CheckedProgram,Diagnostic>{
+ var values:Paged<Value>=empty<Value>();
+ var symbols:Paged<Symbol>=empty<Symbol>();
+ var functions:List<CheckedFunction>=List<CheckedFunction>[];
+ var globals:Parent=Parent::None;
+ var functionId:Int=0;var entries:Int=0;
+ loop over(program->declarations as declaration:Declaration){
+  try available(symbols,globals,declaration->name,declaration->span);
+  branch when{declaration->mutable=>{
+   return Result<CheckedProgram,Diagnostic>::Err(problem(
+    branch when{declaration->name=="main"=>"semantic",else=>"unsupported"},declaration->span,"top-level functions require let"));
+  },else=>unit};
+  branch when{declaration->declaredResult!=declaration->result || declaration->declaredParameters->length()!=declaration->parameters->length()=>{
+   return Result<CheckedProgram,Diagnostic>::Err(problem("type",declaration->span,"function annotation differs from initializer"));
+  },else=>unit};
+  let isMain:Bool=declaration->name=="main";
+  branch when{isMain=>{
+   entries=entries+1;
+   branch when{declaration->result!=1 || declaration->parameters->length()!=1=>{
+    return Result<CheckedProgram,Diagnostic>::Err(problem("type",declaration->span,"main requires Function(List<String>):Int"));
+   },else=>unit};
+  },else=>{
+   branch when{declaration->result>=4=>{return Result<CheckedProgram,Diagnostic>::Err(problem("unsupported",declaration->span,"helper result must be primitive"));},else=>unit};
+  }};
+  let firstSymbol:Int=symbols->count;
+  var environment:Parent=Parent::Some(symbols->count);
+  symbols=push<Symbol>(symbols,Symbol{parent:globals,name:declaration->name,valueType:5,mutable:false,visible:false,functionId:functionId});
+  var index:Int=0;
+  var parameters:List<Int>=List<Int>[];
+  loop over(declaration->parameters as parameter:Parameter){
+   let declared:Int=branch on declaration->declaredParameters->at(index){
+    Result<Int,IndexError>::Ok(expected:Int)=>expected,
+    Result<Int,IndexError>::Err(error:IndexError)=>{return Result<CheckedProgram,Diagnostic>::Err(problem("internal",declaration->span,"missing annotation"));},
+   };
+   branch when{declared!=parameter->valueType=>{
+    return Result<CheckedProgram,Diagnostic>::Err(problem("type",parameter->span,"parameter annotations differ"));
+   },else=>unit};
+   branch when{
+    isMain && parameter->valueType!=4=>{return Result<CheckedProgram,Diagnostic>::Err(problem("type",parameter->span,"main parameter requires List<String>"));},
+    !isMain && parameter->valueType>=4=>{return Result<CheckedProgram,Diagnostic>::Err(problem("unsupported",parameter->span,"helper parameter must be primitive"));},
+    else=>unit,
+   };
+   try available(symbols,environment,parameter->name,parameter->span);
+   let id:Int=symbols->count;
+   symbols=push<Symbol>(symbols,Symbol{parent:environment,name:parameter->name,valueType:parameter->valueType,mutable:false,visible:true,functionId:functionId});
+   environment=Parent::Some(id);parameters=parameters->append(id);index=index+1;
+  };
+  let body:Body=try checkBody(program,declaration->body,declaration->result,values,symbols,environment,functionId);
+  values=body->values;symbols=body->symbols;
+  try context(try lookup<Value>(values,declaration->body),declaration->result,declaration->span);
+  functions=functions->append(CheckedFunction{declaration:functionId,parameters:parameters,firstSymbol:firstSymbol,endSymbol:symbols->count});
+  let globalId:Int=symbols->count;
+  symbols=push<Symbol>(symbols,Symbol{parent:globals,name:declaration->name,valueType:5,mutable:false,visible:true,functionId:functionId});
+  globals=Parent::Some(globalId);functionId=functionId+1;
+ };
+ branch when{entries!=1=>{return Result<CheckedProgram,Diagnostic>::Err(problem("semantic",program->end,"entry main is missing"));},else=>unit};
+ Result<CheckedProgram,Diagnostic>::Ok(CheckedProgram{syntax:program,values:values,symbols:symbols,functions:functions})
+};

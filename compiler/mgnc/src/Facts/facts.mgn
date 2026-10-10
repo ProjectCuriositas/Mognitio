@@ -1,0 +1,62 @@
+namespace Mgnc\Facts;
+use Std\Numeric\{Bits,BitShiftError};
+use Mgnc\Data\{Diagnostic,problem,Span};
+public let mask:Function(Int,Span):Result<Bits<64>,Diagnostic>=function(slot:Int,span:Span):Result<Bits<64>,Diagnostic>{
+ branch on Bits<64>{1}->shiftLeft(slot%64){
+  Result<Bits<64>,BitShiftError>::Ok(value:Bits<64>)=>Result<Bits<64>,Diagnostic>::Ok(value),
+  Result<Bits<64>,BitShiftError>::Err(error:BitShiftError)=>Result<Bits<64>,Diagnostic>::Err(problem("internal",span,"invalid definition bit")),
+ }
+};
+public let words:Function(Int,Bool):List<Bits<64>>=function(count:Int,full:Bool):List<Bits<64>>{
+ var result:List<Bits<64>>=List<Bits<64>>[];var index:Int=0;
+ loop while(index<(count+63)/64){
+  result=result->append(branch when{full=>Bits<64>{18446744073709551615},else=>Bits<64>{0}});index=index+1;
+ };result
+};
+public let at:Function(List<Bits<64>>,Int,Span):Result<Bits<64>,Diagnostic>=
+function(values:List<Bits<64>>,index:Int,span:Span):Result<Bits<64>,Diagnostic>{
+ branch on values->at(index){
+  Result<Bits<64>,IndexError>::Ok(value:Bits<64>)=>Result<Bits<64>,Diagnostic>::Ok(value),
+  Result<Bits<64>,IndexError>::Err(error:IndexError)=>Result<Bits<64>,Diagnostic>::Err(problem("internal",span,"definition vector bounds")),
+ }
+};
+public let combine:Function(List<Bits<64>>,List<Bits<64>>,Bool,Span):Result<List<Bits<64>>,Diagnostic>=
+function(left:List<Bits<64>>,right:List<Bits<64>>,union:Bool,span:Span):Result<List<Bits<64>>,Diagnostic>{
+ var result:List<Bits<64>>=List<Bits<64>>[];var index:Int=0;
+ loop over(left as word:Bits<64>){
+  let other:Bits<64>=try at(right,index,span);
+  result=result->append(branch when{union=>word->or(other),else=>word->and(other)});index=index+1;
+ };
+ branch when{index!=right->length()=>{return Result<List<Bits<64>>,Diagnostic>::Err(problem("internal",span,"definition vector shape"));},else=>unit};
+ Result<List<Bits<64>>,Diagnostic>::Ok(result)
+};
+public let equal:Function(List<Bits<64>>,List<Bits<64>>,Span):Result<Bool,Diagnostic>=
+function(left:List<Bits<64>>,right:List<Bits<64>>,span:Span):Result<Bool,Diagnostic>{
+ branch when{left->length()!=right->length()=>{return Result<Bool,Diagnostic>::Ok(false);},else=>unit};
+ var index:Int=0;
+ loop over(left as word:Bits<64>){
+  branch when{word!=(try at(right,index,span))=>{return Result<Bool,Diagnostic>::Ok(false);},else=>unit};
+  index=index+1;
+ };
+ Result<Bool,Diagnostic>::Ok(true)
+};
+public let define:Function(List<Bits<64>>,Int,Span):Result<List<Bits<64>>,Diagnostic>=
+function(current:List<Bits<64>>,slot:Int,span:Span):Result<List<Bits<64>>,Diagnostic>{
+ let bit:Bits<64>=try mask(slot,span);
+ var result:List<Bits<64>>=List<Bits<64>>[];var index:Int=0;var found:Bool=false;
+ loop over(current as word:Bits<64>){
+  branch when{index==slot/64=>{result=result->append(word->or(bit));found=true;},else=>{result=result->append(word);}};
+  index=index+1;
+ };
+ branch when{!found=>{return Result<List<Bits<64>>,Diagnostic>::Err(problem("internal",span,"definition slot bounds"));},else=>unit};
+ Result<List<Bits<64>>,Diagnostic>::Ok(result)
+};
+public let require:Function(List<Bits<64>>,Int,Span):Result<Unit,Diagnostic>=
+function(current:List<Bits<64>>,slot:Int,span:Span):Result<Unit,Diagnostic>{
+ let word:Bits<64>=try at(current,slot/64,span);
+ let bit:Bits<64>=try mask(slot,span);
+ branch when{
+  word->and(bit)==Bits<64>{0}=>Result<Unit,Diagnostic>::Err(problem("internal",span,"IR read before definition")),
+  else=>Result<Unit,Diagnostic>::Ok(unit),
+ }
+};

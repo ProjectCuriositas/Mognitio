@@ -1,0 +1,68 @@
+namespace Mgnc\CheckBody;
+use Mgnc\Data\{Paged,empty,push,lookup,Diagnostic,problem};
+use Mgnc\Syntax\{Node,Parent,Program};
+use Mgnc\Checked\{Symbol,Value,Frame,Body};
+use Mgnc\CheckSupport\{available,childId};
+use Mgnc\Evaluate\{evaluate};
+public let checkBody:Function(Program,Int,Int,Paged<Value>,Paged<Symbol>,Parent,Int):Result<Body,Diagnostic>=
+function(program:Program,root:Int,returnType:Int,initialValues:Paged<Value>,initialSymbols:Paged<Symbol>,scope:Parent,functionId:Int):Result<Body,Diagnostic>{
+ var values:Paged<Value>=initialValues;
+ var symbols:Paged<Symbol>=initialSymbols;
+ var frames:Paged<Frame>=empty<Frame>();
+ var parent:Parent=Parent::None;
+ var nodeId:Int=root;var child:Int=0;
+ var environment:Parent=scope;var before:Parent=scope;
+ var loopTarget:Parent=Parent::None;
+ var allowMinimum:Bool=false;var entered:Bool=false;
+ loop while(true){
+  let node:Node=try lookup<Node>(program->nodes,nodeId);
+  branch when{!entered=>{
+   branch when{node->kind==9=>{
+    branch when{node->annotation>=4=>{return Result<Body,Diagnostic>::Err(problem("unsupported",node->span,"local values must be primitive"));},else=>unit};
+    try available(symbols,environment,node->text,node->span);
+    let id:Int=symbols->count;
+    symbols=push<Symbol>(symbols,Symbol{parent:environment,name:node->text,valueType:node->annotation,mutable:node->flag,visible:false,functionId:functionId});
+    environment=Parent::Some(id);
+   },else=>unit};
+   entered=true;
+  },else=>unit};
+  branch when{child<node->children->length()=>{
+   let id:Int=try childId(node,child);
+   branch when{id>=nodeId=>{return Result<Body,Diagnostic>::Err(problem("internal",node->span,"invalid syntax ownership"));},else=>unit};
+   branch when{node->kind==8 && child>0=>{
+    let previous:Value=try lookup<Value>(values,try childId(node,child-1));
+    branch when{!previous->normal=>{
+     let unreachable:Node=try lookup<Node>(program->nodes,id);
+     return Result<Body,Diagnostic>::Err(problem("semantic",unreachable->span,"unreachable block element"));
+    },else=>unit};
+   },else=>unit};
+   frames=push<Frame>(frames,Frame{parent:parent,node:nodeId,child:child+1,environment:before,loopTarget:loopTarget,allowMinimum:allowMinimum});
+   parent=Parent::Some(frames->count-1);
+   branch when{node->kind==17 && child==1=>{loopTarget=Parent::Some(nodeId);},else=>unit};
+   allowMinimum=branch when{node->kind==3=>allowMinimum,node->kind==4 && node->text=="-"=>true,else=>false};
+   nodeId=id;child=0;before=environment;entered=false;continue;
+  },else=>unit};
+  var checked:Value=try evaluate(program,node,values,symbols,environment,loopTarget,returnType,allowMinimum);
+  branch when{
+   node->kind==8=>{environment=before;},
+   node->kind==9=>{
+    let id:Int=symbols->count;
+    symbols=push<Symbol>(symbols,Symbol{parent:before,name:node->text,valueType:node->annotation,mutable:node->flag,visible:true,functionId:functionId});
+    environment=Parent::Some(id);
+    checked=Value{valueType:checked->valueType,normal:checked->normal,symbol:environment,target:Parent::None,integer:0,minimum:false};
+   },
+   else=>unit,
+  };
+  branch when{values->count!=nodeId=>{return Result<Body,Diagnostic>::Err(problem("internal",node->span,"syntax is not an owned postorder tree"));},else=>unit};
+  values=push<Value>(values,checked);
+  branch on parent{
+   Parent::None=>{return Result<Body,Diagnostic>::Ok(Body{values:values,symbols:symbols});},
+   Parent::Some(index:Int)=>{
+    let frame:Frame=try lookup<Frame>(frames,index);
+    parent=frame->parent;nodeId=frame->node;child=frame->child;
+    before=frame->environment;loopTarget=frame->loopTarget;allowMinimum=frame->allowMinimum;entered=true;
+   },
+  };
+ };
+ panic {"unreachable body checker"}
+};
