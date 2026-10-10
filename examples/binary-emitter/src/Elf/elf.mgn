@@ -1,0 +1,27 @@
+namespace Emitter\Elf;
+use Std\Numeric\{Bits,Signed,Unsigned,IntegerConversionError};
+use Std\Binary\{Bytes,bytesFromBits,ByteOrder,BitWidthError};
+use Emitter\Fields\{u16,u32,u64};
+use Emitter\Code\{instructions};
+public let assemble:Function(Bytes,Int):Result<Bytes,String>=function(payload:Bytes,status:Int):Result<Bytes,String>{
+ let headerSize:Int=64;let programSize:Int=56;let codeOffset:Int=headerSize+programSize;let base:Int=4194304;
+ let code:Bytes=try instructions(payload->length(),status);
+ let fileSize:Int=codeOffset+code->length()+payload->length();
+ let kind:Bytes=try u16(2);
+ let machine:Bytes=try u16(62);
+ let version:Bytes=try u32(1);
+ let entry:Bytes=try u64(base+codeOffset);
+ let programOffset:Bytes=try u64(headerSize);
+ let zero64:Bytes=try u64(0);
+ let zero32:Bytes=try u32(0);
+ let header:Bytes=try u16(headerSize);
+ let program:Bytes=try u16(programSize);
+ let one16:Bytes=try u16(1);
+ let zero16:Bytes=try u16(0);
+ let load:Bytes=try u32(1);
+ let flags:Bytes=try u32(5);
+ let address:Bytes=try u64(base);
+ let size:Bytes=try u64(fileSize);
+ let alignment:Bytes=try u64(4096);
+ Result<Bytes,String>::Ok(bytesFromBits(List<Bits<8>>[Bits<8>{127},Bits<8>{69},Bits<8>{76},Bits<8>{70},Bits<8>{2},Bits<8>{1},Bits<8>{1},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{0}])->concat(kind)->concat(machine)->concat(version)->concat(entry)->concat(programOffset)->concat(zero64)->concat(zero32)->concat(header)->concat(program)->concat(one16)->concat(zero16)->concat(zero16)->concat(zero16)->concat(load)->concat(flags)->concat(zero64)->concat(address)->concat(address)->concat(size)->concat(size)->concat(alignment)->concat(code)->concat(payload))
+};

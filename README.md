@@ -2,9 +2,11 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-Version 1.1.0 adds compiler-oriented workloads and improves native allocation
-and collection while preserving the 1.x language API. The implementation and
-fixed performance comparison are recorded in [verification](verification/v1.1.0.md).
+Version 1.2.0 adds compile-time integer parameters, checked fixed-width integers,
+Bits, immutable Bytes, explicit endian encoding, and transactional binary output.
+Ordinary Int retains its signed 64-bit 1.x semantics. See the
+[implementation verification](verification/v1.2.0.md) and
+[binary emitter](examples/binary-emitter/README.md).
 The static analyzer, stdio language server, build identities and Linux packaging
 remain part of the toolchain.
 The compiler targets Linux amd64. Official Linux packages and installer bundles
@@ -14,7 +16,7 @@ for Ubuntu 24.04 and 26.04 amd64. The packaged toolchain includes its fixed runt
 a host SBCL installation is required only for source development.
 The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=mognitio.mognitio)
 is versioned independently. The existing extension 0.1.1 does not accept a 1.1.0
-server. Use a client version whose compatibility table explicitly includes 1.1.0;
+server and is not established as compatible with 1.2.0. Use a client version whose compatibility table explicitly includes the server version;
 a compatible extension update is a separate project.
 
 ## Start here

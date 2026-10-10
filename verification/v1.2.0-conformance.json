@@ -1,0 +1,758 @@
+{
+  "format": 1,
+  "version": "1.2.0",
+  "cases": [
+    {
+      "id": "C120-T01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T05",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T06",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T07",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T08",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T09",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py",
+        "tests/v120-acceptance-edges.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T10",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py",
+        "tests/v120-acceptance-edges.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-T11",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-value-arguments.lisp",
+        "tests/v120-projects.py",
+        "tests/v120-numeric.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-I01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-acceptance-edges.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-I02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-I03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-I04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-I05",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-I06",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-I07",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-I08",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-V01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-V02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py",
+        "tests/v120-acceptance-edges.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-V03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-V04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-V05",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-Y01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-bytes-proofs.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-Y02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-bytes-proofs.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-Y03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-bytes-proofs.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-Y04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-bytes-proofs.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-Y05",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-bytes-proofs.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-Y06",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-bytes-proofs.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-B01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-publication.py",
+        "tests/v120-publication-surface.py",
+        "tests/v120-publication.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-B02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-publication.py",
+        "tests/v120-publication-surface.py",
+        "tests/v120-publication.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-B03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-publication.py",
+        "tests/v120-publication-surface.py",
+        "tests/v120-publication.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-B04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-publication.py",
+        "tests/v120-publication-surface.py",
+        "tests/v120-publication.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-B05",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-bytes.py",
+        "tests/v120-publication.py",
+        "tests/v120-publication-surface.py",
+        "tests/v120-publication.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-N01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-N02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py",
+        "tests/v120-acceptance-edges.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-N03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-N04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-N05",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-N06",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-N07",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-N08",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-numeric.py",
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-bytes.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-P01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-P02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-P03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-P04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-P05",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-P06",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-P07",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-P08",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-M01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-emitter.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-M02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-emitter.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-M03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.py",
+        "tests/v120-emitter.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E05",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E06",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "structural-na",
+      "basis": "verification/v1.2.0-publication-profile.md"
+    },
+    {
+      "id": "C120-E07",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E08",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E09",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-E10",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-publication.lisp",
+        "tests/v120-publication-surface.py",
+        "tests/v120-bytes-proofs.lisp"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-A01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-emitter.py",
+        "examples/binary-emitter/src/emitter.mgn"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-A02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-emitter.py",
+        "examples/binary-emitter/src/emitter.mgn"
+      ],
+      "disposition": "required-execution",
+      "additional_command": "python3 tests/v120-emitter.py --userland ROOT24 --userland ROOT26 --evidence RESULT"
+    },
+    {
+      "id": "C120-A03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-emitter.py",
+        "examples/binary-emitter/src/emitter.mgn"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-A04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v120-emitter.py",
+        "examples/binary-emitter/src/emitter.mgn"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-K01",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v012-io.py",
+        "tests/v013-directory.py",
+        "tests/v014-integration.py",
+        "tests/v11-workloads.py",
+        "tests/v11-measure-check.py",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-K02",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v012-io.py",
+        "tests/v013-directory.py",
+        "tests/v014-integration.py",
+        "tests/v11-workloads.py",
+        "tests/v11-measure-check.py",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution",
+      "external_evidence": [
+        "Levi verify.py and regression.py with the exact candidate",
+        "v1.1 performance regression matrix and retained improvement controls"
+      ]
+    },
+    {
+      "id": "C120-K03",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v012-io.py",
+        "tests/v013-directory.py",
+        "tests/v014-integration.py",
+        "tests/v11-workloads.py",
+        "tests/v11-measure-check.py",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-K04",
+      "gate": "1.2.0",
+      "evidence": [
+        "tests/v012-io.py",
+        "tests/v013-directory.py",
+        "tests/v014-integration.py",
+        "tests/v11-workloads.py",
+        "tests/v11-measure-check.py",
+        "tests/v120-publication-surface.py"
+      ],
+      "disposition": "required-execution"
+    },
+    {
+      "id": "C120-G01",
+      "gate": "2.0-alpha",
+      "evidence": [],
+      "disposition": "future"
+    },
+    {
+      "id": "C120-G02",
+      "gate": "2.0-alpha",
+      "evidence": [],
+      "disposition": "future"
+    },
+    {
+      "id": "C120-G03",
+      "gate": "2.0-alpha",
+      "evidence": [],
+      "disposition": "future"
+    }
+  ],
+  "note": "This manifest maps required observations; successful execution and exact candidate identity are recorded separately."
+}

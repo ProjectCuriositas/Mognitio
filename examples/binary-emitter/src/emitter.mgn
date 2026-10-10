@@ -1,0 +1,19 @@
+namespace Emitter;
+use Std\Numeric\{Bits,Signed,Unsigned,IntegerConversionError};
+use Std\Binary\{Bytes,bytesFromBits,ByteOrder,BitWidthError};
+use Emitter\Elf\{assemble};
+use Std\Binary\{publishFile,BinaryFileMode,BinaryOutputError};
+let argument:Function(List<String>,Int):Result<String,String>=function(args:List<String>,i:Int):Result<String,String>{
+ branch on args->at(i){Result<String,IndexError>::Ok(x:String)=>Result<String,String>::Ok(x),Result<String,IndexError>::Err(e:IndexError)=>Result<String,String>::Err("argument")}
+};
+let generate:Function(List<String>):Result<Unit,String>=function(args:List<String>):Result<Unit,String>{
+ let path:String=try argument(args,0);let selection:String=try argument(args,1);let exitChoice:String=try argument(args,2);let modeChoice:String=try argument(args,3);
+ let payload:Bytes=branch when{selection=="ascii"=>bytesFromBits(List<Bits<8>>[Bits<8>{77},Bits<8>{71},Bits<8>{78},Bits<8>{10}]),else=>bytesFromBits(List<Bits<8>>[Bits<8>{227},Bits<8>{129},Bits<8>{130},Bits<8>{10},Bits<8>{49}])};
+ let status:Int=branch when{exitChoice=="0"=>0,else=>7};
+ let mode:BinaryFileMode=branch when{modeChoice=="data"=>BinaryFileMode::Data,else=>BinaryFileMode::Executable};
+ let image:Bytes=try assemble(payload,status);
+ branch on publishFile(path,image,mode){Result<Unit,BinaryOutputError>::Ok(x:Unit)=>Result<Unit,String>::Ok(x),Result<Unit,BinaryOutputError>::Err(e:BinaryOutputError)=>Result<Unit,String>::Err("publication")}
+};
+let main:Function(List<String>):Int=function(args:List<String>):Int{
+ branch on generate(args){Result<Unit,String>::Ok(x:Unit)=>0,Result<Unit,String>::Err(e:String)=>1}
+};

@@ -60,6 +60,17 @@ with tempfile.TemporaryDirectory(prefix="mgn-bytes-") as temporary:
     for values,index in (([-1,256],0),([0,256,-1],1),([255,-9223372036854775808],1),([9223372036854775807],0)):
         execute(case("bytesFromInts(List<Int>["+",".join(map(str,values))+"])","Bytes","ByteValueError","false",f"e->index=={index} && e->value==({values[index]})")+"0")
     execute(case("bytesFromInts(List<Int>[])","Bytes","ByteValueError","x=="+vector([]),"false")+"0")
+    for kind,value,width in (("Int<8,Unsigned>",0,8),("Int<8,Unsigned>",255,8),
+        ("Int<16,Unsigned>",4660,16),("Int<32,Unsigned>",305419896,32),
+        ("Int<64,Unsigned>",9223372036854775808,64),("Int<64,Unsigned>",18446744073709551615,64),
+        ("Int<64,Signed>",-1,64),("Int<16,Signed>",-2,16),("Int<64,Signed>",-9223372036854775808,64),
+        ("Int<64,Signed>",9223372036854775807,64),("Int",-9223372036854775808,64)):
+        expression=f"({value})" if kind=="Int" else f"{kind}{{{value}}}"
+        body=""
+        for order in ("LittleEndian","BigEndian"):
+            octets=(value % (1<<width)).to_bytes(width//8,"little" if order=="LittleEndian" else "big")
+            body+=case(expression+f"->toBits()->toBytes(ByteOrder::{order})","Bytes","BitWidthError","x=="+vector(octets),"false")
+        execute(body+"0")
     for width in range(8,65,8):
         body=""
         for value in (0,(1<<width)-1,int.from_bytes(bytes(range(1,width//8+1)),"big")):

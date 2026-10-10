@@ -65,6 +65,11 @@ with tempfile.TemporaryDirectory(prefix="mgn-publish-") as temporary:
         compile(body(target,values))
         for native in (False,True):
             execute(native);assert target.read_bytes()==bytes(values);target.unlink()
+    target=root/"snapshot"
+    snapshot="let snapshot:Function():Bytes=function():Bytes{let original:Bytes="+vector([0,128,255])+";var i:Int=0;loop while(i<100){let changed:Bytes=original->append(Bits<8>{1});assert changed->length()==4;i=i+1;};original};"
+    compile(body(target,[0,128,255]).replace(vector([0,128,255]),"snapshot()"),snapshot)
+    for native in (False,True):
+        execute(native);assert target.read_bytes()==bytes([0,128,255]);target.unlink()
     # Existing entry kinds and every trailing-slash spelling are protected.
     regular=root/"existing";regular.write_bytes(b"original");regular.chmod(0o640)
     directory=root/"directory";directory.mkdir()
@@ -122,7 +127,9 @@ with tempfile.TemporaryDirectory(prefix="mgn-publish-") as temporary:
         execute(native);assert stat.S_IMODE(target.stat().st_mode)&0o7000==0;target.unlink()
     # Concurrent no-replace commits have exactly one winner and preserve it.
     target=root/"race"
-    compile(body(target).replace("=>2}}","=>11}}"))
+    race_error="("+enum("e->kind","BinaryOutputErrorKind",KINDS,"AlreadyExists")+") && ("+enum("e->publication","BinaryPublicationState",STATES,"NotPublished")+")"
+    race_error+=" && (("+enum("e->phase","BinaryOutputPhase",PHASES,"Target")+") || ("+enum("e->phase","BinaryOutputPhase",PHASES,"Publish")+"))"
+    compile(body(target).replace("false=>0,else=>2",race_error+"=>11,else=>2"))
     procs=[subprocess.Popen([image],stdout=subprocess.PIPE,stderr=subprocess.PIPE) for _ in range(12)]
     codes=[]
     for p in procs:

@@ -1,0 +1,20 @@
+namespace Emitter\Code;
+use Std\Numeric\{Bits,Signed,Unsigned,IntegerConversionError};
+use Std\Binary\{Bytes,bytesFromBits,ByteOrder,BitWidthError};
+use Emitter\Fields\{u32,s32};
+public let instructions:Function(Int,Int):Result<Bytes,String>=function(size:Int,status:Int):Result<Bytes,String>{
+ let pointerAfter:Int=5+7;
+ let loopStart:Int=pointerAfter+5;
+ let interruptedAfter:Int=loopStart+5+2+4+6;
+ let failedAfter:Int=interruptedAfter+3+6;
+ let repeatAfter:Int=failedAfter+3+3+6;
+ let failure:Int=repeatAfter+5+5+2;
+ let codeSize:Int=failure+5+5+2;
+ let pointer:Bytes=try s32(codeSize-pointerAfter);
+ let count:Bytes=try u32(size);
+ let interrupted:Bytes=try s32(loopStart-interruptedAfter);
+ let failed:Bytes=try s32(failure-failedAfter);
+ let repeat:Bytes=try s32(loopStart-repeatAfter);
+ let exitStatus:Bytes=try u32(status);
+ Result<Bytes,String>::Ok(bytesFromBits(List<Bits<8>>[Bits<8>{191},Bits<8>{1},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{72},Bits<8>{141},Bits<8>{53}])->concat(pointer)->concat(bytesFromBits(List<Bits<8>>[Bits<8>{186}]))->concat(count)->concat(bytesFromBits(List<Bits<8>>[Bits<8>{184},Bits<8>{1},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{15},Bits<8>{5},Bits<8>{72},Bits<8>{131},Bits<8>{248},Bits<8>{252},Bits<8>{15},Bits<8>{132}]))->concat(interrupted)->concat(bytesFromBits(List<Bits<8>>[Bits<8>{72},Bits<8>{133},Bits<8>{192},Bits<8>{15},Bits<8>{142}]))->concat(failed)->concat(bytesFromBits(List<Bits<8>>[Bits<8>{72},Bits<8>{1},Bits<8>{198},Bits<8>{72},Bits<8>{41},Bits<8>{194},Bits<8>{15},Bits<8>{133}]))->concat(repeat)->concat(bytesFromBits(List<Bits<8>>[Bits<8>{191}]))->concat(exitStatus)->concat(bytesFromBits(List<Bits<8>>[Bits<8>{184},Bits<8>{60},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{15},Bits<8>{5},Bits<8>{191},Bits<8>{111},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{184},Bits<8>{60},Bits<8>{0},Bits<8>{0},Bits<8>{0},Bits<8>{15},Bits<8>{5}])))
+};
