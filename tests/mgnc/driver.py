@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """CLI, diagnostics, no-replace publication, races and OS restrictions."""
-import argparse, os, resource, stat, subprocess, tempfile
+import argparse, os, resource, stat, subprocess, tempfile, sys
 from pathlib import Path
 from native import ENTRY, elf
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument("--compiler",required=True,type=Path)
-    args=parser.parse_args();compiler=args.compiler.resolve();checks=0
+    parser.add_argument("--bindfs",default="bindfs");args=parser.parse_args();compiler=args.compiler.resolve();checks=0
     with tempfile.TemporaryDirectory(prefix="mgnc-driver-") as temporary:
         root=Path(temporary);source=root/"valid.mgn";source.write_text(ENTRY+"7};")
         def invoke(argv,want,fragment=b"",**kwargs):
@@ -83,6 +83,11 @@ def main():
             assert out==b"" and (err==b"" if process.returncode==0 else b"AlreadyExists" in err)
         assert sorted(codes)==[0]+[2]*7;before=race.read_bytes()
         build(source,race,2,b"AlreadyExists");assert race.read_bytes()==before;checks+=8
+        restricted=root/"noexec";restricted.mkdir()
+        controlled=subprocess.run([sys.executable,Path(__file__).with_name("noexec.py"),args.bindfs,compiler,source,restricted],
+                                  capture_output=True,timeout=120)
+        assert (controlled.returncode,controlled.stdout,controlled.stderr)==(0,b"",b""),controlled
+        checks+=2
         for fault in ["closed","pipe"]:
             writer=None
             if fault=="closed":kwargs={"preexec_fn":lambda:os.close(2),"stderr":subprocess.PIPE}

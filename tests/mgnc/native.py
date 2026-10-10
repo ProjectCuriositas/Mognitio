@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """End-to-end scalar native execution with independent arithmetic and ELF oracles."""
-import argparse, hashlib, os, struct, subprocess, tempfile
+import argparse, hashlib, json, os, stat, struct, subprocess, tempfile
 from pathlib import Path
 
 ENTRY = "namespace App;let main:Function(List<String>):Int=function(args:List<String>):Int{"
@@ -88,8 +88,8 @@ def cases():
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument("--compiler",required=True,type=Path)
-    parser.add_argument("--seed",type=Path);args=parser.parse_args()
-    count=0
+    parser.add_argument("--seed",type=Path);parser.add_argument("--evidence",type=Path);args=parser.parse_args()
+    count=0;records=[]
     with tempfile.TemporaryDirectory(prefix="mgnc-native-") as temporary:
         work=Path(temporary);compiler=args.compiler.resolve()
         for name,source,want,diagnostic in cases():
@@ -99,6 +99,10 @@ def main():
             data=image.read_bytes();elf(data)
             result=run(image,["a","b","c"])
             assert (result.returncode,result.stdout,result.stderr)==(want,b"",diagnostic),(name,result)
+            records.append(dict(fixture=name,source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+                                artifact_sha256=hashlib.sha256(data).hexdigest(),mode=oct(stat.S_IMODE(image.stat().st_mode)),
+                                argv_hex=[b"a".hex(),b"b".hex(),b"c".hex()],exit=result.returncode,
+                                stdout_hex=result.stdout.hex(),stderr_hex=result.stderr.hex()))
             count+=1
             if args.seed:
                 project=work/(name+"-project");(project/"src").mkdir(parents=True)
@@ -109,6 +113,8 @@ def main():
                 assert (built.returncode,built.stdout,built.stderr)==(0,b"",b""),(name,"seed",built.stderr)
                 result=run(old,["a","b","c"])
                 assert (result.returncode,result.stdout,result.stderr)==(want,b"",diagnostic),(name,"seed",result)
+                records[-1]["seed_equal"]=True
+                records[-1]["seed_artifact_sha256"]=hashlib.sha256(old.read_bytes()).hexdigest()
         for replacement in [0x78,0x400079]:
             data=bytearray((work/"seven").read_bytes());struct.pack_into("<Q",data,24,replacement)
             try:elf(data)
@@ -123,11 +129,15 @@ def main():
             want,diagnostic=(7,b"") if raw in valid else (2,UTF8)
             result=run(work/"seven",[b"a",raw,b"b"])
             assert (result.returncode,result.stdout,result.stderr)==(want,b"",diagnostic),(raw,result)
+            records.append(dict(fixture="seven",argv_hex=[b"a".hex(),raw.hex(),b"b".hex()],
+                                exit=result.returncode,stdout_hex=result.stdout.hex(),stderr_hex=result.stderr.hex()))
             count+=1
         for fault in ["closed","pipe"]:
             for name,argv,want in [("seven",[],7),("zero-div-0",[],4),("overflow-0",[],4),("seven",[b"\xff"],2)]:
                 result=run(work/name,argv,fault)
                 assert result.returncode==want and result.stdout==b"",(fault,name,result)
+                records.append(dict(fixture=name,argv_hex=[arg.hex() for arg in argv],stderr_fault=fault,
+                                    exit=result.returncode,stdout_hex=result.stdout.hex()))
                 count+=1
         path=work/"forever.mgn";path.write_text(ENTRY+"loop while(true){};0};")
         built=subprocess.run([compiler,"build",path,"-o",work/"forever"],capture_output=True,timeout=120)
@@ -138,5 +148,8 @@ def main():
             assert (built.returncode,built.stdout,built.stderr)==(0,b"",b"")
             assert (work/name).read_bytes()==(work/(name+"-copy")).read_bytes()
             count+=1
+    if args.evidence:
+        args.evidence.write_text(json.dumps(dict(compiler_sha256=hashlib.sha256(args.compiler.read_bytes()).hexdigest(),
+                                                checks=count,records=records),indent=2)+"\n")
     print(f"MGNC_NATIVE_OK checks={count} differential={bool(args.seed)}")
 if __name__=="__main__":main()

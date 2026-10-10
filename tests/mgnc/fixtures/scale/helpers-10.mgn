@@ -1,0 +1,12 @@
+namespace App;
+let h0:Function(Int):Int=function(value:Int):Int{value+1};
+let h1:Function(Int):Int=function(value:Int):Int{value+1};
+let h2:Function(Int):Int=function(value:Int):Int{value+1};
+let h3:Function(Int):Int=function(value:Int):Int{value+1};
+let h4:Function(Int):Int=function(value:Int):Int{value+1};
+let h5:Function(Int):Int=function(value:Int):Int{value+1};
+let h6:Function(Int):Int=function(value:Int):Int{value+1};
+let h7:Function(Int):Int=function(value:Int):Int{value+1};
+let h8:Function(Int):Int=function(value:Int):Int{value+1};
+let h9:Function(Int):Int=function(value:Int):Int{value+1};
+let main:Function(List<String>):Int=function(args:List<String>):Int{h9(args->length())};

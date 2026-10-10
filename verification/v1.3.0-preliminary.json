@@ -1,0 +1,1091 @@
+{
+  "batches": [
+    {
+      "compiler_sha256": "4ddf87929d109b3c1a1ee1780926b8f5fe7ff6fe08b7b1fdbe31a3e125a52f13",
+      "warmups": 0,
+      "repeats": 1,
+      "cells": [
+        {
+          "fixture": {
+            "name": "combined-1000",
+            "family": "combined",
+            "size": 1000,
+            "bytes": 87878,
+            "scalars": 87878,
+            "sha256": "bd967ab6275af5319fc7ea31cee5b76c42bb2d9ccde27945c0177d1e40f7d1cb",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 25.120103358996857,
+              "peak_rss_bytes": 24674304,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 25.120103358996857,
+          "max_rss_bytes": 24674304,
+          "pass": true
+        },
+        {
+          "fixture": {
+            "name": "combined-long-1000",
+            "family": "combined-long",
+            "size": 1000,
+            "bytes": 276116,
+            "scalars": 276116,
+            "sha256": "89237ceada33885e35371621fdce46da1f89b2b646c3feddf83e9e6336894b61",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 32.971349712999654,
+              "peak_rss_bytes": 24674304,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 32.971349712999654,
+          "max_rss_bytes": 24674304,
+          "pass": false
+        },
+        {
+          "fixture": {
+            "name": "combined-comment-1000",
+            "family": "combined-comment",
+            "size": 1000,
+            "bytes": 153422,
+            "scalars": 125333,
+            "sha256": "668ee91cb026250cf3d88bfd2ca3514c4ec791e5db7efd8cc24f5f500ebebbb7",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 26.700968220000505,
+              "peak_rss_bytes": 24674304,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 26.700968220000505,
+          "max_rss_bytes": 24674304,
+          "pass": true
+        }
+      ],
+      "purpose": "Preliminary comparison, not formal acceptance"
+    },
+    {
+      "compiler_sha256": "c2038184c5ccb5387dcd151a12e161dae8d04c78187379458e5db97071f51424",
+      "warmups": 0,
+      "repeats": 1,
+      "cells": [
+        {
+          "fixture": {
+            "name": "combined-1000",
+            "family": "combined",
+            "size": 1000,
+            "bytes": 87878,
+            "scalars": 87878,
+            "sha256": "bd967ab6275af5319fc7ea31cee5b76c42bb2d9ccde27945c0177d1e40f7d1cb",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 24.92173768399516,
+              "peak_rss_bytes": 24551424,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 24.92173768399516,
+          "max_rss_bytes": 24551424,
+          "pass": true
+        },
+        {
+          "fixture": {
+            "name": "combined-long-1000",
+            "family": "combined-long",
+            "size": 1000,
+            "bytes": 276116,
+            "scalars": 276116,
+            "sha256": "89237ceada33885e35371621fdce46da1f89b2b646c3feddf83e9e6336894b61",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 120.00637554999412,
+              "peak_rss_bytes": 36765696,
+              "exit": -9,
+              "timeout": true,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "correct": false
+            }
+          ],
+          "median_seconds": 120.00637554999412,
+          "max_rss_bytes": 36765696,
+          "pass": false
+        },
+        {
+          "fixture": {
+            "name": "combined-comment-1000",
+            "family": "combined-comment",
+            "size": 1000,
+            "bytes": 153422,
+            "scalars": 125333,
+            "sha256": "668ee91cb026250cf3d88bfd2ca3514c4ec791e5db7efd8cc24f5f500ebebbb7",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 71.86174798299908,
+              "peak_rss_bytes": 24551424,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 71.86174798299908,
+          "max_rss_bytes": 24551424,
+          "pass": false
+        }
+      ],
+      "purpose": "Preliminary comparison, not formal acceptance"
+    },
+    {
+      "compiler_sha256": "f0a28fe6e3c90cf2baccc47e373702d767a84f14b5988cb0865763ff2ae49704",
+      "warmups": 0,
+      "repeats": 1,
+      "cells": [
+        {
+          "fixture": {
+            "name": "combined-1000",
+            "family": "combined",
+            "size": 1000,
+            "bytes": 87878,
+            "scalars": 87878,
+            "sha256": "bd967ab6275af5319fc7ea31cee5b76c42bb2d9ccde27945c0177d1e40f7d1cb",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 22.347502773001906,
+              "peak_rss_bytes": 24604672,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 22.347502773001906,
+          "max_rss_bytes": 24604672,
+          "pass": true
+        },
+        {
+          "fixture": {
+            "name": "combined-long-1000",
+            "family": "combined-long",
+            "size": 1000,
+            "bytes": 276116,
+            "scalars": 276116,
+            "sha256": "89237ceada33885e35371621fdce46da1f89b2b646c3feddf83e9e6336894b61",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 73.91339510100079,
+              "peak_rss_bytes": 37715968,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 73.91339510100079,
+          "max_rss_bytes": 37715968,
+          "pass": false
+        },
+        {
+          "fixture": {
+            "name": "combined-comment-1000",
+            "family": "combined-comment",
+            "size": 1000,
+            "bytes": 153422,
+            "scalars": 125333,
+            "sha256": "668ee91cb026250cf3d88bfd2ca3514c4ec791e5db7efd8cc24f5f500ebebbb7",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 66.70291068599909,
+              "peak_rss_bytes": 24604672,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 66.70291068599909,
+          "max_rss_bytes": 24604672,
+          "pass": false
+        }
+      ],
+      "purpose": "Preliminary comparison, not formal acceptance"
+    },
+    {
+      "compiler_sha256": "bb0d366f6e59b7f3f3f2ff482ec7429196578121f87a29158b419551abd352c4",
+      "warmups": 0,
+      "repeats": 1,
+      "cells": [
+        {
+          "fixture": {
+            "name": "combined-1000",
+            "family": "combined",
+            "size": 1000,
+            "bytes": 87878,
+            "scalars": 87878,
+            "sha256": "bd967ab6275af5319fc7ea31cee5b76c42bb2d9ccde27945c0177d1e40f7d1cb",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 28.444226226994942,
+              "peak_rss_bytes": 24543232,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 28.444226226994942,
+          "max_rss_bytes": 24543232,
+          "pass": true
+        },
+        {
+          "fixture": {
+            "name": "combined-long-1000",
+            "family": "combined-long",
+            "size": 1000,
+            "bytes": 276116,
+            "scalars": 276116,
+            "sha256": "89237ceada33885e35371621fdce46da1f89b2b646c3feddf83e9e6336894b61",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 34.496119531999284,
+              "peak_rss_bytes": 24543232,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 34.496119531999284,
+          "max_rss_bytes": 24543232,
+          "pass": false
+        },
+        {
+          "fixture": {
+            "name": "combined-comment-1000",
+            "family": "combined-comment",
+            "size": 1000,
+            "bytes": 153422,
+            "scalars": 125333,
+            "sha256": "668ee91cb026250cf3d88bfd2ca3514c4ec791e5db7efd8cc24f5f500ebebbb7",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 25.848351810993336,
+              "peak_rss_bytes": 24543232,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 25.848351810993336,
+          "max_rss_bytes": 24543232,
+          "pass": true
+        }
+      ],
+      "purpose": "Preliminary comparison, not formal acceptance"
+    },
+    {
+      "compiler_sha256": "c0c423b25583907125329c13215ecbfb53648e1ee53b9ac390194993eb9ff149",
+      "warmups": 0,
+      "repeats": 1,
+      "cells": [
+        {
+          "fixture": {
+            "name": "combined-1000",
+            "family": "combined",
+            "size": 1000,
+            "bytes": 87878,
+            "scalars": 87878,
+            "sha256": "bd967ab6275af5319fc7ea31cee5b76c42bb2d9ccde27945c0177d1e40f7d1cb",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 32.41770557199925,
+              "peak_rss_bytes": 24678400,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 32.41770557199925,
+          "max_rss_bytes": 24678400,
+          "pass": false
+        },
+        {
+          "fixture": {
+            "name": "combined-long-1000",
+            "family": "combined-long",
+            "size": 1000,
+            "bytes": 276116,
+            "scalars": 276116,
+            "sha256": "89237ceada33885e35371621fdce46da1f89b2b646c3feddf83e9e6336894b61",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 36.07139142599772,
+              "peak_rss_bytes": 24678400,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 36.07139142599772,
+          "max_rss_bytes": 24678400,
+          "pass": false
+        },
+        {
+          "fixture": {
+            "name": "combined-comment-1000",
+            "family": "combined-comment",
+            "size": 1000,
+            "bytes": 153422,
+            "scalars": 125333,
+            "sha256": "668ee91cb026250cf3d88bfd2ca3514c4ec791e5db7efd8cc24f5f500ebebbb7",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 29.09535745500034,
+              "peak_rss_bytes": 24678400,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 29.09535745500034,
+          "max_rss_bytes": 24678400,
+          "pass": true
+        }
+      ],
+      "purpose": "Preliminary comparison, not formal acceptance"
+    },
+    {
+      "compiler_sha256": "f454f6d8399e00f162286a7ba1550bd81315c1dba31518be16fb45c5c402b4f9",
+      "warmups": 0,
+      "repeats": 1,
+      "cells": [
+        {
+          "fixture": {
+            "name": "combined-1000",
+            "family": "combined",
+            "size": 1000,
+            "bytes": 87878,
+            "scalars": 87878,
+            "sha256": "bd967ab6275af5319fc7ea31cee5b76c42bb2d9ccde27945c0177d1e40f7d1cb",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 28.545818531994883,
+              "peak_rss_bytes": 24936448,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 28.545818531994883,
+          "max_rss_bytes": 24936448,
+          "pass": true
+        },
+        {
+          "fixture": {
+            "name": "combined-long-1000",
+            "family": "combined-long",
+            "size": 1000,
+            "bytes": 276116,
+            "scalars": 276116,
+            "sha256": "89237ceada33885e35371621fdce46da1f89b2b646c3feddf83e9e6336894b61",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 26.155626660998678,
+              "peak_rss_bytes": 24936448,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 26.155626660998678,
+          "max_rss_bytes": 24936448,
+          "pass": true
+        },
+        {
+          "fixture": {
+            "name": "combined-comment-1000",
+            "family": "combined-comment",
+            "size": 1000,
+            "bytes": 153422,
+            "scalars": 125333,
+            "sha256": "668ee91cb026250cf3d88bfd2ca3514c4ec791e5db7efd8cc24f5f500ebebbb7",
+            "argv_counts": [
+              0,
+              1,
+              3
+            ],
+            "expected": [
+              124,
+              125,
+              127
+            ]
+          },
+          "samples": [
+            {
+              "warmup": false,
+              "wall_seconds": 26.98925764500018,
+              "peak_rss_bytes": 24936448,
+              "exit": 0,
+              "timeout": false,
+              "stdout_hex": "",
+              "stderr_hex": "",
+              "artifact_sha256": "20c2d1e5a89daac6776ee56fb33c90e11b88e272ec651be459d90ce05b936ce6",
+              "artifact_bytes": 132084,
+              "mode": "0o755",
+              "runtime": [
+                {
+                  "argv_count": 0,
+                  "exit": 124,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 1,
+                  "exit": 125,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                },
+                {
+                  "argv_count": 3,
+                  "exit": 127,
+                  "stdout_hex": "",
+                  "stderr_hex": ""
+                }
+              ],
+              "correct": true
+            }
+          ],
+          "median_seconds": 26.98925764500018,
+          "max_rss_bytes": 24936448,
+          "pass": true
+        }
+      ],
+      "purpose": "Preliminary comparison, not formal acceptance"
+    }
+  ],
+  "earlier": [
+    {
+      "stage": "Initial complete native compiler",
+      "compiler_sha256": "e09fcbf880d0be98ca805386ab06c31c117ff76d4106683923fd82266891949c",
+      "result": "compile timeout at 120 seconds"
+    },
+    {
+      "stage": "Chunked frontend before reachable output selection",
+      "compiler_sha256": "632733bed53947d37888f88ba390ccd7772418e7d8e75a8fee65b198d917d03e",
+      "wall_seconds": 66.27
+    },
+    {
+      "stage": "Reachable output selection",
+      "compiler_sha256": "cad00489a1240cfd9f8b63ac31faae78ac25a78250e9745ecf633421f46a645a",
+      "wall_seconds": 32.85
+    }
+  ],
+  "policy": "Unsuccessful preliminary observations are retained. The formal budget and frozen source fixtures did not change."
+}

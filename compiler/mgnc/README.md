@@ -39,9 +39,9 @@ generated program during compilation. Normal compiler output streams are empty.
 The native runtime validates UTF-8 arguments and preserves primary failures
 even when its diagnostic stream is unavailable.
 
-Internal and end-to-end runners are under tests/mgnc. Resource acceptance is
-recorded separately from functional tests; this increment does not claim the
-large-input performance budget has passed.
+Internal and end-to-end runners are under tests/mgnc. The 55-condition
+[implementation acceptance](../../verification/v1.3.0.md) includes the completed
+21-cell resource profile. Acceptance is separate from release and publication.
 
 The seed's public Product/Sum types, templates, immutable lists and strings,
 text I/O, numeric representation conversion and binary publication are the

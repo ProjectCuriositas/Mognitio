@@ -1,0 +1,657 @@
+{
+  "compiler_sha256": "f454f6d8399e00f162286a7ba1550bd81315c1dba31518be16fb45c5c402b4f9",
+  "records": [
+    {
+      "fixture": "case-0",
+      "source_sha256": "9580443bd96c58fd6c3b213355ade8896607a0c054c47d42ed95432485881a45",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "b3de24bc21e345fb26c0c09e09c74ea7bba809b16802fcc182a89894d584eb74",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-1",
+      "source_sha256": "a7fe5e1519b7a8d55d7ce495e9691cd4714e566cef0ad37ed2683383cdc43138",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "33fa6f2ecc8bcb256c8a0282cf81bb12d438c9e88e64dc1fd5c8459d99e022bc",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-2",
+      "source_sha256": "26876a44f39edbbeee466202e6b40b2e1911d7a5bf04bd4e9c40042e1236ec65",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "531bbe3c24bc9af6b196a4b58c7d74a7e0f3f504f5052cd80cea3c717471bf8d",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-3",
+      "source_sha256": "b4eef6513f25d54061e502ba9d11a715ad4a11cbea5012248459b76bf02594e0",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "b0e0075eea487df8bfdc6decb194e279023da49813c0dc419b6a492c6b8a33d0",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-4",
+      "source_sha256": "aa80b5a661def47152146f4824959bf3d266d421dc827a29f6249f4c48f10772",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "d1253c16fc3f1350247faa8792fb2f19c1a246ece59b6ff275a9b3f1f65b6ee9",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-5",
+      "source_sha256": "8467fc20ccf76dab715297a19b6c2268c03aaf743e5b2229c05fce0929c691c7",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "d57605ecfaa99f6fcb05ee27e39bb8fcafe4d38d0027681468a38eb7cf26dbdd",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-6",
+      "source_sha256": "0acfb15280c14bd23cb2e55d769357f50ff1c6cf10f727841099301aecc365ca",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "40ae689180bffed5adc4e5f390337332ea44c7cba832ed92150dcf851a76077e",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-7",
+      "source_sha256": "df688b7ed859826255732e0a9062a239145cd6ce25b1875d193d9d5947483a65",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "2acddf2b455d72eea40698c6ae74b7298ba67f1d92d9ba23bc485b87c41eea84",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-8",
+      "source_sha256": "6eeff938c7cb107a36d05e765883298da2518536445097f5828aad19223c6051",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "c8050da8761177d8f0de3efb8e100a533ff3c673c006fb1ddb21ddf958875e27",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-9",
+      "source_sha256": "e61cd41239b145ff2b6e2345af7ecd43f9fe9a654fe47901ed61e51222117511",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "f4d3a9f609cb7e27d827112093563f3d178f902cfb61e41f26851badab0cccb4",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-10",
+      "source_sha256": "16ccdfcb0864e0e20e59991af0e051780f329cb00e15a0b99a59f742ce97d6d7",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "04587ced471d0c2c72f902c99cffb7d3b87c179d18a819ae326e5847ae5d859a",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-11",
+      "source_sha256": "6df1a2de44ad15c5d82762f8cb63352b3146c52412fcb181614e5ae819b67056",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "94a312cca47e24fd4fee8082d155238fb2185da7e6b150f6166e8be1b591b141",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-12",
+      "source_sha256": "455c64e4ad01815a0ec2347d89ea8518bb42d01eec26bbae19a7fe7a8cfd4380",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "afcc88a5e2e79829fc9137773a1b6f564af72c3cf8800b375006cb3a974ca0f6",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-13",
+      "source_sha256": "893ee990adca3e900bb423b9f7d980b6fb3f37a28bda8efd1e3849dfabdd5b14",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "692ee56381edb4105defa695af30a76a4acc6a0523205c06ba09fbcf8b7ec92d",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-14",
+      "source_sha256": "9c4986a37e679c5e6774c56d02f3758d93b7b62f79a43a35e898bf5bcd327f70",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "ff19d1fddbcfd57e8f8a4ba6efd96556185ab0ef73fc93c6176b9bd59200dc8e",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-15",
+      "source_sha256": "b98def3c6ba6f70245480a682451f09ca113363d8822cd6aeaaa671ecb9b4205",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-15.mgn:1:98 [97,98): operator has no unique type\n",
+      "stderr_sha256": "d6c44c8e975336442238af816872ead9a46d7eb3a2f89ceebb3ffce875e701b9"
+    },
+    {
+      "fixture": "case-16",
+      "source_sha256": "2d577647d49313b125a650bbc0e4ddfa9a971a5f046fd3d236b93b5a646760df",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-16.mgn:1:96 [95,96): assignment requires a visible var\n",
+      "stderr_sha256": "7d8cfd14a6d110ba81f54f9708f3638eac1c4bed7795538fd6ce812a3d3887b2"
+    },
+    {
+      "fixture": "case-17",
+      "source_sha256": "72b0be3e10311df066182f86309286391a893adcfb14725ef1ff1c153b918465",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-17.mgn:1:100 [99,100): type mismatch\n",
+      "stderr_sha256": "050e5f9a966e43cde6517e8df6702c25b965e7ce8d15669bcb831e3e0b4cf761"
+    },
+    {
+      "fixture": "case-18",
+      "source_sha256": "8a3ff7aab76d77b2ba441ecccbe730b79fe3c91e9a212659450f4cc04396cb1a",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-18.mgn:1:84 [83,90): name is not visible\n",
+      "stderr_sha256": "19032fcc5486ef352c149ffb66218313f1e217826b3d809d266aca8958360f91"
+    },
+    {
+      "fixture": "case-19",
+      "source_sha256": "49fd2299fbb6ef77812e646748f3189a815a3b27610f0df3041a6ec00be53f74",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-19.mgn:1:94 [93,94): binding is not visible in its initializer\n",
+      "stderr_sha256": "bd1a3eea449886dc114c146de6ea729f916fc4c9fef18f237ef322fa2c68ddbe"
+    },
+    {
+      "fixture": "case-20",
+      "source_sha256": "1698c44ab3ea37eb60239f25b84c37233de85d48c1a4da3ba812687f138a0244",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-20.mgn:1:99 [98,99): name is already visible or reserved\n",
+      "stderr_sha256": "0d65d28f9cef3c16e0c07c07e8dc20fac1ff9e139ee09703045ed03f6e9bf633"
+    },
+    {
+      "fixture": "case-21",
+      "source_sha256": "bafc903305263f4d09fb647023757fc86f8f09d1898d265840f19c3e77f3d080",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-21.mgn:1:101 [100,101): name is already visible or reserved\n",
+      "stderr_sha256": "3941544d34a17f7ee50fa605c655729d4b786c1d1215ebd17a88d9801821726b"
+    },
+    {
+      "fixture": "case-22",
+      "source_sha256": "562f2d4028b00962d2217c0713edc1b64d5c62b3c3acdae9822056c943b1de97",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-22.mgn:1:88 [87,91): name is already visible or reserved\n",
+      "stderr_sha256": "0bc76616197608e6028af025737010328b4b203c32fd6040f59fe836242066be"
+    },
+    {
+      "fixture": "case-23",
+      "source_sha256": "b140a427c5d3cf314e6c20b14f838015cebbbb2574e2d06c990bca260e18cd78",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-23.mgn:1:88 [87,90): reserved name\n",
+      "stderr_sha256": "e01785ca4e47b4e58f2d5ec8402f2f969daeb2a91de08e53f5b2ab6b59b62e89"
+    },
+    {
+      "fixture": "case-24",
+      "source_sha256": "c69c2f79687698ef6a418aac190e7197bd4785c97007a1b2925d1492160a1706",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-24.mgn:1:93 [92,93): unreachable block element\n",
+      "stderr_sha256": "801dcd98ce32fb30a0a85a5d8530c6c92f93b09774cf043bfba458da1ffced9e"
+    },
+    {
+      "fixture": "case-25",
+      "source_sha256": "2bb004016570a3406aa2180564cf1354a739224e78f379966a532f3eb89c2742",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-25.mgn:1:84 [83,90): discard requires a normal non-Unit result\n",
+      "stderr_sha256": "1182c6c6de73659f7db19b0eda73a3c1b520de775a400accf299938165a7a817"
+    },
+    {
+      "fixture": "case-26",
+      "source_sha256": "adb820d20e6afd2d0384985f3576bd07cf8f6a5d6b748541be1ddf29429c88ea",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-26.mgn:1:84 [83,90): discard requires a normal non-Unit result\n",
+      "stderr_sha256": "aa0837ffe98b75dd6c4b8eb58896f7f9a95e88785b81dc90d4b50a8e5a20e216"
+    },
+    {
+      "fixture": "case-27",
+      "source_sha256": "f844b7757663d7133ffc9f10e0991189241cec785753b40d223d86a334d169d2",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-27.mgn:1:83 [82,83): non-Unit expression requires discard\n",
+      "stderr_sha256": "8692d74fd801ab3ed6155553bfc8aa4d1e351b82e5c2c9a1780a647d7f1780ae"
+    },
+    {
+      "fixture": "case-28",
+      "source_sha256": "f7746855732b5520648b3928603604de77e950746001d7b636e6c279e86509ec",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-28.mgn:1:20 [19,23): type mismatch\n",
+      "stderr_sha256": "d352d7b2949097d752aa6d5886765095f7e06e30027b9749a4274e344f16ed4b"
+    },
+    {
+      "fixture": "case-29",
+      "source_sha256": "388f9ba860b25f332b82fb7ea121d4efd2d413080b2f77dcd714998c81370df4",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-29.mgn:1:20 [19,23): type mismatch\n",
+      "stderr_sha256": "c8e91f6bf3a80819ff9a13d5a6d3ee566e8da2eb051ce0780946f831f6e9d1ca"
+    },
+    {
+      "fixture": "case-30",
+      "source_sha256": "eb8cd8fe50261061daba0af59b1d8e75627c52ba1e1c247fb5aa51b461ec9a68",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-30.mgn:1:84 [83,87): operator has no unique type\n",
+      "stderr_sha256": "f271bc3e365093f902feeaac50a775a06767139db33c53fad0cf01cae1c35b4b"
+    },
+    {
+      "fixture": "case-31",
+      "source_sha256": "bfe0f5fb83e8009e11e344ac4a0ebd9aa8b1b3f40c259be46ba975e52017f3b4",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-31.mgn:1:84 [83,89): branch arm types differ\n",
+      "stderr_sha256": "98ca09e2be9c535afa5b5c78bbf81f84ec92e2b119735c35cffdc0e7b941e58d"
+    },
+    {
+      "fixture": "case-32",
+      "source_sha256": "459746966db65f359842f4b89cec1fd67cecc715843104e8579fd6ebb7410d50",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-32.mgn:1:84 [83,87): type mismatch\n",
+      "stderr_sha256": "d41dd4e21390bb34b73e8abbe27cc13f8e9880f8ac4332cb62a2ac1a8f938640"
+    },
+    {
+      "fixture": "case-33",
+      "source_sha256": "a54a597e18dd94cd1e39d16bc76b0a56205fa575f6046359cc069038e23eb468",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-33.mgn:1:84 [83,87): type mismatch\n",
+      "stderr_sha256": "5c1018f2d7404160d08512a0f68bdb0ae2580f4fa85f5eb9252d5e63af9ebca6"
+    },
+    {
+      "fixture": "case-34",
+      "source_sha256": "f1a09aa964a73b235bddbab92d474d1cf6a6077d1d4abd7c48826f5e2110078e",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-34.mgn:1:96 [95,100): control requires an enclosing loop\n",
+      "stderr_sha256": "a460b144d9bd042c70815838f6f5c195224226c236ff8c04c98905b0c160deb5"
+    },
+    {
+      "fixture": "case-35",
+      "source_sha256": "d4484e70decc5922d99aee2c1b51cdd8d27a22b2a40e908e6bbeb3e939efacd1",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-35.mgn:1:96 [95,103): control requires an enclosing loop\n",
+      "stderr_sha256": "6da415838ca07af6938a0dd319bb4eed9e425755b9b3bac546f81f41a5b7619b"
+    },
+    {
+      "fixture": "case-36",
+      "source_sha256": "5c5555edea5bd2cc8f92b717e6c4afed3ef56fcb0f4a908ba14cfe609a370fda",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-36.mgn:1:84 [83,102): integer literal out of range\n",
+      "stderr_sha256": "1205a96de2db323ec624ba461d016fc6e3811c24380b465e008b37c7184516de"
+    },
+    {
+      "fixture": "case-37",
+      "source_sha256": "f3a412f58f6bb3a504c52ac83d5bba79549093663c048a9fd29637b2e13d4f4f",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-37.mgn:1:85 [84,103): integer literal out of range\n",
+      "stderr_sha256": "b4283f7345bc6e40cd9348a64ba524fcce1c12896ed7e68d4c82c333231c62a9"
+    },
+    {
+      "fixture": "case-38",
+      "source_sha256": "4cb91badfd1d47b9d2073d67c199f0a96839fa21d54fa13a196ec84318c941b2",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-38.mgn:1:86 [85,104): integer literal out of range\n",
+      "stderr_sha256": "8cd14eb297d476efa1db30dce2fddce7c7b138c6f93598a922d7bb6883e20dd6"
+    },
+    {
+      "fixture": "case-39",
+      "source_sha256": "3a2f128f88478a50c6beba910bca13597e5d224ce9c2d3971fec1867f50399e1",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-39.mgn:1:88 [87,91): local values must be primitive\n",
+      "stderr_sha256": "595e450f3311374215970a42edddb19eea0fc4cf46ee4cd3e375df733b38113d"
+    },
+    {
+      "fixture": "case-40",
+      "source_sha256": "f2adb4680da7a967d598ae9157cae88ffeb89a9a48733869cbc6d61230f21c5b",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-40.mgn:1:84 [83,84): length requires the direct entry parameter\n",
+      "stderr_sha256": "9d0275b4fb8e275a14e8d898f55933dcff21f67fa01371b4da6a6dbdef4283c0"
+    },
+    {
+      "fixture": "case-41",
+      "source_sha256": "be206e2427a9d2bce146da1df482267c1b6d11a9dd8c7c4e649803a1455969f6",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-41.mgn:1:90 [89,91): only entry length is supported\n",
+      "stderr_sha256": "ed7a01218c1af9c880e7587c207ff5b243df882c1b2e4db1196ff0b95b8f3bd9"
+    },
+    {
+      "fixture": "case-42",
+      "source_sha256": "7744e08fa24a8426a703768b061bf322a0440a0508a2e28f53a9fbc90c659033",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-42.mgn:1:84 [83,87): binding is not visible in its initializer\n",
+      "stderr_sha256": "2c6f212a3dedf17618de842db1615b2c98f0e773ef7f6dfdf706962cc823f7f6"
+    },
+    {
+      "fixture": "case-43",
+      "source_sha256": "e8238c00d718f9faf6f9b1b2fde1ddb9c394314bf89b4c87eeeb85f899c11fa1",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-43.mgn:1:84 [83,84): source feature is not supported\n",
+      "stderr_sha256": "1e41c252eec591b628868b4b6dab7a2065e017fad36eece38f88e23ab93a7012"
+    },
+    {
+      "fixture": "case-44",
+      "source_sha256": "a900d85a7c0baabe2781f847a6eccaa0b9c854da2b8aea88f03fefc25f7e0438",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "fd5912784033e9ea240aa4a64fdcba40d253f4c8f812e9756d9cd7f4c94d9d28",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-45",
+      "source_sha256": "02f431df1dca954ea345521e890587d78d0cf4cb8675127e17a4fd838af38c59",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "93b8bd5986ff007b1c85a26114bf1ecc43bfe2aec3972fe41a7d370e1e25b66b",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-46",
+      "source_sha256": "518e3bb3c6df2ba7806640e9ed2f4d78f0783a3a0c1cd1d0d30f6ca4fde5cf29",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-46.mgn:1:166 [165,166): call requires a direct helper name\n",
+      "stderr_sha256": "2a1f1bd4d06ade5359f42f165f4aa57312331565e063389b07e31f726a763b05"
+    },
+    {
+      "fixture": "case-47",
+      "source_sha256": "9200c98b7f64d3069a216f9537a9171b8191ed916af11b496e17a04223431cee",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-47.mgn:1:166 [165,166): call arity mismatch\n",
+      "stderr_sha256": "97daa73f020766ac74c8a6fcaafee971df18249eae76757b1a5a701a00d1e4e7"
+    },
+    {
+      "fixture": "case-48",
+      "source_sha256": "a892a22dec24c54d0c3fc5455c2ebd9a69d7c1d644c44e51ad3bb0d093a19f00",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-48.mgn:1:166 [165,166): type mismatch\n",
+      "stderr_sha256": "6a1792e889fa489f63ae667f939be24498493fea953a58e297e7d3ec4f5bd406"
+    },
+    {
+      "fixture": "case-49",
+      "source_sha256": "6564422622fd2709eddba247f569d67fd268d46041bfc2b94aa275c3f35515b4",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-49.mgn:1:83 [82,87): name is not visible\n",
+      "stderr_sha256": "89f77fee8619c5e8d1464d6a6ff186c07c75eb37fdf0223af035f8358a47517c"
+    },
+    {
+      "fixture": "case-50",
+      "source_sha256": "1549029fc509c0074ca079058038959c235f32abb423536bf720016be436a331",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-50.mgn:1:51 [50,51): binding is not visible in its initializer\n",
+      "stderr_sha256": "9d4eda217623e8a97321edbe5a4f747552831b2c894445f412bab549382235bb"
+    },
+    {
+      "fixture": "case-51",
+      "source_sha256": "cdf7f20f0322bf9566523d7c556b1c9e1d076e9731cc3fc9b2f4eda81502a243",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-51.mgn:1:19 [18,19): type mismatch\n",
+      "stderr_sha256": "dd6275a57664580f9d518ff9ed8ba43db657abeb70f15c8ab0d09b9660e02d4c"
+    },
+    {
+      "fixture": "case-52",
+      "source_sha256": "36d384997f9c76c8e194804ed5e0a6257ce27acbfe16b6566dcc33f0496ebd26",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-52.mgn:1:54 [53,53): entry main is missing\n",
+      "stderr_sha256": "2a02bd0c51b8482c1af503c36fa6b96c85012f2e04e6328474ded8c947a139bf"
+    },
+    {
+      "fixture": "case-53",
+      "source_sha256": "5ef3d20466df31436c7136279feb6d27d3a706345cd57c4c6034bea049ab46ee",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-53.mgn:1:20 [19,23): top-level functions require let\n",
+      "stderr_sha256": "63cbd3ddfd7178e187b3531b8940f05e781f2b93807b4964ed67cd0096a2986e"
+    },
+    {
+      "fixture": "case-54",
+      "source_sha256": "38300407e9cd41e02b030892a5c406c4cee8b870643cc5d8b0f39bdc78190e80",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-54.mgn:1:61 [60,64): parameter annotations differ\n",
+      "stderr_sha256": "c41502ad1b6c081dfcc4fa8c7646c0cfe16a2c2747bb3c187ab7a13f76845911"
+    },
+    {
+      "fixture": "case-55",
+      "source_sha256": "50f8b90fe073010f48c42bd7497a45df3afe3c96c10ee886654fa1238a99bcfb",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: lexical: <fixture-root>/case-55.mgn:1:84 [83,85): invalid decimal literal\n",
+      "stderr_sha256": "9295a578a85a43ebeb8e237d64934d72d5f16ce598523f10d13298b8ffd0123c"
+    },
+    {
+      "fixture": "case-56",
+      "source_sha256": "df2ae3cc6136e298c5a9e777180fa94aad43453344c8ebbea705cab250b0d1d8",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: lexical: <fixture-root>/case-56.mgn:1:84 [83,84): invalid decimal literal\n",
+      "stderr_sha256": "daee53058433715f459e4e3b26fdf04885d1b3115b0811ef9eab47566fec13ee"
+    },
+    {
+      "fixture": "case-57",
+      "source_sha256": "18312f994097720426d7fb4291b446c2c642285d14159dc9df2356f8bc376051",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-57.mgn:1:87 [86,87): comparison chaining requires grouping\n",
+      "stderr_sha256": "390877241cb554cc53e4f363d827ed8ca87111412eb047c55ed84e26f674eb65"
+    },
+    {
+      "fixture": "case-58",
+      "source_sha256": "76a76f397d68046a5893723c00bb868e9d7bf1c032399941f372e20d19454607",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-58.mgn:1:88 [87,91): expected binding name\n",
+      "stderr_sha256": "c892de8821968254a2c3e3b63746eeb88460b827c397b4d5f102c7564a04b123"
+    },
+    {
+      "fixture": "case-59",
+      "source_sha256": "4bd1f906192da41500b11fa97cc833e0ccb145bfb06cf4caceb7980e628c4a68",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: semantic: <fixture-root>/case-59.mgn:1:90 [89,92): unknown type\n",
+      "stderr_sha256": "0bdb869fc0b6b50a2941f4e4a1db64c54cd5ec5bb80c39981c195759bb61b656"
+    },
+    {
+      "fixture": "case-60",
+      "source_sha256": "ab0defb01d850a234a386ea5b4ab2c7b0d929fe3424d8045fe9c4532e5d74716",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-60.mgn:1:96 [95,96): expected expression\n",
+      "stderr_sha256": "f5e9c0d089617ec861646d593bfe75a4f639e2102641b6eeee4d79b624bb3728"
+    },
+    {
+      "fixture": "case-61",
+      "source_sha256": "0c151988e261c2debf01ab516eedde1ae6e9ef82746918ba33cf36dfc91b0acc",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-61.mgn:1:96 [95,96): expected ;\n",
+      "stderr_sha256": "f29c472fe0d0579d4be17f98e65e8080e78721fe6447a668629d765a381ebfc9"
+    },
+    {
+      "fixture": "case-62",
+      "source_sha256": "400986aba5abfa4d473b18c2aea39fd9491a935b68474dc7a5d2e9f9413d3ee5",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-62.mgn:1:108 [107,108): expected ;\n",
+      "stderr_sha256": "38de03c26487add025e4289de8b79566c59f4e7ba3ee0aaf53abbfaea0c5c723"
+    },
+    {
+      "fixture": "case-63",
+      "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-63.mgn:1:1 [0,0): expected namespace\n",
+      "stderr_sha256": "15bb4d6623cb2c04b563e1682749051d3c6dffad699f626ddcde9cbedebddde2"
+    },
+    {
+      "fixture": "case-64",
+      "source_sha256": "4a6061ff60afff400c1ed00db6084ec5830b66040299a70226810c3a50d7da05",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-64.mgn:1:1 [0,3): expected namespace\n",
+      "stderr_sha256": "d6d69728e2f3d5d5b93ed34f43012e2904a6934b3d5c66173fefd08fa98b31f8"
+    },
+    {
+      "fixture": "case-65",
+      "source_sha256": "02805fe20126a3205b906ef210f38b27b217395bdaf09d31a74174031decf565",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-65.mgn:1:16 [15,19): expected top-level binding\n",
+      "stderr_sha256": "56e88cb0919753d51d4f78a88ce789a9eec872acdc5778ea2bc008ed0ee4f24a"
+    },
+    {
+      "fixture": "case-66",
+      "source_sha256": "f066e2dbf0629a76f554b93af1142dd7f12316c8a06b4f9ebe308634974a85f4",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: parse: <fixture-root>/case-66.mgn:1:85 [84,84): expected ;\n",
+      "stderr_sha256": "0e3929d5169894f70b553a8d668e1567acd69fa4f8b8b031759e984e99e9a3fd"
+    },
+    {
+      "fixture": "case-67",
+      "source_sha256": "884d17b677714eedf72032d515362cddd4a9143cce76ce294f9775d4b50cb9e4",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: type: <fixture-root>/case-67.mgn:1:102 [101,102): operator has no unique type\n",
+      "stderr_sha256": "db99c9326ba5b8c8ad5b9e30e8cb963ef2c2b0a209d146cc1442f09136ed2e8a"
+    },
+    {
+      "fixture": "case-68",
+      "source_sha256": "34ce83973a87b71766359ad243259658610e20f75e2dbc94621a09d16f0425ba",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-68.mgn:1:94 [93,101): type is outside the native profile\n",
+      "stderr_sha256": "619963d42a1d5d31e4c03266f0845558b868c2a9864c19a1484663dd9a9ab9e2"
+    },
+    {
+      "fixture": "case-69",
+      "source_sha256": "57e70729935e8aebaaa054fac3cda09b7a575b18570382291bfb1815f013a780",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-69.mgn:1:16 [15,18): top-level feature is outside the native profile\n",
+      "stderr_sha256": "505ba1395c6e35b014b767e248b0e47c80e825de7507502d6f90466cac84736f"
+    },
+    {
+      "fixture": "case-70",
+      "source_sha256": "79f2349c0f58315ba5b0620406b39bfc25d2cb201a60a0958c22b61803d80369",
+      "exit": 1,
+      "stdout_hex": "",
+      "stderr_text": "mgnc: unsupported: <fixture-root>/case-70.mgn:1:16 [15,23): top-level feature is outside the native profile\n",
+      "stderr_sha256": "dd5d73df476a0646705288025d182c3f03c8a17df69ca72a8139dfef5f621c58"
+    },
+    {
+      "fixture": "case-71",
+      "source_sha256": "f3affbf0313d0ffd44234456640eadc547c7f22e21d6bdbe6fe8fd5fe8d271e1",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "b3de24bc21e345fb26c0c09e09c74ea7bba809b16802fcc182a89894d584eb74",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-72",
+      "source_sha256": "1f05a6de20ac2123dba492e21c1847d53165eaed67f212fd497ab97b69e45607",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "b3de24bc21e345fb26c0c09e09c74ea7bba809b16802fcc182a89894d584eb74",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-73",
+      "source_sha256": "67c54df9bd55bc3ec2aee3a0500aedf46d6aff67225400a49d9fc6a5f158bb31",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "5fabec1687f3d520e66da67a82cda908aaa10caaf3bf54a30a9704e7bc891fb1",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-74",
+      "source_sha256": "541158e3eaa2d65010aeb459aebf2420c0c86d52c04405a29d71361be7d52d78",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "d2e7f15756b71ccb6afc409f1e98f8682113cbc7bee3283ff1bab694770fe615",
+      "mode": "0o775"
+    },
+    {
+      "fixture": "case-75",
+      "source_sha256": "f451700485f9b46eeabf2f6c832787c57d47a56c8055a930d6c675803d2f5af6",
+      "exit": 0,
+      "stdout_hex": "",
+      "stderr_text": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "artifact_sha256": "343fbc6b875af5cf1562d3ffe3cb7aca2c2975c9c953c8ad10e1481d6a1dfa35",
+      "mode": "0o775"
+    }
+  ]
+}

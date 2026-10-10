@@ -111,13 +111,39 @@ function(initial:Code,instruction:Instruction,layout:Layout):Result<Code,Diagnos
  };
  Result<Code,Diagnostic>::Ok(code)
 };
+let includes:Function(List<Int>,Int):Bool=function(ids:List<Int>,wanted:Int):Bool{
+ loop over(ids as id:Int){branch when{id==wanted=>{return true;},else=>unit};};false
+};
+let reachedFunctions:Function(ModuleIR,Span):Result<List<Int>,Diagnostic>=
+function(module:ModuleIR,span:Span):Result<List<Int>,Diagnostic>{
+ var reached:List<Int>=List<Int>[module->entry];var cursor:Int=0;
+ loop while(cursor<reached->length()){
+  let id:Int=try integerAt(reached,cursor,span);
+  let current:FunctionIR=branch on module->functions->at(id){
+   Result<FunctionIR,IndexError>::Ok(value:FunctionIR)=>value,
+   Result<FunctionIR,IndexError>::Err(error:IndexError)=>{return Result<List<Int>,Diagnostic>::Err(problem("internal",span,"call graph function bounds"));},
+  };
+  loop over(current->instructions->pages->append(current->instructions->tail) as page:List<Instruction>){
+   loop over(page as instruction:Instruction){
+    branch when{instruction->kind==16=>{
+     let target:Int=try integerAt(instruction->targets,0,instruction->span);
+     branch when{!includes(reached,target)=>{reached=reached->append(target);},else=>unit};
+    },else=>unit};
+   };
+  };
+  cursor=cursor+1;
+ };
+ Result<List<Int>,Diagnostic>::Ok(reached)
+};
 public let generate:Function(ModuleIR):Result<Code,Diagnostic>=function(module:ModuleIR):Result<Code,Diagnostic>{
  let span:Span=Span{start:0,end:0,line:1,column:1};
  let planned:Plan=try plan(module);
+ let reached:List<Int>=try reachedFunctions(module,span);
  let entry:Layout=try layoutAt(planned->layouts,module->entry,span);
- var code:Code=Code{records:empty<Record>(),nextLabel:planned->nextLabel};
+ var code:Code=Code{records:empty<Record>(),nextLabel:planned->nextLabel,pending:List<Int>[]};
  code=startup(code,entry->entry);code=failures(code);
  loop over(module->functions as functionInfo:FunctionIR){
+  branch when{!includes(reached,functionInfo->id)=>{continue;},else=>unit};
   let layout:Layout=try layoutAt(planned->layouts,functionInfo->id,span);
   code=label(code,layout->entry);
   code=field(raw(code,List<Int>[85,72,137,229,72,129,236]),3,layout->frame);

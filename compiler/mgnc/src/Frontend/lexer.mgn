@@ -1,21 +1,15 @@
 namespace Mgnc\Frontend;
 use Mgnc\Data\{Paged, empty, push, Span, Diagnostic, Token, problem, contains};
-use Mgnc\Width\{scalarWidth};
+use Mgnc\Width\{scalarWidth,ascii10,ascii100,ascii101,ascii102,ascii103,ascii104,ascii105,ascii106,ascii107,ascii108,ascii109,ascii110,ascii111,ascii112,ascii113,ascii114,ascii115,ascii116,ascii117,ascii118,ascii119,ascii120,ascii121,ascii122,ascii123,ascii124,ascii125,ascii13,ascii32,ascii33,ascii34,ascii37,ascii38,ascii40,ascii41,ascii42,ascii43,ascii44,ascii45,ascii47,ascii48,ascii49,ascii50,ascii51,ascii52,ascii53,ascii54,ascii55,ascii56,ascii57,ascii58,ascii59,ascii60,ascii61,ascii62,ascii64,ascii65,ascii66,ascii67,ascii68,ascii69,ascii70,ascii71,ascii72,ascii73,ascii74,ascii75,ascii76,ascii77,ascii78,ascii79,ascii80,ascii81,ascii82,ascii83,ascii84,ascii85,ascii86,ascii87,ascii88,ascii89,ascii9,ascii90,ascii91,ascii92,ascii93,ascii95,ascii97,ascii98,ascii99};
 type WidthEntry = product { scalar: String; width: Int; };
 let isLetter: Function(String): Bool = function(scalar: String): Bool {
-    contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_", scalar)
+    scalar == ascii97 || scalar == ascii98 || scalar == ascii99 || scalar == ascii100 || scalar == ascii101 || scalar == ascii102 || scalar == ascii103 || scalar == ascii104 || scalar == ascii105 || scalar == ascii106 || scalar == ascii107 || scalar == ascii108 || scalar == ascii109 || scalar == ascii110 || scalar == ascii111 || scalar == ascii112 || scalar == ascii113 || scalar == ascii114 || scalar == ascii115 || scalar == ascii116 || scalar == ascii117 || scalar == ascii118 || scalar == ascii119 || scalar == ascii120 || scalar == ascii121 || scalar == ascii122 || scalar == ascii65 || scalar == ascii66 || scalar == ascii67 || scalar == ascii68 || scalar == ascii69 || scalar == ascii70 || scalar == ascii71 || scalar == ascii72 || scalar == ascii73 || scalar == ascii74 || scalar == ascii75 || scalar == ascii76 || scalar == ascii77 || scalar == ascii78 || scalar == ascii79 || scalar == ascii80 || scalar == ascii81 || scalar == ascii82 || scalar == ascii83 || scalar == ascii84 || scalar == ascii85 || scalar == ascii86 || scalar == ascii87 || scalar == ascii88 || scalar == ascii89 || scalar == ascii90 || scalar == ascii95
 };
 let isDigit: Function(String): Bool = function(scalar: String): Bool {
-    contains("0123456789", scalar)
+    scalar == ascii48 || scalar == ascii49 || scalar == ascii50 || scalar == ascii51 || scalar == ascii52 || scalar == ascii53 || scalar == ascii54 || scalar == ascii55 || scalar == ascii56 || scalar == ascii57
 };
 let wordKind: Function(String): Int = function(text: String): Int {
-    loop over (List<String>["alias", "as", "branch", "break", "continue", "contract",
-        "discard", "else", "function", "implements", "let", "loop", "on", "over",
-        "panic", "product", "return", "sum", "template", "try", "type", "var",
-        "when", "while", "witness", "true", "false", "unit", "namespace", "use",
-        "public"] as keyword: String) {
-        branch when { text == keyword => { return 4; }, else => unit };
-    };
+    branch when { text == "alias" || text == "as" || text == "branch" || text == "break" || text == "continue" || text == "contract" || text == "discard" || text == "else" || text == "function" || text == "implements" || text == "let" || text == "loop" || text == "on" || text == "over" || text == "panic" || text == "product" || text == "return" || text == "sum" || text == "template" || text == "try" || text == "type" || text == "var" || text == "when" || text == "while" || text == "witness" || text == "true" || text == "false" || text == "unit" || text == "namespace" || text == "use" || text == "public" => {return 4;}, else => unit };
     1
 };
 public let scan: Function(String): Result<Paged<Token>, Diagnostic> =
@@ -24,6 +18,7 @@ function(source: String): Result<Paged<Token>, Diagnostic> {
     var cache: List<WidthEntry> = List<WidthEntry>[];
     var state: Int = 0;
     var text: String = "";
+    var fragments:List<String>=List<String>[];
     var start: Int = 0;
     var startLine: Int = 1;
     var startColumn: Int = 1;
@@ -31,7 +26,17 @@ function(source: String): Result<Paged<Token>, Diagnostic> {
     var line: Int = 1;
     var column: Int = 1;
     var previousCR: Bool = false;
-    loop over (source->scalars() as scalar: String) {
+    var sourceCursor:Int=0;
+    loop while(sourceCursor<source->length()){
+      let sourceEnd:Int=branch when{source->length()-sourceCursor>1024=>sourceCursor+1024,else=>source->length()};
+      let chunk:String=branch on source->slice(sourceCursor,sourceEnd){
+       Result<String,SliceError>::Ok(value:String)=>value,
+       Result<String,SliceError>::Err(error:SliceError)=>{
+        return Result<Paged<Token>,Diagnostic>::Err(problem("internal",Span{start:offset,end:offset,line:line,column:column},"source cursor bounds"));
+       },
+      };
+      sourceCursor=sourceEnd;
+      loop over (chunk->scalars() as scalar: String) {
         var width: Int = 0;
         loop over (cache as cached: WidthEntry) {
             branch when { cached->scalar == scalar => { width = cached->width; break; }, else => unit };
@@ -40,30 +45,31 @@ function(source: String): Result<Paged<Token>, Diagnostic> {
             width = scalarWidth(scalar);
             branch when { width > 1 => { cache = cache->append(WidthEntry{scalar: scalar, width: width}); }, else => unit };
         }, else => unit };
-        let here: Span = Span{start: offset, end: offset + width, line: line, column: column};
+        let hereStart:Int=offset;let hereEnd:Int=offset+width;let hereLine:Int=line;let hereColumn:Int=column;
         offset = offset + width;
         branch when {
-            scalar == "\r" => { line = line + 1; column = 1; },
-            scalar == "\n" => { branch when { !previousCR => { line = line + 1; }, else => unit }; column = 1; },
+            scalar == ascii13 => { line = line + 1; column = 1; },
+            scalar == ascii10 => { branch when { !previousCR => { line = line + 1; }, else => unit }; column = 1; },
             else => { column = column + 1; },
         };
-        previousCR = scalar == "\r";
-        branch when { here->start == 0 && scalar == "\u{feff}" => {
-            return Result<Paged<Token>, Diagnostic>::Err(problem("source", here, "BOM is not allowed"));
+        previousCR = scalar == ascii13;
+        branch when { hereStart == 0 && scalar == "\u{feff}" => {
+            return Result<Paged<Token>, Diagnostic>::Err(problem("source", Span{start:hereStart,end:hereEnd,line:hereLine,column:hereColumn}, "BOM is not allowed"));
         }, else => unit };
         branch when { state == 3 => {
-            branch when { scalar != "\r" && scalar != "\n" => { continue; }, else => { state = 0; } };
+            branch when { scalar != ascii13 && scalar != ascii10 => { continue; }, else => { state = 0; } };
         }, else => unit };
         branch when { state == 1 && (isLetter(scalar) || isDigit(scalar)) => {
-            text = text + scalar; continue;
+            fragments=fragments->append(scalar); continue;
         }, else => unit };
         branch when { state == 2 && isDigit(scalar) => {
-            text = text + scalar; continue;
+            fragments=fragments->append(scalar); continue;
         }, else => unit };
         branch when { state == 1 || state == 2 => {
-            let span: Span = Span{start: start, end: here->start, line: startLine, column: startColumn};
+            text=fragments->join("");
+            let span: Span = Span{start: start, end: hereStart, line: startLine, column: startColumn};
             branch when { state == 2 && (isLetter(scalar) || (text->length() > 1 && branch on text->slice(0,1) {
-                Result<String, SliceError>::Ok(first: String) => first == "0",
+                Result<String, SliceError>::Ok(first: String) => first == ascii48,
                 Result<String, SliceError>::Err(error: SliceError) => false,
             })) => {
                 return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", span, "invalid decimal literal"));
@@ -84,8 +90,8 @@ function(source: String): Result<Paged<Token>, Diagnostic> {
                     state = 0; continue;
                 },
                 else => {
-                    let span: Span = Span{start: start, end: here->start, line: startLine, column: startColumn};
-                    branch when { text == "&" || text == "|" => {
+                    let span: Span = Span{start: start, end: hereStart, line: startLine, column: startColumn};
+                    branch when { text == ascii38 || text == ascii124 => {
                         return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", span, "incomplete operator"));
                     }, else => unit };
                     tokens = push<Token>(tokens, Token{text: text, kind: 3, span: span});
@@ -94,20 +100,22 @@ function(source: String): Result<Paged<Token>, Diagnostic> {
             };
         }, else => unit };
         branch when {
-            contains(" \t\r\n", scalar) => unit,
-            isLetter(scalar) => { state = 1; text = scalar; },
-            isDigit(scalar) => { state = 2; text = scalar; },
-            contains("/-+=!<>&|:", scalar) => { state = 4; text = scalar; },
-            contains("{}();,\\*%[]", scalar) => {
-                tokens = push<Token>(tokens, Token{text: scalar, kind: 3, span: here});
+            scalar == ascii32 || scalar == ascii9 || scalar == ascii13 || scalar == ascii10 => unit,
+            isLetter(scalar) => { state = 1; fragments=List<String>[scalar]; },
+            isDigit(scalar) => { state = 2; fragments=List<String>[scalar]; },
+            scalar == ascii47 || scalar == ascii45 || scalar == ascii43 || scalar == ascii61 || scalar == ascii33 || scalar == ascii60 || scalar == ascii62 || scalar == ascii38 || scalar == ascii124 || scalar == ascii58 => { state = 4; text = scalar; },
+            scalar == ascii123 || scalar == ascii125 || scalar == ascii40 || scalar == ascii41 || scalar == ascii59 || scalar == ascii44 || scalar == ascii92 || scalar == ascii42 || scalar == ascii37 || scalar == ascii91 || scalar == ascii93 => {
+                tokens = push<Token>(tokens, Token{text: scalar, kind: 3, span: Span{start:hereStart,end:hereEnd,line:hereLine,column:hereColumn}});
             },
-            scalar == "\"" || scalar == "@" => {
-                return Result<Paged<Token>, Diagnostic>::Err(problem("unsupported", here, "source feature is not supported"));
+            scalar == ascii34 || scalar == ascii64 => {
+                return Result<Paged<Token>, Diagnostic>::Err(problem("unsupported", Span{start:hereStart,end:hereEnd,line:hereLine,column:hereColumn}, "source feature is not supported"));
             },
-            else => { return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", here, "invalid source character")); },
+            else => { return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", Span{start:hereStart,end:hereEnd,line:hereLine,column:hereColumn}, "invalid source character")); },
         };
-        start = here->start; startLine = here->line; startColumn = here->column;
+        start = hereStart; startLine = hereLine; startColumn = hereColumn;
     };
+    };
+    branch when {state==1 || state==2=>{text=fragments->join("");},else=>unit};
     let endSpan: Span = Span{start: start, end: offset, line: startLine, column: startColumn};
     branch when {
         state == 1 => { tokens = push<Token>(tokens, Token{text: text, kind: wordKind(text), span: endSpan}); },
@@ -116,13 +124,13 @@ function(source: String): Result<Paged<Token>, Diagnostic> {
                 Result<String, SliceError>::Ok(value: String) => value,
                 Result<String, SliceError>::Err(error: SliceError) => "",
             };
-            branch when { text->length() > 1 && first == "0" => {
+            branch when { text->length() > 1 && first == ascii48 => {
                 return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", endSpan, "invalid decimal literal"));
             }, else => unit };
             tokens = push<Token>(tokens, Token{text: text, kind: 2, span: endSpan});
         },
         state == 4 => {
-            branch when { text == "&" || text == "|" => {
+            branch when { text == ascii38 || text == ascii124 => {
                 return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", endSpan, "incomplete operator"));
             }, else => unit };
             tokens = push<Token>(tokens, Token{text: text, kind: 3, span: endSpan});
