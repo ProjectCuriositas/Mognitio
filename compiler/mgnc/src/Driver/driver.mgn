@@ -1,0 +1,78 @@
+namespace Mgnc\Driver;
+use Std\Io\{readTextFile,writeStderr,IoError,IoErrorKind,IoErrorPhase};
+use Std\Binary\{Bytes,publishFile,BinaryFileMode,BinaryOutputError,BinaryOutputErrorKind,BinaryOutputPhase,BinaryPublicationState};
+use Mgnc\Data\{Diagnostic,describe,contains};
+use Mgnc\Pipeline\{compile};
+public let report:Function(Int,String):Int=function(status:Int,message:String):Int{
+ branch on writeStderr(message){
+  Result<Unit,IoError>::Ok(value:Unit)=>status,
+  Result<Unit,IoError>::Err(error:IoError)=>2,
+ }
+};
+let argument:Function(List<String>,Int):String=function(args:List<String>,index:Int):String{
+ branch on args->at(index){Result<String,IndexError>::Ok(value:String)=>value,Result<String,IndexError>::Err(error:IndexError)=>""}
+};
+let endsWith:Function(String,String):Bool=function(text:String,suffix:String):Bool{
+ branch when{text->length()<suffix->length()=>false,else=>branch on text->slice(text->length()-suffix->length(),text->length()){
+  Result<String,SliceError>::Ok(value:String)=>value==suffix,Result<String,SliceError>::Err(error:SliceError)=>false}}
+};
+let ioKind:Function(IoErrorKind):String=function(kind:IoErrorKind):String{
+ branch on kind{
+  IoErrorKind::InvalidPath=>"InvalidPath",IoErrorKind::InvalidEncoding=>"InvalidEncoding",
+  IoErrorKind::NotFound=>"NotFound",IoErrorKind::PermissionDenied=>"PermissionDenied",
+  IoErrorKind::UnsupportedTarget=>"UnsupportedTarget",IoErrorKind::BrokenPipe=>"BrokenPipe",
+  IoErrorKind::ResourceExhausted=>"ResourceExhausted",IoErrorKind::Other=>"Other",
+ }
+};
+let ioPhase:Function(IoErrorPhase):String=function(phase:IoErrorPhase):String{
+ branch on phase{IoErrorPhase::Input=>"Input",IoErrorPhase::Target=>"Target",IoErrorPhase::Body=>"Body",IoErrorPhase::Cleanup=>"Cleanup"}
+};
+let outputKind:Function(BinaryOutputErrorKind):String=function(kind:BinaryOutputErrorKind):String{
+ branch on kind{
+  BinaryOutputErrorKind::InvalidPath=>"InvalidPath",BinaryOutputErrorKind::AlreadyExists=>"AlreadyExists",
+  BinaryOutputErrorKind::NotFound=>"NotFound",BinaryOutputErrorKind::PermissionDenied=>"PermissionDenied",
+  BinaryOutputErrorKind::UnsupportedTarget=>"UnsupportedTarget",BinaryOutputErrorKind::ResourceExhausted=>"ResourceExhausted",
+  BinaryOutputErrorKind::Other=>"Other",
+ }
+};
+let outputPhase:Function(BinaryOutputPhase):String=function(phase:BinaryOutputPhase):String{
+ branch on phase{BinaryOutputPhase::Input=>"Input",BinaryOutputPhase::Target=>"Target",BinaryOutputPhase::Body=>"Body",BinaryOutputPhase::Publish=>"Publish",BinaryOutputPhase::Cleanup=>"Cleanup"}
+};
+let publicationState:Function(BinaryPublicationState):String=function(state:BinaryPublicationState):String{
+ branch on state{BinaryPublicationState::NotPublished=>"NotPublished",BinaryPublicationState::Published=>"Published",BinaryPublicationState::Unknown=>"Unknown"}
+};
+public let publicationMessage:Function(BinaryOutputError):String=function(error:BinaryOutputError):String{
+ "mgnc: publication: "+error->subject+": "+outputKind(error->kind)+" / "+outputPhase(error->phase)+" / "+publicationState(error->publication)+"\n"
+};
+public let run:Function(List<String>):Int=function(args:List<String>):Int{
+ branch when{args->length()!=4=>{return report(2,"mgnc: cli: expected build source.mgn -o new-artifact\n");},else=>unit};
+ let command:String=argument(args,0);let sourcePath:String=argument(args,1);
+ let option:String=argument(args,2);let outputPath:String=argument(args,3);
+ branch when{command!="build" || option!="-o"=>{
+  return report(2,"mgnc: cli: expected build source.mgn -o new-artifact\n");
+ },else=>unit};
+ branch when{sourcePath=="" || outputPath=="" || contains(sourcePath,"\0") || contains(outputPath,"\0")=>{
+  return report(2,"mgnc: cli: InvalidPath: empty or NUL-containing path\n");
+ },else=>unit};
+ branch when{!endsWith(sourcePath,".mgn")=>{return report(2,"mgnc: cli: "+sourcePath+": source requires .mgn extension\n");},else=>unit};
+ branch when{endsWith(outputPath,"/")=>{return report(2,"mgnc: cli: "+outputPath+": InvalidPath: trailing slash\n");},else=>unit};
+ let source:String=branch on readTextFile(sourcePath){
+  Result<String,IoError>::Ok(text:String)=>text,
+  Result<String,IoError>::Err(error:IoError)=>{
+   branch when{
+    ioKind(error->kind)=="InvalidEncoding"=>{return report(1,"mgnc: source: "+sourcePath+": position unknown: InvalidEncoding\n");},
+    else=>{return report(2,"mgnc: io: "+error->subject+": "+ioKind(error->kind)+" / "+ioPhase(error->phase)+"\n");},
+   }
+  },
+ };
+ let bytes:Bytes=branch on compile(source){
+  Result<Bytes,Diagnostic>::Ok(value:Bytes)=>value,
+  Result<Bytes,Diagnostic>::Err(error:Diagnostic)=>{
+   return report(branch when{error->phase=="internal"=>3,else=>1},describe(sourcePath,error));
+  },
+ };
+ branch on publishFile(outputPath,bytes,BinaryFileMode::Executable){
+  Result<Unit,BinaryOutputError>::Ok(value:Unit)=>0,
+  Result<Unit,BinaryOutputError>::Err(error:BinaryOutputError)=>report(2,publicationMessage(error)),
+ }
+};

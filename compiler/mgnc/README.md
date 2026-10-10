@@ -20,12 +20,28 @@ Run the verified seed launcher, with an explicit path, from the repository root:
 /path/to/verified-seed/bin/mgn build compiler/mgnc/mognitio.toml -o /new/output/mgnc
 ~~~
 
-The scalar lexer, byte-span classifier, and explicit continuation parser have
-internal test runners under tests/mgnc. Structural typing, completion, scope
-checking, slot IR lowering, and CFG verification are available to those runners.
-Native generation is not connected yet. The current driver intentionally exits with an internal diagnostic until
-the compiler pipeline is connected. It does not emit a placeholder artifact.
-The public command will be mgnc build source.mgn -o new-artifact.
+## Use
+
+~~~sh
+/new/output/mgnc build path/to/source.mgn -o path/to/new-artifact
+/new/output/new-artifact argument
+~~~
+
+The source profile is a single namespace with explicitly typed scalar helpers
+and main. Main takes List<String> and returns Int; its argument list supports
+direct length queries. Helpers operate on Int, Bool and Unit. Blocks, mutable
+locals, direct calls, branches, while loops, and checked signed arithmetic are
+compiled into standalone Linux AMD64 ELF executables.
+
+The compiler validates every function before publishing a new executable.
+It never replaces an existing output, invokes a fallback compiler, or runs the
+generated program during compilation. Normal compiler output streams are empty.
+The native runtime validates UTF-8 arguments and preserves primary failures
+even when its diagnostic stream is unavailable.
+
+Internal and end-to-end runners are under tests/mgnc. Resource acceptance is
+recorded separately from functional tests; this increment does not claim the
+large-input performance budget has passed.
 
 The seed's public Product/Sum types, templates, immutable lists and strings,
 text I/O, numeric representation conversion and binary publication are the
