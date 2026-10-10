@@ -63,7 +63,7 @@ with tempfile.TemporaryDirectory(prefix="mgn-oracle-") as tmp:
   for n in range(start,min(65,start+4)):
    for signed in (False,True):
     lo,hi=bounds(n,signed);t=f"Int<{n},{'Signed' if signed else 'Unsigned'}>"
-    values=sorted(set([lo,lo+1,hi-1,hi,0,1]+([-1] if signed else [])+[rng.randint(lo,hi) for _ in range(12)]))
+    values=sorted(set([lo,lo+1,hi-1,hi,0,1]+([-1] if signed else [(1<<(n-1))-1,1<<(n-1),(1<<(n-1))+1])+[rng.randint(lo,hi) for _ in range(12)]))
     for a in values:
      vectors+=1
      body+=f"assert {lit(t,a)}->toBits()->asInteger<{'Signed' if signed else 'Unsigned'}>()=={lit(t,a)};"
