@@ -1,0 +1,81 @@
+namespace Mgnc\ParseSupport;
+use Mgnc\Data\{Paged,Token,Span,Diagnostic,lookup,problem};
+use Mgnc\Syntax\{ParsedType,Parameter};
+public type Signature = product {
+    parameters: List<Parameter>; types: List<Int>; result: Int; next: Int;
+};
+public let requireToken: Function(Paged<Token>,Int,String): Result<Int,Diagnostic> =
+function(tokens:Paged<Token>,position:Int,expected:String):Result<Int,Diagnostic>{
+    let token:Token=try lookup<Token>(tokens,position);
+    branch when {
+        token->text==expected=>Result<Int,Diagnostic>::Ok(position+1),
+        else=>Result<Int,Diagnostic>::Err(problem("parse",token->span,"expected "+expected)),
+    }
+};
+public let parseType:Function(Paged<Token>,Int):Result<ParsedType,Diagnostic>=
+function(tokens:Paged<Token>,position:Int):Result<ParsedType,Diagnostic>{
+    let token:Token=try lookup<Token>(tokens,position);
+    branch when { token->kind==0=>{ return Result<ParsedType,Diagnostic>::Err(problem("parse",token->span,"expected type")); },else=>unit };
+    let next:Token=try lookup<Token>(tokens,position+1);
+    var code:Int=0;
+    var after:Int=position+1;
+    branch when {
+        token->text=="Int"=>{
+            branch when {next->text=="<"=>{return Result<ParsedType,Diagnostic>::Err(problem("unsupported",token->span,"fixed-width type"));},else=>unit};
+            code=1;
+        },
+        token->text=="Bool"=>{code=2;},
+        token->text=="Unit"=>{code=3;},
+        token->text=="List"=>{
+            after=try requireToken(tokens,after,"<");
+            let element:Token=try lookup<Token>(tokens,after);
+            branch when {element->text!="String"=>{return Result<ParsedType,Diagnostic>::Err(problem("unsupported",token->span,"only entry List<String> is supported"));},else=>unit};
+            after=try requireToken(tokens,after+1,">");code=4;
+        },
+        token->text=="String" || token->text=="Function" || token->text=="Bits" || token->text=="Bytes"=>{
+            return Result<ParsedType,Diagnostic>::Err(problem("unsupported",token->span,"type is outside the native profile"));
+        },
+        token->kind==1=>{return Result<ParsedType,Diagnostic>::Err(problem("semantic",token->span,"unknown type"));},
+        else=>{return Result<ParsedType,Diagnostic>::Err(problem("parse",token->span,"expected type"));},
+    };
+    Result<ParsedType,Diagnostic>::Ok(ParsedType{valueType:code,next:after,span:token->span})
+};
+public let signature:Function(Paged<Token>,Int,Bool):Result<Signature,Diagnostic>=
+function(tokens:Paged<Token>,position:Int,named:Bool):Result<Signature,Diagnostic>{
+    var cursor:Int=try requireToken(tokens,position,branch when{named=>"function",else=>"Function"});
+    cursor=try requireToken(tokens,cursor,"(");
+    var types:List<Int>=List<Int>[];
+    var parameters:List<Parameter>=List<Parameter>[];
+    loop while(true){
+        let token:Token=try lookup<Token>(tokens,cursor);
+        branch when{token->text==")"=>{cursor=cursor+1;break;},else=>unit};
+        var name:String="";
+        branch when{named=>{
+            branch when{token->kind!=1=>{return Result<Signature,Diagnostic>::Err(problem("parse",token->span,"expected parameter name"));},else=>unit};
+            name=token->text;cursor=try requireToken(tokens,cursor+1,":");
+        },else=>unit};
+        let parsed:ParsedType=try parseType(tokens,cursor);
+        types=types->append(parsed->valueType);
+        branch when{named=>{parameters=parameters->append(Parameter{name:name,valueType:parsed->valueType,span:token->span});},else=>unit};
+        cursor=parsed->next;
+        let delimiter:Token=try lookup<Token>(tokens,cursor);
+        branch when{
+            delimiter->text==","=>{cursor=cursor+1;},
+            delimiter->text==")"=>{cursor=cursor+1;break;},
+            else=>{return Result<Signature,Diagnostic>::Err(problem("parse",delimiter->span,"expected comma or closing parenthesis"));},
+        };
+    };
+    cursor=try requireToken(tokens,cursor,":");
+    let result:ParsedType=try parseType(tokens,cursor);
+    Result<Signature,Diagnostic>::Ok(Signature{parameters:parameters,types:types,result:result->valueType,next:result->next})
+};
+public let precedence:Function(String):Int=function(operator:String):Int{
+    branch when{
+        operator=="||"=>10,operator=="&&"=>20,
+        operator=="==" || operator=="!="=>30,
+        operator=="<" || operator==">" || operator=="<=" || operator==">="=>40,
+        operator=="+" || operator=="-"=>50,
+        operator=="*" || operator=="/" || operator=="%"=>60,
+        else=>0,
+    }
+};

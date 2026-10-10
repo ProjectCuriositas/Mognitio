@@ -20,7 +20,9 @@ Run the verified seed launcher, with an explicit path, from the repository root:
 /path/to/verified-seed/bin/mgn build compiler/mgnc/mognitio.toml -o /new/output/mgnc
 ~~~
 
-The current foundation intentionally exits with an internal diagnostic until
+The scalar lexer, byte-span classifier, and explicit continuation parser have
+internal test runners under tests/mgnc. They are not yet connected to semantic
+analysis or native generation. The current driver intentionally exits with an internal diagnostic until
 the compiler pipeline is connected. It does not emit a placeholder artifact.
 The public command will be mgnc build source.mgn -o new-artifact.
 

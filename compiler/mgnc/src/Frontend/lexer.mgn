@@ -1,0 +1,135 @@
+namespace Mgnc\Frontend;
+use Mgnc\Data\{Paged, empty, push, Span, Diagnostic, Token, problem, contains};
+use Mgnc\Width\{scalarWidth};
+type WidthEntry = product { scalar: String; width: Int; };
+let isLetter: Function(String): Bool = function(scalar: String): Bool {
+    contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_", scalar)
+};
+let isDigit: Function(String): Bool = function(scalar: String): Bool {
+    contains("0123456789", scalar)
+};
+let wordKind: Function(String): Int = function(text: String): Int {
+    loop over (List<String>["alias", "as", "branch", "break", "continue", "contract",
+        "discard", "else", "function", "implements", "let", "loop", "on", "over",
+        "panic", "product", "return", "sum", "template", "try", "type", "var",
+        "when", "while", "witness", "true", "false", "unit", "namespace", "use",
+        "public"] as keyword: String) {
+        branch when { text == keyword => { return 4; }, else => unit };
+    };
+    1
+};
+public let scan: Function(String): Result<Paged<Token>, Diagnostic> =
+function(source: String): Result<Paged<Token>, Diagnostic> {
+    var tokens: Paged<Token> = empty<Token>();
+    var cache: List<WidthEntry> = List<WidthEntry>[];
+    var state: Int = 0;
+    var text: String = "";
+    var start: Int = 0;
+    var startLine: Int = 1;
+    var startColumn: Int = 1;
+    var offset: Int = 0;
+    var line: Int = 1;
+    var column: Int = 1;
+    var previousCR: Bool = false;
+    loop over (source->scalars() as scalar: String) {
+        var width: Int = 0;
+        loop over (cache as cached: WidthEntry) {
+            branch when { cached->scalar == scalar => { width = cached->width; break; }, else => unit };
+        };
+        branch when { width == 0 => {
+            width = scalarWidth(scalar);
+            branch when { width > 1 => { cache = cache->append(WidthEntry{scalar: scalar, width: width}); }, else => unit };
+        }, else => unit };
+        let here: Span = Span{start: offset, end: offset + width, line: line, column: column};
+        offset = offset + width;
+        branch when {
+            scalar == "\r" => { line = line + 1; column = 1; },
+            scalar == "\n" => { branch when { !previousCR => { line = line + 1; }, else => unit }; column = 1; },
+            else => { column = column + 1; },
+        };
+        previousCR = scalar == "\r";
+        branch when { here->start == 0 && scalar == "\u{feff}" => {
+            return Result<Paged<Token>, Diagnostic>::Err(problem("source", here, "BOM is not allowed"));
+        }, else => unit };
+        branch when { state == 3 => {
+            branch when { scalar != "\r" && scalar != "\n" => { continue; }, else => { state = 0; } };
+        }, else => unit };
+        branch when { state == 1 && (isLetter(scalar) || isDigit(scalar)) => {
+            text = text + scalar; continue;
+        }, else => unit };
+        branch when { state == 2 && isDigit(scalar) => {
+            text = text + scalar; continue;
+        }, else => unit };
+        branch when { state == 1 || state == 2 => {
+            let span: Span = Span{start: start, end: here->start, line: startLine, column: startColumn};
+            branch when { state == 2 && (isLetter(scalar) || (text->length() > 1 && branch on text->slice(0,1) {
+                Result<String, SliceError>::Ok(first: String) => first == "0",
+                Result<String, SliceError>::Err(error: SliceError) => false,
+            })) => {
+                return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", span, "invalid decimal literal"));
+            }, else => unit };
+            let kind: Int = branch when { state == 1 => wordKind(text), else => 2 };
+            tokens = push<Token>(tokens, Token{text: text, kind: kind, span: span});
+            state = 0;
+        }, else => unit };
+        branch when { state == 4 => {
+            let pair: String = text + scalar;
+            branch when {
+                pair == "//" => { state = 3; continue; },
+                pair == "->" || pair == "=>" || pair == "==" || pair == "!=" ||
+                pair == "<=" || pair == ">=" || pair == "&&" || pair == "||" ||
+                pair == "::" => {
+                    tokens = push<Token>(tokens, Token{text: pair, kind: 3,
+                        span: Span{start: start, end: offset, line: startLine, column: startColumn}});
+                    state = 0; continue;
+                },
+                else => {
+                    let span: Span = Span{start: start, end: here->start, line: startLine, column: startColumn};
+                    branch when { text == "&" || text == "|" => {
+                        return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", span, "incomplete operator"));
+                    }, else => unit };
+                    tokens = push<Token>(tokens, Token{text: text, kind: 3, span: span});
+                    state = 0;
+                },
+            };
+        }, else => unit };
+        branch when {
+            contains(" \t\r\n", scalar) => unit,
+            isLetter(scalar) => { state = 1; text = scalar; },
+            isDigit(scalar) => { state = 2; text = scalar; },
+            contains("/-+=!<>&|:", scalar) => { state = 4; text = scalar; },
+            contains("{}();,\\*%[]", scalar) => {
+                tokens = push<Token>(tokens, Token{text: scalar, kind: 3, span: here});
+            },
+            scalar == "\"" || scalar == "@" => {
+                return Result<Paged<Token>, Diagnostic>::Err(problem("unsupported", here, "source feature is not supported"));
+            },
+            else => { return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", here, "invalid source character")); },
+        };
+        start = here->start; startLine = here->line; startColumn = here->column;
+    };
+    let endSpan: Span = Span{start: start, end: offset, line: startLine, column: startColumn};
+    branch when {
+        state == 1 => { tokens = push<Token>(tokens, Token{text: text, kind: wordKind(text), span: endSpan}); },
+        state == 2 => {
+            let first: String = branch on text->slice(0,1) {
+                Result<String, SliceError>::Ok(value: String) => value,
+                Result<String, SliceError>::Err(error: SliceError) => "",
+            };
+            branch when { text->length() > 1 && first == "0" => {
+                return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", endSpan, "invalid decimal literal"));
+            }, else => unit };
+            tokens = push<Token>(tokens, Token{text: text, kind: 2, span: endSpan});
+        },
+        state == 4 => {
+            branch when { text == "&" || text == "|" => {
+                return Result<Paged<Token>, Diagnostic>::Err(problem("lexical", endSpan, "incomplete operator"));
+            }, else => unit };
+            tokens = push<Token>(tokens, Token{text: text, kind: 3, span: endSpan});
+        },
+        else => unit,
+    };
+    tokens = push<Token>(tokens, Token{text: "", kind: 0,
+        span: Span{start: offset, end: offset, line: line, column: column}});
+    Result<Paged<Token>, Diagnostic>::Ok(tokens)
+};

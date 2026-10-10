@@ -1,0 +1,188 @@
+namespace Mgnc\Parser;
+use Mgnc\ParseSupport\{requireToken,parseType,precedence};
+use Mgnc\Data\{Paged,empty,push,lookup,Token,Span,Diagnostic,problem};
+use Mgnc\Syntax\{Node,Parent,Frame,ParsedExpression,ParsedType};
+public let expression:Function(Paged<Token>,Int,Paged<Node>):Result<ParsedExpression,Diagnostic>=
+function(tokens:Paged<Token>,begin:Int,initial:Paged<Node>):Result<ParsedExpression,Diagnostic>{
+ var nodes:Paged<Node>=initial;
+ var frames:Paged<Frame>=empty<Frame>();
+ var parent:Parent=Parent::None;
+ var cursor:Int=begin;
+ var mode:Int=0;
+ var start:Int=begin;
+ var power:Int=0;
+ var first:Int=0;
+ var site:Int=begin;
+ var children:List<Int>=List<Int>[];
+ var text:String="";
+ var annotation:Int=0;
+ var flag:Bool=false;
+ var ready:Bool=false;
+ var last:Int=0;
+ loop while(true){
+  branch when{ready=>{
+   branch on parent{
+    Parent::None=>{return Result<ParsedExpression,Diagnostic>::Ok(ParsedExpression{nodes:nodes,root:last,next:cursor});},
+    Parent::Some(index:Int)=>{
+     let frame:Frame=try lookup<Frame>(frames,index);
+parent=frame->parent;mode=frame->mode;start=frame->start;power=frame->power;first=frame->first;site=frame->site;children=frame->children;text=frame->text;annotation=frame->annotation;flag=frame->flag;
+    },
+   };
+   ready=false;
+  },else=>unit};
+  let token:Token=try lookup<Token>(tokens,cursor);
+  let origin:Token=try lookup<Token>(tokens,start);
+  branch when{
+   mode==0=>{
+    branch when{
+     token->kind==2 || token->text=="true" || token->text=="false" || token->text=="unit"=>{
+      text=token->text;cursor=cursor+1;
+first=nodes->count;nodes=push<Node>(nodes,Node{kind:1,text:text,children:List<Int>[],span:origin->span,annotation:0,flag:false});mode=1;continue;
+     },
+     token->kind==1=>{text=token->text;cursor=cursor+1;
+first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<Int>[],span:origin->span,annotation:0,flag:false});mode=1;continue;
+     },
+     token->text=="("=>{cursor=cursor+1;frames=push<Frame>(frames,Frame{parent:parent,mode:3,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
+     token->text=="-" || token->text=="!"=>{text=token->text;cursor=cursor+1;frames=push<Frame>(frames,Frame{parent:parent,mode:2,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=70;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
+     token->text=="{"=>{frames=push<Frame>(frames,Frame{parent:parent,mode:90,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);cursor=cursor+1;mode=10;start=cursor-1;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
+     token->text=="branch"=>{
+      cursor=try requireToken(tokens,cursor+1,"when");cursor=try requireToken(tokens,cursor,"{");
+      frames=push<Frame>(frames,Frame{parent:parent,mode:90,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=30;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+     },
+     token->text=="loop"=>{
+      let loopKind:Token=try lookup<Token>(tokens,cursor+1);
+      branch when{loopKind->text!="while"=>{return Result<ParsedExpression,Diagnostic>::Err(problem("unsupported",token->span,"only loop while is supported"));},else=>unit};
+      cursor=try requireToken(tokens,cursor+2,"(");frames=push<Frame>(frames,Frame{parent:parent,mode:90,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=20;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+     },
+     token->text=="function" || token->text=="try" || token->text=="panic" || token->text=="type" || token->text=="template" || token->text=="use"=>{
+      return Result<ParsedExpression,Diagnostic>::Err(problem("unsupported",token->span,"expression is outside the native profile"));
+     },
+     else=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",token->span,"expected expression"));},
+    };
+   },
+   mode==90=>{first=last;mode=1;continue;},
+   mode==1=>{
+    branch when{
+     token->text=="("=>{
+      cursor=cursor+1;children=List<Int>[first];
+      let next:Token=try lookup<Token>(tokens,cursor);
+      branch when{next->text==")"=>{cursor=cursor+1;first=nodes->count;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});mode=1;continue;},else=>unit};
+      frames=push<Frame>(frames,Frame{parent:parent,mode:5,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+     },
+     token->text=="->"=>{
+      let member:Token=try lookup<Token>(tokens,cursor+1);
+      branch when{member->text!="length"=>{return Result<ParsedExpression,Diagnostic>::Err(problem("unsupported",member->span,"only entry length is supported"));},else=>unit};
+      cursor=try requireToken(tokens,cursor+2,"(");
+      cursor=try requireToken(tokens,cursor,")");
+      first=nodes->count;nodes=push<Node>(nodes,Node{kind:7,text:"length",children:List<Int>[first],span:origin->span,annotation:0,flag:false});mode=1;continue;
+     },
+     else=>unit,
+    };
+    let bindingPower:Int=precedence(token->text);
+    branch when{bindingPower==0 || bindingPower<=power=>{last=first;ready=true;continue;},else=>unit};
+    let left:Node=try lookup<Node>(nodes,first);
+    branch when{bindingPower>=30 && bindingPower<=40 && left->kind==5 && precedence(left->text)>=30 && precedence(left->text)<=40=>{
+     return Result<ParsedExpression,Diagnostic>::Err(problem("parse",token->span,"comparison chaining requires grouping"));
+    },else=>unit};
+    text=token->text;cursor=cursor+1;
+    frames=push<Frame>(frames,Frame{parent:parent,mode:4,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=bindingPower;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+   },
+   mode==2=>{first=nodes->count;nodes=push<Node>(nodes,Node{kind:4,text:text,children:List<Int>[last],span:origin->span,annotation:0,flag:false});mode=1;continue;},
+   mode==3=>{
+    cursor=try requireToken(tokens,cursor,")");
+    first=nodes->count;nodes=push<Node>(nodes,Node{kind:3,text:"",children:List<Int>[last],span:origin->span,annotation:0,flag:false});mode=1;continue;
+   },
+   mode==4=>{first=nodes->count;nodes=push<Node>(nodes,Node{kind:5,text:text,children:List<Int>[first,last],span:origin->span,annotation:0,flag:false});mode=1;continue;},
+   mode==5=>{
+    children=children->append(last);
+    branch when{
+     token->text==")"=>{cursor=cursor+1;first=nodes->count;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});mode=1;continue;},
+     token->text==","=>{
+      cursor=cursor+1;let next:Token=try lookup<Token>(tokens,cursor);
+      branch when{next->text==")"=>{cursor=cursor+1;first=nodes->count;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});mode=1;continue;},else=>unit};
+      frames=push<Frame>(frames,Frame{parent:parent,mode:5,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+     },
+     else=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",token->span,"expected comma or closing parenthesis"));},
+    };
+   },
+   mode==10=>{
+    branch when{token->kind==0=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",token->span,"expected closing brace"));},else=>unit};
+    branch when{
+     token->text=="}"=>{cursor=cursor+1;last=nodes->count;nodes=push<Node>(nodes,Node{kind:8,text:"",children:children,span:origin->span,annotation:0,flag:false});ready=true;continue;},
+     token->text=="let" || token->text=="var"=>{
+      flag=token->text=="var";site=cursor+1;
+      let name:Token=try lookup<Token>(tokens,cursor+1);
+      branch when{name->kind!=1=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",name->span,"expected binding name"));},else=>unit};
+      text=name->text;
+      cursor=try requireToken(tokens,cursor+2,":");
+      let parsed:ParsedType=try parseType(tokens,cursor);
+      annotation=parsed->valueType;cursor=try requireToken(tokens,parsed->next,"=");
+      frames=push<Frame>(frames,Frame{parent:parent,mode:13,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+     },
+     token->text=="return"=>{site=cursor;cursor=cursor+1;frames=push<Frame>(frames,Frame{parent:parent,mode:15,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
+     token->text=="discard"=>{site=cursor;cursor=cursor+1;frames=push<Frame>(frames,Frame{parent:parent,mode:16,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
+     token->text=="break" || token->text=="continue"=>{
+      let kind:Int=branch when{token->text=="break"=>12,else=>13};
+      cursor=try requireToken(tokens,cursor+1,";");
+      let id:Int=nodes->count;nodes=push<Node>(nodes,Node{kind:kind,text:token->text,children:List<Int>[],span:token->span,annotation:0,flag:false});
+      children=children->append(id);continue;
+     },
+     token->text=="type" || token->text=="template" || token->text=="alias"=>{
+      return Result<ParsedExpression,Diagnostic>::Err(problem("unsupported",token->span,"local declaration is outside the native profile"));
+     },
+     else=>unit,
+    };
+    let following:Token=try lookup<Token>(tokens,cursor+1);
+    branch when{token->kind==1 && following->text=="="=>{
+      text=token->text;site=cursor;cursor=cursor+2;frames=push<Frame>(frames,Frame{parent:parent,mode:14,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+    },else=>unit};
+    frames=push<Frame>(frames,Frame{parent:parent,mode:12,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+   },
+   mode==12=>{
+    branch when{token->text=="}"=>{
+      children=children->append(last);cursor=cursor+1;last=nodes->count;nodes=push<Node>(nodes,Node{kind:8,text:"",children:children,span:origin->span,annotation:0,flag:true});ready=true;continue;
+    },else=>unit};
+    cursor=try requireToken(tokens,cursor,";");
+    let id:Int=nodes->count;nodes=push<Node>(nodes,Node{kind:15,text:"",children:List<Int>[last],span:origin->span,annotation:0,flag:false});
+    children=children->append(id);mode=10;continue;
+   },
+   mode==13 || mode==14 || mode==15 || mode==16=>{
+    cursor=try requireToken(tokens,cursor,";");
+    let location:Token=try lookup<Token>(tokens,site);
+    let kind:Int=branch when{mode==13=>9,mode==14=>10,mode==15=>11,else=>14};
+    let id:Int=nodes->count;nodes=push<Node>(nodes,Node{kind:kind,text:text,children:List<Int>[last],span:location->span,annotation:annotation,flag:flag});
+    children=children->append(id);mode=10;continue;
+   },
+   mode==20=>{frames=push<Frame>(frames,Frame{parent:parent,mode:21,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
+   mode==21=>{
+    first=last;cursor=try requireToken(tokens,cursor,")");
+    let next:Token=try lookup<Token>(tokens,cursor);
+    branch when{next->text!="{"=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",next->span,"expected loop body"));},else=>unit};
+    frames=push<Frame>(frames,Frame{parent:parent,mode:22,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+   },
+   mode==22=>{last=nodes->count;nodes=push<Node>(nodes,Node{kind:17,text:"",children:List<Int>[first,last],span:origin->span,annotation:0,flag:false});ready=true;continue;},
+   mode==30=>{
+    branch when{token->text=="else"=>{
+      cursor=try requireToken(tokens,cursor+1,"=>");frames=push<Frame>(frames,Frame{parent:parent,mode:33,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+    },else=>unit};
+    frames=push<Frame>(frames,Frame{parent:parent,mode:31,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+   },
+   mode==31=>{
+    children=children->append(last);cursor=try requireToken(tokens,cursor,"=>");
+    frames=push<Frame>(frames,Frame{parent:parent,mode:32,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+   },
+   mode==32=>{
+    children=children->append(last);cursor=try requireToken(tokens,cursor,",");
+    mode=30;continue;
+   },
+   mode==33=>{
+    children=children->append(last);
+    branch when{token->text==","=>{cursor=cursor+1;},else=>unit};
+    cursor=try requireToken(tokens,cursor,"}");
+    last=nodes->count;nodes=push<Node>(nodes,Node{kind:16,text:"",children:children,span:origin->span,annotation:0,flag:false});ready=true;continue;
+   },
+   else=>{return Result<ParsedExpression,Diagnostic>::Err(problem("internal",token->span,"invalid parser continuation"));},
+  };
+ };
+ panic {"unreachable parser exit"}
+};

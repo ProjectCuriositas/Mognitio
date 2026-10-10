@@ -1,0 +1,21 @@
+namespace Mgnc\Syntax;
+use Mgnc\Data\{Paged, Span};
+// Node IDs only reference earlier nodes in the arena.
+public type Node = product {
+    kind: Int; text: String; children: List<Int>; span: Span; annotation: Int; flag: Bool;
+};
+public type Parameter = product { name: String; valueType: Int; span: Span; };
+public type Declaration = product {
+    name: String; parameters: List<Parameter>; declaredParameters: List<Int>;
+    result: Int; declaredResult: Int; body: Int; span: Span; mutable: Bool;
+};
+public type Program = product {
+    nodes: Paged<Node>; declarations: List<Declaration>; moduleName: String; end: Span;
+};
+public type ParsedType = product { valueType: Int; next: Int; span: Span; };
+public type ParsedExpression = product { nodes: Paged<Node>; root: Int; next: Int; };
+public type Parent = sum { None; Some(Int); };
+public type Frame = product {
+    parent: Parent; mode: Int; start: Int; power: Int; first: Int; site: Int;
+    children: List<Int>; text: String; annotation: Int; flag: Bool;
+};
