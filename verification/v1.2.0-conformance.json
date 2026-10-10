@@ -88,7 +88,8 @@
       "evidence": [
         "tests/v120-value-arguments.lisp",
         "tests/v120-projects.py",
-        "tests/v120-numeric.py"
+        "tests/v120-numeric.py",
+        "tests/v120-acceptance-edges.py"
       ],
       "disposition": "required-execution"
     },
@@ -98,7 +99,8 @@
       "evidence": [
         "tests/v120-value-arguments.lisp",
         "tests/v120-projects.py",
-        "tests/v120-numeric.py"
+        "tests/v120-numeric.py",
+        "tests/v120-acceptance-edges.py"
       ],
       "disposition": "required-execution"
     },
@@ -117,7 +119,8 @@
       "gate": "1.2.0",
       "evidence": [
         "tests/v120-numeric.py",
-        "tests/v120-numeric-oracle.py"
+        "tests/v120-numeric-oracle.py",
+        "tests/v120-acceptance-edges.py"
       ],
       "disposition": "required-execution"
     },
@@ -200,7 +203,8 @@
       "evidence": [
         "tests/v120-numeric.py",
         "tests/v120-numeric-oracle.py",
-        "tests/v120-bytes.py"
+        "tests/v120-bytes.py",
+        "tests/v120-acceptance-edges.py"
       ],
       "disposition": "required-execution"
     },
@@ -365,7 +369,8 @@
       "evidence": [
         "tests/v120-numeric.py",
         "tests/v120-numeric-oracle.py",
-        "tests/v120-bytes.py"
+        "tests/v120-bytes.py",
+        "tests/v120-acceptance-edges.py"
       ],
       "disposition": "required-execution"
     },

@@ -12,14 +12,14 @@ def run(args):
 def trunc(a,b):return (abs(a)//abs(b))*(-1 if (a<0)!=(b<0) else 1)
 def bounds(n,s):return (-(1<<(n-1)),(1<<(n-1))-1) if s else (0,(1<<n)-1)
 def lit(t,n):return f"{t}{{{n}}}"
-def unwrap(expr,t):return f'branch on {expr}{{Result<{t},IntegerConversionError>::Ok(converted:{t})=>converted,Result<{t},IntegerConversionError>::Err(e:IntegerConversionError)=>panic{{"oracle conversion"}}}}'
+def unwrap(expr,t,error="IntegerConversionError"):return f'branch on {expr}{{Result<{t},{error}>::Ok(converted:{t})=>converted,Result<{t},{error}>::Err(e:{error})=>panic{{"oracle conversion"}}}}'
 def execute(body,root):
  extra=""
  if body.startswith("assert "):
   parts=[part for part in body.split(";") if part];chunks=[parts[i:i+24] for i in range(0,len(parts),24)]
   extra="".join(f"let case{i}:Function():Unit=function():Unit{{"+";".join(chunk)+";unit};" for i,chunk in enumerate(chunks))
   body="".join(f"case{i}();" for i in range(len(chunks)))
- (root/"src/app.mgn").write_text("namespace App;use Std\\Numeric\\{Bits,Signed,Unsigned,IntegerConversionError};"+extra+"let main:Function(List<String>):Int=function(args:List<String>):Int{"+body+"0};")
+ (root/"src/app.mgn").write_text("namespace App;use Std\\Numeric\\{Bits,Signed,Unsigned,IntegerConversionError,BitShiftError};"+extra+"let main:Function(List<String>):Int=function(args:List<String>):Int{"+body+"0};")
  run([ROOT/"bin/mgn","run",root/"mognitio.toml"])
  run([ROOT/"bin/mgn","build",root/"mognitio.toml","-o",root/"program"])
  run([root/"program"])
@@ -36,7 +36,16 @@ with tempfile.TemporaryDirectory(prefix="mgn-oracle-") as tmp:
      if b:values += [trunc(a,b),a-trunc(a,b)*b]
      for value in values:
       if lo<=value<=hi:count+=1;total+=value
-   body=f"var count:Int=0;var total:Int=0;var a:Int={lo};loop while(a<={hi}){{let x:{t}="+unwrap(f"a->convertTo<{t}>()",t)+f";assert x->toBits()->asInteger<{'Signed' if signed else 'Unsigned'}>()==x;var b:Int={lo};loop while(b<={hi}){{let y:{t}="+unwrap(f"b->convertTo<{t}>()",t)+";"
+   bits=f"Bits<{n}>"
+   unary=f"let pattern:Int=branch when{{a<0=>a+{1<<n},else=>a}};"
+   unary+="assert "+unwrap("x->toBits()->not()->asInteger<Unsigned>()->convertTo<Int>()","Int")+f"=={(1<<n)-1}-pattern;"
+   unary+=f"branch when{{(-a)>={lo} && (-a)<={hi}=>{{assert "+unwrap("(-x)->convertTo<Int>()","Int")+"==(-a);},else=>{}};"
+   unary+=f"var bitIndex:Int=0;var factor:Int=1;loop while(bitIndex<{n}){{"
+   for method,expected in (("shiftLeft",f"(pattern*factor)%{1<<n}"),("shiftRight","pattern/factor")):
+    shifted=unwrap(f"x->toBits()->{method}(bitIndex)",bits,"BitShiftError")
+    unary+="assert "+unwrap(f"({shifted})->asInteger<Unsigned>()->convertTo<Int>()","Int")+f"==({expected});"
+   unary+="assert "+unwrap("x->toBits()->at(bitIndex)","Bool","IndexError")+"==((pattern/factor)%2==1);bitIndex=bitIndex+1;factor=factor*2;};"
+   body=f"var count:Int=0;var total:Int=0;var a:Int={lo};loop while(a<={hi}){{let x:{t}="+unwrap(f"a->convertTo<{t}>()",t)+f";assert x->toBits()->asInteger<{'Signed' if signed else 'Unsigned'}>()==x;{unary}var b:Int={lo};loop while(b<={hi}){{let y:{t}="+unwrap(f"b->convertTo<{t}>()",t)+";"
    body+="assert (x<y)==(a<b);assert (x==y)==(a==b);"
    for op in ("+","-","*","/","%"):
     expr=f"a{op}b"
