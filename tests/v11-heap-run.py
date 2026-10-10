@@ -67,7 +67,7 @@ def capture(image, profile, fail_fd=None):
                 part = os.read(event_read, 40 - len(ready))
                 assert part, "ready EOF"
                 ready += part
-            assert ready[:8] == bytes.fromhex("4d474e5403000100"), ready
+            assert ready[:8] == bytes.fromhex("4d474e5404000100"), ready
             assert ready[8:32] == bytes(24) and ready[32:] == bytes([255])*8
             os.write(gate_write, b"\x01")
             os.close(gate_write); owned.remove(gate_write)

@@ -83,19 +83,19 @@
     (multiple-value-bind (out err code) (v12-driver (v13-manifest (format nil "discard readDirectory(~S);0" root)))
       (same "" out) (same 4 code) (is (search "allocation failure" err)))
     (same before (v11-fd-snapshot)))
-  ;; An independent v2 reader boundary rejects the real v3 child's first ready
-  ;; record. The opposite direction is the v2 child fixture above, not a claim
+  ;; An independent v3 reader boundary rejects the real v4 child's first ready
+  ;; record. The opposite direction is the v3 child fixture above, not a claim
   ;; that a second installed compiler build was used.
   (let ((original (fdefinition 'mognitio.testing::accept-event)) (attempt nil) (seen nil))
     (replacing (mognitio.testing::accept-event
       (lambda (reader)
         (let ((bytes (mognitio.testing::event-reader-buffer reader)))
           (setf seen (aref bytes 4))
-          (unless (and (= (aref bytes 4) 2) (= (aref bytes 5) 0))
-            (internal-error "Independent v2 reader rejects this ready version")))
+          (unless (and (= (aref bytes 4) 3) (= (aref bytes 5) 0))
+            (internal-error "Independent v3 reader rejects this ready version")))
         (funcall original reader)))
       (multiple-value-bind (out err code)
           (v11-driver (v11-manifest "unit" 1) (lambda (point object) (when (eq point :before-spawn) (setf attempt object))))
-        (same 3 code) (same "" out) (same 3 seen) (is (search "v2 reader rejects" err))
+        (same 3 code) (same "" out) (same 4 seen) (is (search "v3 reader rejects" err))
         (same nil (mognitio.testing::attempt-resources-execution-delegated attempt))))
     (v11-assert-released attempt)))
