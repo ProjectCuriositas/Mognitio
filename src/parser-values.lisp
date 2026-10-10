@@ -100,6 +100,11 @@
                                :span (p-span p name (p-expect p :right-bracket)))))
       ((and category (eq (p-kind p) :left-brace))
        (p-take p)
+       (when (member (p-kind p) '(:integer :sub :left-paren))
+         (let ((value (p-value-argument p t)))
+           (return-from p-named-expression
+             (mognitio.syntax::make-scalar-literal :type name :value value
+               :span (p-span p name (p-expect p :right-brace))))))
        (let ((fields (p-list p
                        (lambda (p) (let ((label (p-name p)))
                          (p-expect p :colon)

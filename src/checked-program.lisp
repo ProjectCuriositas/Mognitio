@@ -7,6 +7,7 @@
     (void-literal (v-finish node :void t nil))
     (mognitio.syntax::io-expression (v-io-expression node))
     (mognitio.syntax::runtime-arguments (v-finish node '(:list :string) t nil))
+    (mognitio.syntax::scalar-literal (v-scalar-literal node))
     (integer-literal
      (let ((value (parse-integer (token-text (integer-literal-token node)))))
        (v-check (and (<= 0 value mognitio.integer:+maximum+) (= value (checked-literal (v-program) node))) "Invalid Int literal"))
@@ -26,6 +27,7 @@
                         (specialization-reference-arguments node)))
             (call (checked-call (v-program) node)))
        (v-check (and signature (= (length arguments) (length (signature-type-parameters signature)))) "Invalid template reference")
+       (record-numeric-substitution (v-context) (signature-type-parameters signature) arguments (node-span node))
        (let ((type (substitute-generic-type (v-context) (signature-type signature) (pairlis (signature-type-parameters signature) arguments))))
          (v-check (and (= (call-info-owner call) (v-owner)) (= (call-info-template call) (signature-id signature))
                        (equal arguments (call-info-type-arguments call)) (equal type (call-info-type call))
@@ -166,6 +168,8 @@
     (if (mognitio.syntax::program-project program)
         (mognitio.project::verify-project-bodies checked)
         (progn (v-sequence program (program-statements program) (program-root program)) (v-exact program :bool)))
+    (solve-numeric-constraints context)
+    (v-check (same-numeric-constraints-p context (checked-program-values checked)) "Changed numeric constraints")
     (loop for sig across signatures for id from 0 do
       (v-check (and (= id (signature-id sig))
                     (v-set-equal (signature-captures sig) (gethash id (verification-state-captures *verification*)))) "Invalid capture snapshot layout"))

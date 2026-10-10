@@ -1,6 +1,6 @@
 (in-package #:mognitio.ir)
 
-(defparameter *value-operations* '(:io.call :struct.make :enum.make :struct.field :enum.tag :enum.payload :interface.pack :call.interface
+(defparameter *value-operations* '(:integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :numeric :io.call :struct.make :enum.make :struct.field :enum.tag :enum.payload :interface.pack :call.interface
     :closure.make :closure.env.get :closure.call :list.empty :list.length :list.append :list.at :list.buffer :buffer.length :buffer.get :text.scalars :text.join :text.slice.result))
 
 (defun verify-core-types (context functions)
@@ -128,6 +128,15 @@
                                  (and tag constant (eq :enum.tag (instruction-op tag)) (equal (list subject) (instruction-operands tag))
                                       (eq :constant (instruction-op constant)) (eql variant (instruction-value constant)))))))))))
       (case op
+        ((:integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at) (verify-numeric-method-instruction op data result types context))
+        (:numeric
+         (and (listp data) (= 2 (length data))
+              (let* ((kind (first data)) (type (second data)) (unary (eq kind :neg)))
+                (and (mognitio.semantic::numeric-scalar-p type)
+                     (not (mognitio.semantic::symbolic-type-p type))
+                     (mognitio.semantic::numeric-operator-p type (if unary :sub kind) unary)
+                     (= (length types) (if unary 1 2)) (every (lambda (x) (equal x type)) types)
+                     (equal result (if (member kind '(:eq :ne :lt :le :gt :ge)) :bool type))))))
         (:io.call (verify-io-instruction instruction types context caller functions))
         (:closure.make
          (let ((target (gethash data functions)))
@@ -217,3 +226,32 @@
                      (= (length targets) (length (third data))) (subsetp targets (third data)) (subsetp (third data) targets)
                      (every (lambda (target) (push (cons target (instruction-span instruction)) (gethash caller edges)) (gethash target functions)) targets)))))
         (otherwise nil)))))
+
+(defun verify-numeric-method-instruction (op source result types context)
+  (let* ((parts (mognitio.semantic::canonical-result-arguments context result))
+         (success (first parts)) (error (second parts))
+         (bits (mognitio.semantic::bits-type-p source)))
+    (labels ((error-is (name fields)
+               (and (nominal-type-p error :struct)
+                    (let ((info (context-type context error)))
+                      (and (equal name (type-info-name info)) (equal fields (type-info-fields info))))))
+             (args (&rest rest) (equal types (cons source rest))))
+      (and (equal source (first types))
+           (case op
+             (:integer.convert
+              (and (mognitio.semantic::integer-type-p source) (mognitio.semantic::integer-type-p success)
+                   (args) (error-is "standard:Std\\Numeric#IntegerConversionError" nil)))
+             (:integer.to-bits
+              (and (mognitio.semantic::integer-type-p source) (args)
+                   (equal result (list :bits (mognitio.semantic::integer-width source)))))
+             (:bits.integer
+              (and bits (args) (mognitio.semantic::fixed-integer-p result) (equal (second result) (second source))))
+             (:bits.length (and bits (args) (eq result :int)))
+             ((:bits.and :bits.or :bits.xor) (and bits (args source) (equal source result)))
+             (:bits.not (and bits (args) (equal source result)))
+             ((:bits.left :bits.right)
+              (and bits (args :int) (equal success source)
+                   (error-is "standard:Std\\Numeric#BitShiftError" '(("count" . :int) ("width" . :int)))))
+             (:bits.at
+              (and bits (args :int) (eq success :bool)
+                   (error-is "IndexError" '(("index" . :int) ("length" . :int))))))))))

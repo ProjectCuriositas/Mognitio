@@ -5,7 +5,9 @@
       (mognitio.integer:decimal-magnitude (token-text (integer-literal-token node)) negative)
     (unless valid (fail-at (node-span node) :type "Integer literal out of range")) value))
 (defun c-primitive-rule (node op children unary)
-  (let* ((candidates (cond
+  (let* ((numeric (find-if #'numeric-scalar-p (mapcar #'c-structure children)))
+         (candidates (cond
+                       (numeric (when (numeric-operator-p numeric op unary) (list numeric)))
                        (unary (if (eq op :not) '(:bool) '(:int)))
                        ((member op '(:and :or)) '(:bool))
                        ((eq op :add) '(:int :string))
@@ -67,6 +69,7 @@
     (void-literal (c-summary node :void t nil))
     (mognitio.syntax::io-expression (c-io-expression node))
     (mognitio.syntax::runtime-arguments (c-summary node '(:list :string) t nil))
+    (mognitio.syntax::scalar-literal (c-scalar-literal node))
     (integer-literal
      (setf (gethash node (checked-program-literals *checked*)) (c-literal node))
      (c-summary node :int t nil))
@@ -148,6 +151,7 @@
                       *template-edges* (lambda (span) (fail-at span :semantic "Cyclic template reference")))
     (loop for sig across (checked-program-signatures *checked*) do
       (setf (signature-captures sig) (sort (signature-captures sig) #'< :key #'local-symbol-id)))
+    (solve-numeric-constraints (c-context))
     (check-attribute-types *checked*)
     *checked*))
 (defun checked-string-literals (checked)

@@ -34,8 +34,8 @@
         (by-source (make-hash-table :test #'eq))
         (seen (make-hash-table :test #'equal)) (parameter-scopes nil)
         (standard-keys (mapcar #'mognitio.project::module-declaration-key
-                              (mognitio.project::standard-catalog-declarations
-                               (mognitio.project::project-standard project)))))
+                              (mapcan (lambda (catalog) (copy-list (mognitio.project::standard-catalog-declarations catalog)))
+                                      (mognitio.project::project-catalogs project)))))
     (labels
         ((emit (token role &optional (mods 0))
            (when (and token (typep token 'token))
@@ -122,9 +122,11 @@
              (specialization-reference
               (emit (specialization-reference-name node) "function")
               (map nil #'types (specialization-reference-arguments node)))
+             (mognitio.syntax::scalar-literal (types (mognitio.syntax::scalar-literal-type node)))
              (list-expression (types (mognitio.syntax::list-expression-type node)))
              (field-expression (emit (field-expression-name node) "property" (if (standard-member-p node) 4 0)))
              (method-call
+              (map nil #'types (mognitio.syntax::method-call-type-arguments node))
               (let ((info (mognitio.semantic::checked-member checked node)))
                 (emit (method-call-name node)
                       (if (and info (eq (mognitio.semantic::member-info-kind info) :field-call)) "property" "method")

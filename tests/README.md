@@ -187,3 +187,8 @@ v120-value-arguments.lisp checks value/type separation, instance identity,
 signed boundaries, alias/template forwarding, closures, and negative proofs.
 v120-projects.py checks the shared CLI and analyzer through module imports.
 These tests cover the value-parameter increment, not the complete 1.2.0 scope.
+
+The v1.2 numeric suite adds all-width scalar arithmetic and host/native parity,
+typed-literal and forwarding constraints, explicit conversions, and Bits methods.
+The numeric proof tests exercise forced collection with high-bit scalar values
+and mutation controls for constraints, literals, and standard identities.

@@ -41,7 +41,8 @@
         (walk-runtime-syntax checked child visit)))))
 
 (defun type-parameters-in (type)
-  (cond ((compile-time-parameter-p type) (list type))
+  (cond ((numeric-scalar-p type) (type-parameters-in (second type)))
+        ((compile-time-parameter-p type) (list type))
         ((application-type-p type) (remove-duplicates (mapcan #'type-parameters-in (copy-list (fourth type))) :test #'equal))
         ((list-type-p type) (type-parameters-in (second type)))
         ((function-type-p type) (remove-duplicates (mapcan #'type-parameters-in (append (second type) (list (third type)))) :test #'equal))))
@@ -108,6 +109,8 @@
 (defun concrete-type-key (context type)
   (cond ((null type) nil) ((integer-argument-p type) type) ((member type '(:int :bool :void :string)) type)
         ((or (compile-time-parameter-p type) (application-type-p type)) (internal-error "Unresolved runtime type parameter"))
+        ((numeric-scalar-p type)
+         (cons (first type) (cons (concrete-type-key context (second type)) (cddr type))))
         ((list-type-p type) (list :list (concrete-type-key context (second type))))
         ((function-type-p type) (list :function (mapcar (lambda (x) (concrete-type-key context x)) (second type))
                                      (concrete-type-key context (third type))))
