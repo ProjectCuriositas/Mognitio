@@ -1,11 +1,11 @@
 (in-package #:mognitio.tests)
 
 (defun v13-child-script (mode)
-  (format nil "#!/usr/bin/python3~%import os,struct,signal~%sequence=0~%def event(tag,stage=0,kind=0,version=3):~% global sequence~% os.write(3,struct.pack('<IHHQQIIQ',0x544e474d,version,tag,0,sequence,stage,kind,2**64-1));sequence+=1~%~A~%"
+  (format nil "#!/usr/bin/python3~%import os,struct,signal~%sequence=0~%def event(tag,stage=0,kind=0,version=4):~% global sequence~% os.write(3,struct.pack('<IHHQQIIQ',0x544e474d,version,tag,0,sequence,stage,kind,2**64-1));sequence+=1~%~A~%"
     (case mode
       (:before-ready "os._exit(123)")
       (:after-ready (format nil "event(1)~%os._exit(123)"))
-      (:old-version (format nil "event(1,version=2)~%os.read(4,1)~%os._exit(0)"))
+      (:old-version (format nil "event(1,version=3)~%os.read(4,1)~%os._exit(0)"))
       (otherwise
        (format nil "event(1)~%os.read(4,1)~%event(2,1)~%event(2,2)~%~A~%"
          (ecase mode

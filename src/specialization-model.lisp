@@ -11,6 +11,7 @@
             (local-binding '(initializer)) (assignment '(rhs)) (return-statement '(value))
             (assert-statement '(operand))
             (mognitio.syntax::io-expression '(arguments))
+            (mognitio.syntax::binary-intrinsic '(arguments))
             (grouping '(expression)) (expression-statement '(expression))
             (call-expression '(callee arguments)) (method-call '(receiver arguments))
             (unary-expression '(operand)) (binary-expression '(left right))
@@ -107,7 +108,7 @@
                                                    :initial-contents (value-context-types source))) context))
 
 (defun concrete-type-key (context type)
-  (cond ((null type) nil) ((integer-argument-p type) type) ((member type '(:int :bool :void :string)) type)
+  (cond ((null type) nil) ((integer-argument-p type) type) ((member type '(:int :bool :void :string :bytes)) type)
         ((or (compile-time-parameter-p type) (application-type-p type)) (internal-error "Unresolved runtime type parameter"))
         ((numeric-scalar-p type)
          (cons (first type) (cons (concrete-type-key context (second type)) (cddr type))))

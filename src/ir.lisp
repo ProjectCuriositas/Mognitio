@@ -7,6 +7,8 @@
   (case op
     ((:integer.convert :bits.left :bits.right :bits.at) '(:may-allocate :may-fail :call-barrier))
     ((:integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not) '(:call-barrier))
+    ((:bytes.from-ints :bytes.from-bits :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes) '(:may-allocate :may-fail :call-barrier))
+    ((:bytes.length :bytes.equal :bytes.not-equal) '(:call-barrier))
     (:io.call '(:external-effect :may-allocate :may-fail :call-barrier))
     ((:call :call.value :call.interface :closure.call :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result :struct.make :enum.make :interface.pack :text.concat :text.slice) '(:may-allocate :may-fail :call-barrier))
     (:test.stage '(:may-fail :call-barrier))
@@ -96,6 +98,14 @@
                   (jump-context (assoc (loop-info-id (checked-control checked node)) *loop-contexts*) block env)
                   (values nil nil nil))
                  (void-literal (values (emit-value block :void :constant (node-span node) :value 0) block env))
+                 (mognitio.syntax::binary-intrinsic
+                  (let* ((op (mognitio.syntax::binary-intrinsic-operation node))
+                         (child (aref (mognitio.syntax::binary-intrinsic-arguments node) 0)))
+                    (multiple-value-bind (value end updated) (lower child block env)
+                      (unless end (return-from lower-raw (values nil nil nil)))
+                      (let* ((element (second (checked-normal-type checked child)))
+                             (buffer (emit-value end (list :buffer element) :list.buffer (node-span node) :operands (list value))))
+                        (values (emit-value end (checked-normal-type checked node) op (node-span node) :operands (list buffer)) end updated)))))
                  (mognitio.syntax::io-expression
                   (let ((operands nil))
                     (loop for argument across (mognitio.syntax::io-expression-arguments node) do
@@ -153,7 +163,8 @@
                     (values (emit-value block (checked-normal-type checked node)
                               (operation-info-kind (checked-operation checked node)) (node-span node)
                               :value (let ((info (checked-operation checked node)))
-                                       (when (mognitio.semantic::numeric-method-p (operation-info-kind info))
+                                       (when (or (mognitio.semantic::numeric-method-p (operation-info-kind info))
+                                                 (mognitio.semantic::binary-method-p (operation-info-kind info)))
                                          (first (operation-info-parameter-types info))))
                               :operands (nreverse operands)) block env)))
                  (list-expression

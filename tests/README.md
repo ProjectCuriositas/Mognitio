@@ -192,3 +192,7 @@ The v1.2 numeric suite adds all-width scalar arithmetic and host/native parity,
 typed-literal and forwarding constraints, explicit conversions, and Bits methods.
 The numeric proof tests exercise forced collection with high-bit scalar values
 and mutation controls for constraints, literals, and standard identities.
+
+The Bytes suite checks all octets, independent endian vectors, exact decode
+lengths, immutable operations, first-invalid-element errors, and static API
+rejection. Bytes proof tests add forced GC and runtime failure injection.

@@ -11,7 +11,7 @@
                        (unary (if (eq op :not) '(:bool) '(:int)))
                        ((member op '(:and :or)) '(:bool))
                        ((eq op :add) '(:int :string))
-                       ((member op '(:eq :ne)) '(:int :bool :string :void))
+                       ((member op '(:eq :ne)) '(:int :bool :string :void :bytes))
                        (t '(:int))))
          (matches (remove-if-not
                     (lambda (type) (every (lambda (child) (or (null (c-structure child))
@@ -20,8 +20,9 @@
     (unless (= (length matches) 1) (fail-at (node-span node) :type "Operator rule is not uniquely determined"))
     (let* ((operand (first matches))
            (result (if (or (member op '(:eq :ne :lt :le :gt :ge :and :or :not))) :bool operand))
-           (kind (if (eq operand :string)
-                     (ecase op (:add :text.concat) (:eq :text.equal) (:ne :text.not-equal)) op)))
+           (kind (if (eq operand :bytes) (ecase op (:eq :bytes.equal) (:ne :bytes.not-equal))
+                   (if (eq operand :string)
+                     (ecase op (:add :text.concat) (:eq :text.equal) (:ne :text.not-equal)) op))))
       (values operand result kind))))
 (defun c-unary (node)
   (let* ((op (token-kind (unary-expression-operator node))) (child (unary-expression-operand node))
@@ -68,6 +69,7 @@
     (boolean-literal (c-summary node :bool t nil))
     (void-literal (c-summary node :void t nil))
     (mognitio.syntax::io-expression (c-io-expression node))
+    (mognitio.syntax::binary-intrinsic (c-binary-intrinsic node))
     (mognitio.syntax::runtime-arguments (c-summary node '(:list :string) t nil))
     (mognitio.syntax::scalar-literal (c-scalar-literal node))
     (integer-literal

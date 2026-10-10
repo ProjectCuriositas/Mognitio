@@ -1,6 +1,6 @@
 (in-package #:mognitio.ir)
 
-(defparameter *value-operations* '(:integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :numeric :io.call :struct.make :enum.make :struct.field :enum.tag :enum.payload :interface.pack :call.interface
+(defparameter *value-operations* '(:bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :numeric :io.call :struct.make :enum.make :struct.field :enum.tag :enum.payload :interface.pack :call.interface
     :closure.make :closure.env.get :closure.call :list.empty :list.length :list.append :list.at :list.buffer :buffer.length :buffer.get :text.scalars :text.join :text.slice.result))
 
 (defun verify-core-types (context functions)
@@ -128,6 +128,7 @@
                                  (and tag constant (eq :enum.tag (instruction-op tag)) (equal (list subject) (instruction-operands tag))
                                       (eq :constant (instruction-op constant)) (eql variant (instruction-value constant)))))))))))
       (case op
+        ((:bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal) (verify-binary-instruction instruction types context))
         ((:integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at) (verify-numeric-method-instruction op data result types context))
         (:numeric
          (and (listp data) (= 2 (length data))

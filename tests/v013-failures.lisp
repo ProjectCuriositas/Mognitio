@@ -119,7 +119,7 @@
       (signals usage-or-io-failure (mognitio.testing::commit-result attempt reader test))))
   (same 123 mognitio.testing::+internal-child-status+)
   (same 124 mognitio.testing::+transport-child-status+)
-  (same 3 mognitio.testing::+protocol-version+))
+  (same 4 mognitio.testing::+protocol-version+))
 
 (deftest v013-child-subject-spelling-and-repetition
   (let ((root (v13-directory)))

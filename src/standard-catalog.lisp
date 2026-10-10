@@ -55,7 +55,7 @@ public let createDirectory: Function(String): Result<Unit,IoError> = function(pa
           (unless (member name *predeclared* :test #'equal)
             (setf (mognitio.syntax::token-resolved-name token) (standard-key name))))))
     (make-standard-catalog :program program :declarations (nreverse declarations)
-                           :extensions (list (make-numeric-catalog)))))
+                           :extensions (list (make-numeric-catalog) (make-binary-catalog)))))
 
 (defun standard-exports (project)
   (let ((table (make-hash-table :test #'equal)))
@@ -103,8 +103,9 @@ public let createDirectory: Function(String): Result<Unit,IoError> = function(pa
                 (check (and (typep argument 'variable-reference) (eq (variable-reference-name argument) (parameter-name parameter))))))))))
   (verify-standard-shapes (project-standard project))
   (let ((extensions (standard-catalog-extensions (project-standard project))))
-    (unless (= 1 (length extensions)) (internal-error "Missing numeric catalog"))
-    (verify-numeric-catalog (first extensions)))
+    (unless (= 2 (length extensions)) (internal-error "Missing numeric or binary catalog"))
+    (verify-numeric-catalog (first extensions))
+    (verify-binary-catalog (second extensions)))
   t)
 
 (in-package #:mognitio.semantic)

@@ -2,7 +2,7 @@
 
 (defun verify-native-metadata (module bytes symbols)
   ;; Read encoded words, independently of the descriptor/metadata producer.
-  (let ((seen (make-hash-table :test #'equal)) (lists nil)
+  (let ((seen (make-hash-table :test #'equal)) (lists nil) (bytes-p nil)
         (context (mognitio.ir:module-values module)))
     (labels ((ensure (ok) (unless ok (internal-error "Invalid encoded native metadata")))
              (offset (name)
@@ -17,21 +17,22 @@
                    (ensure (= word (loop for i below 8 sum (ash (aref bytes (+ at i)) (* i 8)))))))
                (setf (gethash name seen) t))
              (reference (type)
-               (or (eq type :string) (and (consp type) (member (car type) '(:function :list :buffer :struct :enum :interface)))))
+               (or (member type '(:string :bytes)) (and (consp type) (member (car type) '(:function :list :buffer :struct :enum :interface)))))
              (row (name kind identity variant slots &optional buffer)
                (let ((refs (loop for type in slots for i from 0 when (reference type) collect i)))
                  (record name (append (list kind identity variant (length slots) (length refs)) refs buffer))))
              (note (type)
+               (when (eq type :bytes) (setf bytes-p t))
                (when (consp type)
                  (case (first type)
                    (:list (pushnew type lists :test #'equal) (note (second type)))
                    (:buffer (note (list :list (second type))))
                    (:function (mapc #'note (second type)) (note (third type)))))))
-      ;; Independently pinned private wire v3. Inspect encoded immediates in each
+      ;; Independently pinned private wire v4. Inspect encoded immediates in each
       ;; helper region, not the producer's event-header or shared constants.
       (when (mognitio.ir::module-test-ordinal module)
-        (dolist (entry '((:test.bootstrap #x00010003544e474d #x00020003544e474d)
-                         (:test.stage #x00020003544e474d) (:test.terminal #x00030003544e474d)))
+        (dolist (entry '((:test.bootstrap #x00010004544e474d #x00020004544e474d)
+                         (:test.stage #x00020004544e474d) (:test.terminal #x00030004544e474d)))
           (let* ((start (offset (list :helper (first entry))))
                  (end (loop for symbol being the hash-values of symbols
                             for at = (mognitio.object:image-symbol-offset symbol)
@@ -84,6 +85,9 @@
               (unless captures
                 (record (list :static-object :closure id)
                         (list 40 69 (address descriptor) 0 (address (list :function id)))))))))
+      (when bytes-p
+        (record '(:layout (:bytes)) '(7 0 0 1 0))
+        (record '(:static-object :bytes 0) (list 40 117 (address '(:layout (:bytes))) 0 0)))
       (setf lists (sort lists #'mognitio.semantic::structural-key-before-p))
       (loop for type in lists for id from 0 for element = (second type) do
         (let ((list-name (list :layout (list :list type))) (buffer-name (list :layout (list :buffer element))))

@@ -5,8 +5,8 @@
 
 (defun diagnostic-type-name (type context)
   (labels ((name (part)
-             (cond ((assoc part '((:int . "Int") (:bool . "Bool") (:string . "String") (:void . "Unit")))
-                    (cdr (assoc part '((:int . "Int") (:bool . "Bool") (:string . "String") (:void . "Unit")))))
+             (cond ((assoc part '((:int . "Int") (:bool . "Bool") (:string . "String") (:void . "Unit") (:bytes . "Bytes")))
+                    (cdr (assoc part '((:int . "Int") (:bool . "Bool") (:string . "String") (:void . "Unit") (:bytes . "Bytes")))))
                    ((numeric-scalar-p part)
                     (if (bits-type-p part) (format nil "Bits<~A>" (name (second part)))
                         (format nil "Int<~A, ~A>" (name (second part)) (if (eq :signed (third part)) "Signed" "Unsigned"))))

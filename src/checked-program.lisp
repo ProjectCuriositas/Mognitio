@@ -6,6 +6,7 @@
      (v-check (member (boolean-literal-value node) '(:true :false)) "Invalid Bool literal") (v-finish node :bool t nil))
     (void-literal (v-finish node :void t nil))
     (mognitio.syntax::io-expression (v-io-expression node))
+    (mognitio.syntax::binary-intrinsic (v-binary-intrinsic node))
     (mognitio.syntax::runtime-arguments (v-finish node '(:list :string) t nil))
     (mognitio.syntax::scalar-literal (v-scalar-literal node))
     (integer-literal

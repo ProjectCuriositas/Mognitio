@@ -111,9 +111,12 @@
          (args (coerce (method-call-arguments node) 'list)) (children (mapcar #'c-expression args))
          (name (token-text (method-call-name node))) (parameters nil) (result nil) (op nil))
     (when (and (plusp (length (mognitio.syntax::method-call-type-arguments node)))
-               (not (or (eq type :int) (numeric-scalar-p type))))
+               (not (or (member type '(:int :bytes)) (numeric-scalar-p type))))
       (fail-at (node-span node) :type "This method has no compile-time parameters"))
     (cond
+      ((binary-method-receiver-p type node)
+       (multiple-value-setq (op parameters result) (binary-method-signature (c-context) node type))
+       (c-operation node op (cons receiver args) (cons type parameters) result))
       ((or (eq type :int) (numeric-scalar-p type))
        (multiple-value-setq (op parameters result) (numeric-method-signature (c-context) node type))
        (c-operation node op (cons receiver args) (cons type parameters) result))
