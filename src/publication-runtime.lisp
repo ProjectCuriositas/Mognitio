@@ -69,7 +69,7 @@
       (and (equal (field 0) "Linux") (equal (field 130) "7.0.0-38-generic")
            (equal (field 195) "#38-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 09:10:14 UTC 2026")
            (equal (field 260) "x86_64")))))
-(defun publication-profile (owner)
+(defun publication-probe-profile (owner)
   (let ((fs (make-array 120 :element-type '(unsigned-byte 8) :initial-element 0))
         (stat (make-array 256 :element-type '(unsigned-byte 8) :initial-element 0))
         (empty (publication-octets "")) (path (publication-octets "/proc/self/mountinfo")))
@@ -107,9 +107,17 @@
           (dotimes (i count)
             (if (= (aref data i) 10) (finish-line) (vector-push-extend (aref data i) line))))
         (unless (and (zerop (length line)) (= matches 1)) (publication-fail owner 4))))
-    (setf (publication-owner-phase owner) 4)
-    (publication-close owner :probe :close-probe)
-    (setf (publication-owner-phase owner) 1 (publication-owner-profile owner) :ubuntu-7.0.0-38-tmpfs)))
+    (setf (publication-owner-profile owner) :ubuntu-7.0.0-38-tmpfs)))
+
+(defun publication-profile (owner)
+  ;; Evidence lookup is optional. It must not become an environment allowlist.
+  ;; Real resource-release failures and internal/allocation failures still escape.
+  (handler-case (publication-probe-profile owner)
+    (binary-io-failure ()
+      (setf (publication-owner-profile owner) nil)))
+  (setf (publication-owner-phase owner) 4)
+  (publication-close owner :probe :close-probe)
+  (setf (publication-owner-phase owner) 1))
 
 (defun publication-classify-commit (owner status)
   (setf (publication-owner-issued owner) t)

@@ -440,7 +440,8 @@
       "evidence": [
         "tests/v120-publication.py",
         "tests/v120-publication.lisp",
-        "tests/v120-publication-surface.py"
+        "tests/v120-publication-surface.py",
+        "tests/v120-publication-portability.py"
       ],
       "disposition": "required-execution"
     },
@@ -450,7 +451,8 @@
       "evidence": [
         "tests/v120-publication.py",
         "tests/v120-publication.lisp",
-        "tests/v120-publication-surface.py"
+        "tests/v120-publication-surface.py",
+        "tests/v120-publication-portability.py"
       ],
       "disposition": "required-execution"
     },
@@ -460,7 +462,8 @@
       "evidence": [
         "tests/v120-publication.py",
         "tests/v120-publication.lisp",
-        "tests/v120-publication-surface.py"
+        "tests/v120-publication-surface.py",
+        "tests/v120-publication-portability.py"
       ],
       "disposition": "required-execution"
     },
@@ -519,7 +522,8 @@
       "gate": "1.2.0",
       "evidence": [
         "tests/v120-publication.py",
-        "tests/v120-emitter.py"
+        "tests/v120-emitter.py",
+        "tests/v120-publication-portability.py"
       ],
       "disposition": "required-execution"
     },
@@ -528,7 +532,8 @@
       "gate": "1.2.0",
       "evidence": [
         "tests/v120-publication.py",
-        "tests/v120-emitter.py"
+        "tests/v120-emitter.py",
+        "tests/v120-publication-portability.py"
       ],
       "disposition": "required-execution"
     },
@@ -618,7 +623,8 @@
       "evidence": [
         "tests/v120-publication.lisp",
         "tests/v120-publication-surface.py",
-        "tests/v120-bytes-proofs.lisp"
+        "tests/v120-bytes-proofs.lisp",
+        "tests/v120-publication-portability.py"
       ],
       "disposition": "required-execution"
     },

@@ -100,12 +100,12 @@ with tempfile.TemporaryDirectory(prefix="mgn-publish-") as temporary:
     target=dirlink/"created";compile(body(target))
     for native in (False,True):
         execute(native);assert (directory/"created").read_bytes()==bytes([0,127,128,255]);target.unlink()
-    # New entries on uncertified ext4 are rejected before creating staging files.
+    # Uncertified filesystems use the same no-replace operation without an allowlist.
     if os.statvfs(ROOT).f_fsid != os.statvfs(root).f_fsid:
         with tempfile.TemporaryDirectory(prefix=".mgn-publish-",dir=ROOT) as other:
-            destination=Path(other)/"out";compile(body(destination,error="UnsupportedTarget"))
+            destination=Path(other)/"out";compile(body(destination))
             for native in (False,True):
-                execute(native);assert list(Path(other).iterdir())==[]
+                execute(native);assert destination.read_bytes()==bytes([0,127,128,255]);destination.unlink();assert list(Path(other).iterdir())==[]
     # A real file-size limit yields a partial write followed by EFBIG.
     target=root/"limited";compile(body(target,error="Other",phase="Body"))
     for native in (False,True):

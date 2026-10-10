@@ -19,10 +19,6 @@
 (deftest v120-publication-faults
   (dolist (row '((:open-parent -2 "NotFound" "Target" "NotPublished")
                  (:target-stat -13 "PermissionDenied" "Target" "NotPublished")
-                 (:filesystem -5 "Other" "Target" "NotPublished")
-                 (:mount-id -38 "UnsupportedTarget" "Target" "NotPublished")
-                 (:open-probe -24 "ResourceExhausted" "Target" "NotPublished")
-                 (:read-probe -5 "Other" "Target" "NotPublished")
                  (:close-probe -5 "Other" "Cleanup" "NotPublished")
                  (:open-temp -28 "ResourceExhausted" "Target" "NotPublished")
                  (:temp-stat -5 "Other" "Target" "NotPublished")
@@ -139,7 +135,7 @@
         (if (equal mode "directory") (sb-posix:rmdir path) (delete-file path))))))
 
 (deftest v120-publication-machine-proof
-  (dolist (mutation '(:roots :frame :flag :cleanup :allocation))
+  (dolist (mutation '(:roots :frame :flag :cleanup :allocation :name-capacity :name-root))
     (let* ((ir (mognitio.ir:lower-program (project-checked (v120-publication-manifest "0"))))
            (mognitio.native.runtime::*runtime-module* ir) (units nil)
            (original (fdefinition 'mognitio.native.runtime::verify-io-units)))
@@ -158,6 +154,10 @@
             (:flag (setf (mognitio.machine:instruction-operands (matches :imm-reg '(:r8 1))) '(:r8 0)))
             (:cleanup (setf (mognitio.object:code-unit-instructions unit)
                             (remove (matches :call '((:runtime :publication.cleanup))) instructions :test #'eq)))
+            (:name-capacity (setf (mognitio.machine:instruction-operands
+                                    (matches :imm-rcx '(9223372036854775760))) '(9223372036854775807)))
+            (:name-root (setf (mognitio.machine:instruction-operands
+                                (matches :store-frame '(-24 :rdx))) '(-104 :rdx)))
             (:allocation (setf (mognitio.machine:instruction-operands (matches :call '((:runtime :publication.profile)))) '((:runtime :allocate-block)))))
           (signals internal-failure (mognitio.native.runtime::verify-publication-unit unit)))))))
 
@@ -228,9 +228,11 @@
              (manifest (v120-publication-manifest (v120-publication-body path nil nil nil)))
              (image (v12-native manifest (list :fail-allocation ordinal))))
         (multiple-value-bind (out err code) (process-result (list (namestring image)))
+          ;; Includes the rooted component allocation while the path mapping is owned.
+          (same 4 code) (same "" out)
+          (same (format nil "runtime error: allocation failure~%") err)
+          (is (null (directory (merge-pathnames ".mgn-*" *temp*))))
           (when (probe-file path)
-            (same 4 code) (same "" out)
-            (same (format nil "runtime error: allocation failure~%") err)
             (delete-file path) (setf reached t)))))
     (is reached)))
 
@@ -307,3 +309,66 @@
      };0")))
     (dolist (stress '(nil t))
       (expect-project manifest (list :stress stress :validate t :arena-unit 4096 :cap 65536)))))
+
+(deftest v120-publication-unverified-environment
+  (dolist (probe '((:filesystem -5) (:filesystem 0) (:mount-id -38) (:mount-id 0)
+                   (:kernel 0) (:open-probe -13) (:read-probe -5)))
+    (dolist (failure '(nil -17 -38 -95))
+      (dolist (native '(nil t))
+        (let* ((path (v120-publication-path))
+               (manifest (v120-publication-manifest
+                          (v120-publication-body path
+                            (and failure (if (= failure -17) "AlreadyExists" "UnsupportedTarget"))
+                            (and failure "Publish")
+                            (and failure (if (= failure -38) "NotPublished" "Unknown")))))
+               (mognitio.io::*publication-fault-hook*
+                (lambda (at)
+                  (cond ((eq at (first probe)) (second probe))
+                        ((and failure (eq at :commit)) failure)))))
+          (multiple-value-bind (out err code)
+              (if native
+                  (process-result
+                   (list (namestring (v12-native manifest
+                     (list :stress t :validate t :arena-unit 4096 :cap 65536
+                           :publication-faults
+                           (append (list (list (first probe) 1 (second probe)))
+                                   (when failure (list (list :commit 1 failure)))))))))
+                  (v12-driver manifest))
+            (same 0 code) (same "" out) (same "" err))
+          (same (null failure) (not (null (probe-file path))))
+          (when (probe-file path)
+            (with-open-file (in path :element-type '(unsigned-byte 8))
+              (same '(0 128 255) (loop for byte = (read-byte in nil) while byte collect byte)))
+            (delete-file path)))))))
+
+(deftest v120-publication-probe-release-error
+  (dolist (native '(nil t))
+    (let* ((path (v120-publication-path))
+           (manifest (v120-publication-manifest (v120-publication-body path "Other" "Cleanup" "NotPublished")))
+           (mognitio.io::*publication-fault-hook*
+            (lambda (at) (case at (:read-probe -5) (:close-probe -5)))))
+      (multiple-value-bind (out err code)
+          (if native
+              (process-result (list (namestring (v12-native manifest
+               '(:publication-faults ((:read-probe 1 -5) (:close-probe 1 -5)))))))
+              (v12-driver manifest))
+        (same 0 code) (same "" out) (same "" err))
+      (is (not (probe-file path))))))
+
+(deftest v120-publication-long-name
+  ;; Synthetic ENOENT permits this branch on a byte-limited test filesystem.
+  ;; Commit then reports the real ENAMETOOLONG, not an internal buffer failure.
+  (dolist (native '(nil t))
+    (let* ((path (namestring (merge-pathnames
+                  (concatenate 'string (make-string 100 :initial-element (code-char #x3042)) ".out") *temp*)))
+           (manifest (v120-publication-manifest (v120-publication-body path "Other" "Publish" "Unknown")))
+           (mognitio.io::*publication-fault-hook*
+            (lambda (at) (case at (:target-stat -2) (:filesystem -5)))))
+      (multiple-value-bind (out err code)
+          (if native
+              (process-result (list (namestring (v12-native manifest
+               '(:stress t :validate t :arena-unit 4096 :cap 65536
+                 :publication-faults ((:target-stat 1 -2) (:filesystem 1 -5)))))))
+              (v12-driver manifest))
+        (same 0 code) (same "" out) (same "" err))
+      (is (null (directory (merge-pathnames ".mgn-*" *temp*)))))))

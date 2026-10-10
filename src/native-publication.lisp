@@ -32,23 +32,28 @@
       (:lea-base :rdx :rbp -640) (:mov-r10d 256) (:publication-syscall :target-stat 262)
       (:cmp-eintr) (:jz :target-stat) (:test) (:jz :already-exists)
       (:cmp-imm :rax -2) (:jnz :os-error)
-      ;; Successful ENOENT name lookup has established the component length.
-      ;; Copy the final name to fixed stack storage and release the path mapping
-      ;; before staging, leaving no fallible mapping release after commit.
+      ;; Profile evidence is optional and cannot impose a filename byte limit.
+      (:lea-base :rax :rbp -256) (:store-out 0 :rax)
+      (:call (:runtime :publication.profile)) (:test) (:jz :profile-ready)
+      (:cmp-imm :rdx 4) (:jnz :os-error) (:store-frame -80 :rdx) (:jmp :os-error)
+      (:label :profile-ready)
+      ;; Keep the NUL-terminated component in a rooted private Bytes object.
+      ;; The mapping remains owned until this allocation and copy have completed.
       (:load-frame :rsi -112) (:mov-reg :rax :rsi) (:load-frame :rcx -224)
       (:sub-reg :rax :rcx) (:load-frame :rcx -216) (:sub-reg :rcx :rax)
-      (:cmp-imm :rcx 256) (:ja :internal)
-      (:lea-base :rdi :rbp -1024))
+      (:store-frame -160 :rcx) (:mov-reg :rax :rcx)
+      (:imm-rcx 9223372036854775760) (:cmp) (:ja :allocation-failed)
+      (:add-imm :rax 8) (:store-out 0 :rax) (:call (:runtime :allocate-block)))
+    (scoped-forms :publication-name (initialize-object (layout-name '(:bytes)) 7))
+    '((:load-frame :rax -160) (:store-word :rdx 32 :rax) (:store-frame -24 :rdx)
+      (:lea-base :rdi :rdx 40) (:load-frame :rsi -112) (:load-frame :rcx -160))
     (copy-octets-forms :final-name)
-    '((:lea-base :rax :rbp -1024) (:store-frame -112 :rax)
+    '((:load-frame :rax -24) (:add-imm :rax 40) (:store-frame -112 :rax)
       (:load-frame :rdi -224) (:load-frame :rsi -216) (:imm-rax 0) (:store-frame -224 :rax)
       (:publication-syscall :path-unmap 11) (:test) (:jz :path-released)
       (:cmp-imm :rax -22) (:jz :internal) (:cmp-imm :rax -14) (:jz :internal)
       (:imm-rcx 4) (:store-frame -80 :rcx) (:jmp :os-error)
-      (:label :path-released) (:lea-base :rax :rbp -256) (:store-out 0 :rax)
-      (:call (:runtime :publication.profile)) (:test) (:jz :profile-ready)
-      (:cmp-imm :rdx 4) (:jnz :os-error) (:store-frame -80 :rdx) (:jmp :os-error)
-      (:label :profile-ready) (:imm-rax 1) (:store-frame -144 :rax))))
+      (:label :path-released))))
 
 (defun publication-temp-forms ()
   (append

@@ -18,8 +18,11 @@ Arguments are a new output path, `ascii` or `jp`, `0` or `7`, and `exec` or
 The fixture selects the second choice for other payload/exit/mode strings;
 it is a fixed workload, not a general command-line encoder.
 
-Publication currently requires the [certified tmpfs profile](../../verification/v1.2.0-publication-profile.md).
-An unsupported filesystem or existing destination fails without replacement.
+Publication also runs on unverified environments; the
+[certified profile](../../verification/v1.2.0-publication-profile.md) determines
+which failed commits have a proven NotPublished result. Existing destinations
+and actual mechanism failures return errors without replacement or a weaker
+fallback.
 The example exits 1 on construction/publication errors and 0 after success.
 Generated executables retry interrupted/short writes and use exit 111 for
 unexpected output failure.
