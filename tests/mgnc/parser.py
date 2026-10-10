@@ -12,7 +12,7 @@ def main():
     driver=r"""namespace Mgnc;
 use Std\Io\{readTextFile,writeStderr,IoError};
 use Mgnc\Data\{Paged,Token,Diagnostic,describe};
-use Mgnc\Syntax\{Program};
+use Mgnc\Syntax\{Program,Node};
 use Mgnc\Frontend\{scan};
 use Mgnc\Module\{parse};
 let check:Function(String):Int=function(path:String):Int{
@@ -22,14 +22,20 @@ let check:Function(String):Int=function(path:String):Int{
  Result<Paged<Token>,Diagnostic>::Err(error:Diagnostic)=>{discard writeStderr(describe(path,error));1},
  Result<Paged<Token>,Diagnostic>::Ok(tokens:Paged<Token>)=>branch on parse(tokens){
  Result<Program,Diagnostic>::Err(error:Diagnostic)=>{discard writeStderr(describe(path,error));1},
- Result<Program,Diagnostic>::Ok(program:Program)=>{assert program->nodes->count>0;0}}}}
+ Result<Program,Diagnostic>::Ok(program:Program)=>{assert program->nodes->count>0;
+ var index:Int=0;
+ loop over(program->nodes->pages as page:List<Node>){
+  loop over(page as node:Node){loop over(node->children as child:Int){assert child<index;};index=index+1;};
+ };
+ loop over(program->nodes->tail as node:Node){loop over(node->children as child:Int){assert child<index;};index=index+1;};
+ assert index==program->nodes->count;0}}}}
 };
 let main:Function(List<String>):Int=function(args:List<String>):Int{
  branch on args->at(0){Result<String,IndexError>::Ok(path:String)=>check(path),
  Result<String,IndexError>::Err(error:IndexError)=>2}
 };
 """
-    good=["7","let x:Int=1; var y:Int=2; y=y+x; y",
+    good=["let copy:List<String>=args;0","7","let x:Int=1; var y:Int=2; y=y+x; y",
           "branch when{args->length()==0=>7,else=>11,}",
           "var x:Int=0; loop while(x<3){x=x+1;}; x",
           "let x:Int=1+{return 7;};",
@@ -38,7 +44,7 @@ let main:Function(List<String>):Int=function(args:List<String>):Int{
           "branch when{true=>{return 7;},false=>1,else=>2}",
           "loop while({break;}){unit};0",
           "{"*128+"args->length()"+"}"*128]
-    bad=[("1+;","parse"),("let x=1;0","parse"),("branch when{true=>1}","parse"),
+    bad=[("let x:Int>=7;0","parse"),("1+;","parse"),("let x=1;0","parse"),("branch when{true=>1}","parse"),
          ("loop while(true) unit;0","parse"),("1<2<3","parse"),
          ("f(,);0","parse"),("let x:Int=0 0","parse"),("use Std;0","unsupported"),
          ("function():Int{7}","unsupported")]

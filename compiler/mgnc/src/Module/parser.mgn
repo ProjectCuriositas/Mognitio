@@ -38,7 +38,7 @@ function(tokens:Paged<Token>):Result<Program,Diagnostic>{
             return Result<Program,Diagnostic>::Err(problem("unsupported",annotation->span,"top-level values require a direct function"));
         },else=>unit};
         let declared:Signature=try signature(tokens,cursor,false);
-        cursor=try requireToken(tokens,declared->next,"=");
+        cursor=try requireToken(tokens,declared->next,branch when{declared->pendingEqual=>">=",else=>"="});
         let initializer:Token=try lookup<Token>(tokens,cursor);
         branch when{initializer->text!="function"=>{
             return Result<Program,Diagnostic>::Err(problem("unsupported",initializer->span,"function aliases are outside the native profile"));

@@ -12,7 +12,7 @@ public type Declaration = product {
 public type Program = product {
     nodes: Paged<Node>; declarations: List<Declaration>; moduleName: String; end: Span;
 };
-public type ParsedType = product { valueType: Int; next: Int; span: Span; };
+public type ParsedType = product { valueType: Int; next: Int; span: Span; pendingEqual: Bool; };
 public type ParsedExpression = product { nodes: Paged<Node>; root: Int; next: Int; };
 public type Parent = sum { None; Some(Int); };
 public type Frame = product {

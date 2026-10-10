@@ -37,10 +37,10 @@ parent=frame->parent;mode=frame->mode;start=frame->start;power=frame->power;firs
     branch when{
      token->kind==2 || token->text=="true" || token->text=="false" || token->text=="unit"=>{
       text=token->text;cursor=cursor+1;
-first=nodes->count;nodes=push<Node>(nodes,Node{kind:1,text:text,children:List<Int>[],span:origin->span,annotation:0,flag:false});mode=1;continue;
+nodes=push<Node>(nodes,Node{kind:1,text:text,children:List<Int>[],span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;
      },
      token->kind==1=>{text=token->text;cursor=cursor+1;
-first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<Int>[],span:origin->span,annotation:0,flag:false});mode=1;continue;
+nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<Int>[],span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;
      },
      token->text=="("=>{cursor=cursor+1;frames=push<Frame>(frames,Frame{parent:parent,mode:3,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
      token->text=="-" || token->text=="!"=>{text=token->text;cursor=cursor+1;frames=push<Frame>(frames,Frame{parent:parent,mode:2,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=70;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
@@ -66,7 +66,7 @@ first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<In
      token->text=="("=>{
       cursor=cursor+1;children=List<Int>[first];
       let next:Token=try lookup<Token>(tokens,cursor);
-      branch when{next->text==")"=>{cursor=cursor+1;first=nodes->count;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});mode=1;continue;},else=>unit};
+      branch when{next->text==")"=>{cursor=cursor+1;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;},else=>unit};
       frames=push<Frame>(frames,Frame{parent:parent,mode:5,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
      },
      token->text=="->"=>{
@@ -74,7 +74,7 @@ first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<In
       branch when{member->text!="length"=>{return Result<ParsedExpression,Diagnostic>::Err(problem("unsupported",member->span,"only entry length is supported"));},else=>unit};
       cursor=try requireToken(tokens,cursor+2,"(");
       cursor=try requireToken(tokens,cursor,")");
-      first=nodes->count;nodes=push<Node>(nodes,Node{kind:7,text:"length",children:List<Int>[first],span:origin->span,annotation:0,flag:false});mode=1;continue;
+      nodes=push<Node>(nodes,Node{kind:7,text:"length",children:List<Int>[first],span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;
      },
      else=>unit,
     };
@@ -87,19 +87,19 @@ first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<In
     text=token->text;cursor=cursor+1;
     frames=push<Frame>(frames,Frame{parent:parent,mode:4,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=bindingPower;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
    },
-   mode==2=>{first=nodes->count;nodes=push<Node>(nodes,Node{kind:4,text:text,children:List<Int>[last],span:origin->span,annotation:0,flag:false});mode=1;continue;},
+   mode==2=>{nodes=push<Node>(nodes,Node{kind:4,text:text,children:List<Int>[last],span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;},
    mode==3=>{
     cursor=try requireToken(tokens,cursor,")");
-    first=nodes->count;nodes=push<Node>(nodes,Node{kind:3,text:"",children:List<Int>[last],span:origin->span,annotation:0,flag:false});mode=1;continue;
+    nodes=push<Node>(nodes,Node{kind:3,text:"",children:List<Int>[last],span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;
    },
-   mode==4=>{first=nodes->count;nodes=push<Node>(nodes,Node{kind:5,text:text,children:List<Int>[first,last],span:origin->span,annotation:0,flag:false});mode=1;continue;},
+   mode==4=>{nodes=push<Node>(nodes,Node{kind:5,text:text,children:List<Int>[first,last],span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;},
    mode==5=>{
     children=children->append(last);
     branch when{
-     token->text==")"=>{cursor=cursor+1;first=nodes->count;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});mode=1;continue;},
+     token->text==")"=>{cursor=cursor+1;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;},
      token->text==","=>{
       cursor=cursor+1;let next:Token=try lookup<Token>(tokens,cursor);
-      branch when{next->text==")"=>{cursor=cursor+1;first=nodes->count;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});mode=1;continue;},else=>unit};
+      branch when{next->text==")"=>{cursor=cursor+1;nodes=push<Node>(nodes,Node{kind:6,text:text,children:children,span:origin->span,annotation:0,flag:false});first=nodes->count-1;mode=1;continue;},else=>unit};
       frames=push<Frame>(frames,Frame{parent:parent,mode:5,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
      },
      else=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",token->span,"expected comma or closing parenthesis"));},
@@ -108,7 +108,7 @@ first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<In
    mode==10=>{
     branch when{token->kind==0=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",token->span,"expected closing brace"));},else=>unit};
     branch when{
-     token->text=="}"=>{cursor=cursor+1;last=nodes->count;nodes=push<Node>(nodes,Node{kind:8,text:"",children:children,span:origin->span,annotation:0,flag:false});ready=true;continue;},
+     token->text=="}"=>{cursor=cursor+1;nodes=push<Node>(nodes,Node{kind:8,text:"",children:children,span:origin->span,annotation:0,flag:false});last=nodes->count-1;ready=true;continue;},
      token->text=="let" || token->text=="var"=>{
       flag=token->text=="var";site=cursor+1;
       let name:Token=try lookup<Token>(tokens,cursor+1);
@@ -116,7 +116,7 @@ first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<In
       text=name->text;
       cursor=try requireToken(tokens,cursor+2,":");
       let parsed:ParsedType=try parseType(tokens,cursor);
-      annotation=parsed->valueType;cursor=try requireToken(tokens,parsed->next,"=");
+      annotation=parsed->valueType;cursor=try requireToken(tokens,parsed->next,branch when{parsed->pendingEqual=>">=",else=>"="});
       frames=push<Frame>(frames,Frame{parent:parent,mode:13,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
      },
      token->text=="return"=>{site=cursor;cursor=cursor+1;frames=push<Frame>(frames,Frame{parent:parent,mode:15,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;},
@@ -140,7 +140,7 @@ first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<In
    },
    mode==12=>{
     branch when{token->text=="}"=>{
-      children=children->append(last);cursor=cursor+1;last=nodes->count;nodes=push<Node>(nodes,Node{kind:8,text:"",children:children,span:origin->span,annotation:0,flag:true});ready=true;continue;
+      children=children->append(last);cursor=cursor+1;nodes=push<Node>(nodes,Node{kind:8,text:"",children:children,span:origin->span,annotation:0,flag:true});last=nodes->count-1;ready=true;continue;
     },else=>unit};
     cursor=try requireToken(tokens,cursor,";");
     let id:Int=nodes->count;nodes=push<Node>(nodes,Node{kind:15,text:"",children:List<Int>[last],span:origin->span,annotation:0,flag:false});
@@ -160,7 +160,7 @@ first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<In
     branch when{next->text!="{"=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",next->span,"expected loop body"));},else=>unit};
     frames=push<Frame>(frames,Frame{parent:parent,mode:22,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
    },
-   mode==22=>{last=nodes->count;nodes=push<Node>(nodes,Node{kind:17,text:"",children:List<Int>[first,last],span:origin->span,annotation:0,flag:false});ready=true;continue;},
+   mode==22=>{nodes=push<Node>(nodes,Node{kind:17,text:"",children:List<Int>[first,last],span:origin->span,annotation:0,flag:false});last=nodes->count-1;ready=true;continue;},
    mode==30=>{
     branch when{token->text=="else"=>{
       cursor=try requireToken(tokens,cursor+1,"=>");frames=push<Frame>(frames,Frame{parent:parent,mode:33,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
@@ -179,7 +179,7 @@ first=nodes->count;nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<In
     children=children->append(last);
     branch when{token->text==","=>{cursor=cursor+1;},else=>unit};
     cursor=try requireToken(tokens,cursor,"}");
-    last=nodes->count;nodes=push<Node>(nodes,Node{kind:16,text:"",children:children,span:origin->span,annotation:0,flag:false});ready=true;continue;
+    nodes=push<Node>(nodes,Node{kind:16,text:"",children:children,span:origin->span,annotation:0,flag:false});last=nodes->count-1;ready=true;continue;
    },
    else=>{return Result<ParsedExpression,Diagnostic>::Err(problem("internal",token->span,"invalid parser continuation"));},
   };

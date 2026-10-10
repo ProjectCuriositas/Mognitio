@@ -2,7 +2,7 @@ namespace Mgnc\ParseSupport;
 use Mgnc\Data\{Paged,Token,Span,Diagnostic,lookup,problem};
 use Mgnc\Syntax\{ParsedType,Parameter};
 public type Signature = product {
-    parameters: List<Parameter>; types: List<Int>; result: Int; next: Int;
+    parameters: List<Parameter>; types: List<Int>; result: Int; next: Int; pendingEqual: Bool;
 };
 public let requireToken: Function(Paged<Token>,Int,String): Result<Int,Diagnostic> =
 function(tokens:Paged<Token>,position:Int,expected:String):Result<Int,Diagnostic>{
@@ -19,6 +19,7 @@ function(tokens:Paged<Token>,position:Int):Result<ParsedType,Diagnostic>{
     let next:Token=try lookup<Token>(tokens,position+1);
     var code:Int=0;
     var after:Int=position+1;
+    var pendingEqual:Bool=false;
     branch when {
         token->text=="Int"=>{
             branch when {next->text=="<"=>{return Result<ParsedType,Diagnostic>::Err(problem("unsupported",token->span,"fixed-width type"));},else=>unit};
@@ -30,7 +31,10 @@ function(tokens:Paged<Token>,position:Int):Result<ParsedType,Diagnostic>{
             after=try requireToken(tokens,after,"<");
             let element:Token=try lookup<Token>(tokens,after);
             branch when {element->text!="String"=>{return Result<ParsedType,Diagnostic>::Err(problem("unsupported",token->span,"only entry List<String> is supported"));},else=>unit};
-            after=try requireToken(tokens,after+1,">");code=4;
+            let close:Token=try lookup<Token>(tokens,after+1);
+            branch when{close->text==">="=>{after=after+1;pendingEqual=true;},
+              else=>{after=try requireToken(tokens,after+1,">");}};
+            code=4;
         },
         token->text=="String" || token->text=="Function" || token->text=="Bits" || token->text=="Bytes"=>{
             return Result<ParsedType,Diagnostic>::Err(problem("unsupported",token->span,"type is outside the native profile"));
@@ -38,7 +42,7 @@ function(tokens:Paged<Token>,position:Int):Result<ParsedType,Diagnostic>{
         token->kind==1=>{return Result<ParsedType,Diagnostic>::Err(problem("semantic",token->span,"unknown type"));},
         else=>{return Result<ParsedType,Diagnostic>::Err(problem("parse",token->span,"expected type"));},
     };
-    Result<ParsedType,Diagnostic>::Ok(ParsedType{valueType:code,next:after,span:token->span})
+    Result<ParsedType,Diagnostic>::Ok(ParsedType{valueType:code,next:after,span:token->span,pendingEqual:pendingEqual})
 };
 public let signature:Function(Paged<Token>,Int,Bool):Result<Signature,Diagnostic>=
 function(tokens:Paged<Token>,position:Int,named:Bool):Result<Signature,Diagnostic>{
@@ -67,7 +71,7 @@ function(tokens:Paged<Token>,position:Int,named:Bool):Result<Signature,Diagnosti
     };
     cursor=try requireToken(tokens,cursor,":");
     let result:ParsedType=try parseType(tokens,cursor);
-    Result<Signature,Diagnostic>::Ok(Signature{parameters:parameters,types:types,result:result->valueType,next:result->next})
+    Result<Signature,Diagnostic>::Ok(Signature{parameters:parameters,types:types,result:result->valueType,next:result->next,pendingEqual:result->pendingEqual})
 };
 public let precedence:Function(String):Int=function(operator:String):Int{
     branch when{
