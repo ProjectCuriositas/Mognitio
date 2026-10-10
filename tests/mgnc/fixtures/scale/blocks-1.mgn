@@ -1,0 +1,2 @@
+namespace App;
+let main:Function(List<String>):Int=function(args:List<String>):Int{{args->length()}};

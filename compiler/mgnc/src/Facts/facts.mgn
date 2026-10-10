@@ -1,6 +1,6 @@
 namespace Mgnc\Facts;
 use Std\Numeric\{Bits,BitShiftError};
-use Mgnc\Data\{Diagnostic,problem,Span};
+use Mgnc\Data\{Diagnostic,problem,Span,Paged,lookup};
 public let mask:Function(Int,Span):Result<Bits<64>,Diagnostic>=function(slot:Int,span:Span):Result<Bits<64>,Diagnostic>{
  branch on Bits<64>{1}->shiftLeft(slot%64){
   Result<Bits<64>,BitShiftError>::Ok(value:Bits<64>)=>Result<Bits<64>,Diagnostic>::Ok(value),
@@ -59,4 +59,28 @@ function(current:List<Bits<64>>,slot:Int,span:Span):Result<Unit,Diagnostic>{
   word->and(bit)==Bits<64>{0}=>Result<Unit,Diagnostic>::Err(problem("internal",span,"IR read before definition")),
   else=>Result<Unit,Diagnostic>::Ok(unit),
  }
+};
+
+public let fromSlots:Function(Int,List<Int>,Span):Result<List<Bits<64>>,Diagnostic>=
+function(count:Int,slots:List<Int>,span:Span):Result<List<Bits<64>>,Diagnostic>{
+ var result:List<Bits<64>>=List<Bits<64>>[];var index:Int=0;
+ loop while(index<(count+63)/64){
+  var word:Bits<64>=Bits<64>{0};
+  loop over(slots as slot:Int){
+   branch when{slot/64==index=>{word=word->or(try mask(slot,span));},else=>unit};
+  };
+  result=result->append(word);index=index+1;
+ };
+ Result<List<Bits<64>>,Diagnostic>::Ok(result)
+};
+public let requireAvailable:Function(List<Bits<64>>,Paged<Int>,Int,Span):Result<Unit,Diagnostic>=
+function(incoming:List<Bits<64>>,written:Paged<Int>,slot:Int,span:Span):Result<Unit,Diagnostic>{
+ let word:Bits<64>=try at(incoming,slot/64,span);let bit:Bits<64>=try mask(slot,span);
+ branch when{word->and(bit)!=Bits<64>{0}=>{return Result<Unit,Diagnostic>::Ok(unit);},else=>unit};
+ var index:Int=written->count;
+ loop while(index>0){
+  index=index-1;
+  branch when{(try lookup<Int>(written,index))==slot=>{return Result<Unit,Diagnostic>::Ok(unit);},else=>unit};
+ };
+ Result<Unit,Diagnostic>::Err(problem("internal",span,"IR read before definition"))
 };

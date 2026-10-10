@@ -27,7 +27,7 @@ let span:Span=Span{start:0,end:0,line:1,column:1};
             source+=f"assert branch on {func}({value},span){{Result<Bytes,Diagnostic>::Ok(b:Bytes)=>b=={vector},Result<Bytes,Diagnostic>::Err=>false}};\n";checks+=1
     for func,value in [("i32",2**31),("i32",-2**31-1),("u16",-1),("u16",65536),("u32",2**32),("u64",-1)]:
         source+=f"assert branch on {func}({value},span){{Result<Bytes,Diagnostic>::Ok=>false,Result<Bytes,Diagnostic>::Err(d:Diagnostic)=>d->phase==\"internal\"}};\n";checks+=1
-    source+="let base:Code=Code{records:empty<Record>(),nextLabel:2};\n"
+    source+="let base:Code=Code{records:empty<Record>(),nextLabel:2,pending:List<Int>[]};\n"
     bad=["label(label(base,0),0)","label(base,2)","reference(label(base,0),2,1)",
          "label(raw(base,List<Int>[144]),0)","raw(label(base,0),List<Int>[256])",
          "field(label(base,0),3,2147483648)"]

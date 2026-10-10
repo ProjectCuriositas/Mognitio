@@ -1,0 +1,548 @@
+[
+  {
+    "name": "bindings-10",
+    "family": "bindings",
+    "size": 10,
+    "bytes": 280,
+    "scalars": 280,
+    "sha256": "99537841a87bac41248a730871b3b05ea9d216f7bde912e8567bb5d67b78617b",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      10,
+      11,
+      13
+    ],
+    "tokens": 135,
+    "declared_bindings": 12,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 0,
+    "nodes": 47,
+    "max_depth": 4,
+    "functions": 1
+  },
+  {
+    "name": "bindings-100",
+    "family": "bindings",
+    "size": 100,
+    "bytes": 1902,
+    "scalars": 1902,
+    "sha256": "ad50b65d0f55680747cb18d7925d46058e340882d700bf50725d35a1275705c8",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      100,
+      101,
+      103
+    ],
+    "tokens": 945,
+    "declared_bindings": 102,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 0,
+    "nodes": 407,
+    "max_depth": 4,
+    "functions": 1
+  },
+  {
+    "name": "bindings-1000",
+    "family": "bindings",
+    "size": 1000,
+    "bytes": 19904,
+    "scalars": 19904,
+    "sha256": "acc7087e8f771a81b70721a3030631c6d73eef9e4a4479a19ae7fa64573c265f",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      247,
+      248,
+      250
+    ],
+    "tokens": 9045,
+    "declared_bindings": 1002,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 0,
+    "nodes": 4007,
+    "max_depth": 4,
+    "functions": 1
+  },
+  {
+    "name": "helpers-10",
+    "family": "helpers",
+    "size": 10,
+    "bytes": 694,
+    "scalars": 694,
+    "sha256": "26885dc7c04ebed2b0017ff982beeb37824f281cc236200ecd092095e905a489",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      1,
+      2,
+      4
+    ],
+    "tokens": 279,
+    "declared_bindings": 11,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 1,
+    "nodes": 45,
+    "max_depth": 4,
+    "functions": 11
+  },
+  {
+    "name": "helpers-100",
+    "family": "helpers",
+    "size": 100,
+    "bytes": 6095,
+    "scalars": 6095,
+    "sha256": "2fe1da242a2c6a2245c7e055854626459c327dd8337b4cd0e27ef610a695b99b",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      1,
+      2,
+      4
+    ],
+    "tokens": 2439,
+    "declared_bindings": 101,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 1,
+    "nodes": 405,
+    "max_depth": 4,
+    "functions": 101
+  },
+  {
+    "name": "helpers-1000",
+    "family": "helpers",
+    "size": 1000,
+    "bytes": 60996,
+    "scalars": 60996,
+    "sha256": "c60d48853baa94c5d3d8af4bb35ee069c5d2fc0c2ba373b63f1c4e56ec40ed4f",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      1,
+      2,
+      4
+    ],
+    "tokens": 24039,
+    "declared_bindings": 1001,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 1,
+    "nodes": 4005,
+    "max_depth": 4,
+    "functions": 1001
+  },
+  {
+    "name": "blocks-1",
+    "family": "blocks",
+    "size": 1,
+    "bytes": 102,
+    "scalars": 102,
+    "sha256": "45f0ea8ce0e723253cee31d774a00b7e0038ce51f94158cf12cddac62ad1a4a8",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      0,
+      1,
+      3
+    ],
+    "tokens": 38,
+    "declared_bindings": 1,
+    "block_extra_depth": 1,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 0,
+    "nodes": 4,
+    "max_depth": 4,
+    "functions": 1
+  },
+  {
+    "name": "blocks-8",
+    "family": "blocks",
+    "size": 8,
+    "bytes": 116,
+    "scalars": 116,
+    "sha256": "53440915ede9e476e354d91a40f862c504958897ac47bdd94d9f7e4232a2b467",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      0,
+      1,
+      3
+    ],
+    "tokens": 52,
+    "declared_bindings": 1,
+    "block_extra_depth": 8,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 0,
+    "nodes": 11,
+    "max_depth": 11,
+    "functions": 1
+  },
+  {
+    "name": "blocks-32",
+    "family": "blocks",
+    "size": 32,
+    "bytes": 164,
+    "scalars": 164,
+    "sha256": "1dc8f72926160ff03d363b0731af62904bd9f2b41126aec37643eb3ffcc04522",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      0,
+      1,
+      3
+    ],
+    "tokens": 100,
+    "declared_bindings": 1,
+    "block_extra_depth": 32,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 0,
+    "nodes": 35,
+    "max_depth": 35,
+    "functions": 1
+  },
+  {
+    "name": "blocks-128",
+    "family": "blocks",
+    "size": 128,
+    "bytes": 356,
+    "scalars": 356,
+    "sha256": "26ce0821b4937e390bf16d58528a6134d9e09f02ac8217c7a3da251fa1e9b8f5",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      0,
+      1,
+      3
+    ],
+    "tokens": 292,
+    "declared_bindings": 1,
+    "block_extra_depth": 128,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 0,
+    "nodes": 131,
+    "max_depth": 131,
+    "functions": 1
+  },
+  {
+    "name": "branches-1",
+    "family": "branches",
+    "size": 1,
+    "bytes": 130,
+    "scalars": 130,
+    "sha256": "9e4f3557eedfd825d2b08757459a86d173258e9920bdc4c6d6b0555fec8021e0",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      7,
+      11,
+      11
+    ],
+    "tokens": 50,
+    "declared_bindings": 1,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 1,
+    "call_chain_depth": 0,
+    "nodes": 9,
+    "max_depth": 5,
+    "functions": 1
+  },
+  {
+    "name": "branches-8",
+    "family": "branches",
+    "size": 8,
+    "bytes": 431,
+    "scalars": 431,
+    "sha256": "73a863e5f66a207e3d3b26f14b821bbe029b11b21b9be2262f7d39a7e9b49ee0",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      7,
+      11,
+      11
+    ],
+    "tokens": 176,
+    "declared_bindings": 1,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 8,
+    "call_chain_depth": 0,
+    "nodes": 58,
+    "max_depth": 19,
+    "functions": 1
+  },
+  {
+    "name": "branches-32",
+    "family": "branches",
+    "size": 32,
+    "bytes": 1463,
+    "scalars": 1463,
+    "sha256": "482f1f8b3af724898bb111541f664912558e658a4fa4e0c5444abb5c7d629a09",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      7,
+      11,
+      11
+    ],
+    "tokens": 608,
+    "declared_bindings": 1,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 32,
+    "call_chain_depth": 0,
+    "nodes": 226,
+    "max_depth": 67,
+    "functions": 1
+  },
+  {
+    "name": "branches-128",
+    "family": "branches",
+    "size": 128,
+    "bytes": 5591,
+    "scalars": 5591,
+    "sha256": "5968258c8ee070c59a2ea977ab3b06aaba914fec3e4fbae3e099e584aafc85c3",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      7,
+      11,
+      11
+    ],
+    "tokens": 2336,
+    "declared_bindings": 1,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 128,
+    "call_chain_depth": 0,
+    "nodes": 898,
+    "max_depth": 259,
+    "functions": 1
+  },
+  {
+    "name": "call-chain-1",
+    "family": "call-chain",
+    "size": 1,
+    "bytes": 167,
+    "scalars": 167,
+    "sha256": "2541309d6379bb6e2569f64a86961d7e205fffb406e3db8b34e357a46748ad13",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      1,
+      2,
+      4
+    ],
+    "tokens": 65,
+    "declared_bindings": 2,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 1,
+    "nodes": 11,
+    "max_depth": 5,
+    "functions": 2
+  },
+  {
+    "name": "call-chain-8",
+    "family": "call-chain",
+    "size": 8,
+    "bytes": 608,
+    "scalars": 608,
+    "sha256": "964e5b1f1c78cfdc2626af0bc824b69be60a769af9e7b52256cda052741fdc36",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      8,
+      9,
+      11
+    ],
+    "tokens": 254,
+    "declared_bindings": 9,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 8,
+    "nodes": 53,
+    "max_depth": 5,
+    "functions": 9
+  },
+  {
+    "name": "call-chain-32",
+    "family": "call-chain",
+    "size": 32,
+    "bytes": 2164,
+    "scalars": 2164,
+    "sha256": "6c12e16f19aa10f9a2b5f518fabf6109927ec839cc0cc15a3f8eb3ebb9dc81ee",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      32,
+      33,
+      35
+    ],
+    "tokens": 902,
+    "declared_bindings": 33,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 32,
+    "nodes": 197,
+    "max_depth": 5,
+    "functions": 33
+  },
+  {
+    "name": "call-chain-128",
+    "family": "call-chain",
+    "size": 128,
+    "bytes": 8460,
+    "scalars": 8460,
+    "sha256": "9a81299691e84751976af400917b252173be6bf0e690b507624e76767c688ef4",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      128,
+      129,
+      131
+    ],
+    "tokens": 3494,
+    "declared_bindings": 129,
+    "block_extra_depth": 0,
+    "branch_extra_depth": 0,
+    "call_chain_depth": 128,
+    "nodes": 773,
+    "max_depth": 5,
+    "functions": 129
+  },
+  {
+    "name": "combined-1000",
+    "family": "combined",
+    "size": 1000,
+    "bytes": 87878,
+    "scalars": 87878,
+    "sha256": "bd967ab6275af5319fc7ea31cee5b76c42bb2d9ccde27945c0177d1e40f7d1cb",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      124,
+      125,
+      127
+    ],
+    "tokens": 35998,
+    "declared_bindings": 2003,
+    "block_extra_depth": 128,
+    "branch_extra_depth": 128,
+    "call_chain_depth": 128,
+    "nodes": 9290,
+    "max_depth": 261,
+    "functions": 1001
+  },
+  {
+    "name": "combined-long-1000",
+    "family": "combined-long",
+    "size": 1000,
+    "bytes": 276116,
+    "scalars": 276116,
+    "sha256": "89237ceada33885e35371621fdce46da1f89b2b646c3feddf83e9e6336894b61",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      124,
+      125,
+      127
+    ],
+    "tokens": 35998,
+    "declared_bindings": 2003,
+    "block_extra_depth": 128,
+    "branch_extra_depth": 128,
+    "call_chain_depth": 128,
+    "nodes": 9290,
+    "max_depth": 261,
+    "functions": 1001
+  },
+  {
+    "name": "combined-comment-1000",
+    "family": "combined-comment",
+    "size": 1000,
+    "bytes": 153422,
+    "scalars": 125333,
+    "sha256": "668ee91cb026250cf3d88bfd2ca3514c4ec791e5db7efd8cc24f5f500ebebbb7",
+    "argv_counts": [
+      0,
+      1,
+      3
+    ],
+    "expected": [
+      124,
+      125,
+      127
+    ],
+    "tokens": 35998,
+    "declared_bindings": 2003,
+    "block_extra_depth": 128,
+    "branch_extra_depth": 128,
+    "call_chain_depth": 128,
+    "nodes": 9290,
+    "max_depth": 261,
+    "functions": 1001
+  }
+]

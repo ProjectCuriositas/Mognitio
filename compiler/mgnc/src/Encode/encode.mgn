@@ -2,35 +2,56 @@ namespace Mgnc\Encode;
 use Std\Numeric\{Bits};
 use Std\Binary\{Bytes,bytesFromBits};
 use Mgnc\Data\{Paged,empty,push,Diagnostic,problem,Span};
-use Mgnc\Machine\{Code,Record,Label};
+use Mgnc\Machine\{Code,Record,Label,flush};
 use Mgnc\Fields\{byte,i32,i64,u16,u32,u64,appendField};
-let locate:Function(Paged<Label>,Int,Span):Result<Int,Diagnostic>=
-function(labels:Paged<Label>,id:Int,span:Span):Result<Int,Diagnostic>{
- loop over(labels->pages->append(labels->tail) as page:List<Label>){
-  loop over(page as label:Label){
-   branch when{label->id==id=>{return Result<Int,Diagnostic>::Ok(label->offset);},else=>unit};
-  };
+type LabelMap=product{buckets:List<List<Label>>;};
+let newMap:Function():LabelMap=function():LabelMap{
+ var buckets:List<List<Label>>=List<List<Label>>[];var index:Int=0;
+ loop while(index<64){buckets=buckets->append(List<Label>[]);index=index+1;};
+ LabelMap{buckets:buckets}
+};
+let bucketAt:Function(LabelMap,Int,Span):Result<List<Label>,Diagnostic>=
+function(labels:LabelMap,id:Int,span:Span):Result<List<Label>,Diagnostic>{
+ branch on labels->buckets->at(id%64){
+  Result<List<Label>,IndexError>::Ok(value:List<Label>)=>Result<List<Label>,Diagnostic>::Ok(value),
+  Result<List<Label>,IndexError>::Err(error:IndexError)=>Result<List<Label>,Diagnostic>::Err(problem("internal",span,"machine label bounds")),
+ }
+};
+let locate:Function(LabelMap,Int,Span):Result<Int,Diagnostic>=
+function(labels:LabelMap,id:Int,span:Span):Result<Int,Diagnostic>{
+ loop over((try bucketAt(labels,id,span)) as label:Label){
+  branch when{label->id==id=>{return Result<Int,Diagnostic>::Ok(label->offset);},else=>unit};
  };
  Result<Int,Diagnostic>::Err(problem("internal",span,"undefined machine label"))
 };
+let addLabel:Function(LabelMap,Label,Span):Result<LabelMap,Diagnostic>=
+function(labels:LabelMap,value:Label,span:Span):Result<LabelMap,Diagnostic>{
+ let bucket:List<Label>=try bucketAt(labels,value->id,span);
+ loop over(bucket as previous:Label){
+  branch when{previous->id==value->id=>{return Result<LabelMap,Diagnostic>::Err(problem("internal",span,"duplicate machine label"));},else=>unit};
+ };
+ var buckets:List<List<Label>>=List<List<Label>>[];var index:Int=0;
+ loop over(labels->buckets as current:List<Label>){
+  buckets=buckets->append(branch when{index==value->id%64=>bucket->append(value),else=>current});
+  index=index+1;
+ };
+ Result<LabelMap,Diagnostic>::Ok(LabelMap{buckets:buckets})
+};
 let size:Function(Record):Int=function(record:Record):Int{
- branch when{record->kind==0=>record->bytes->length(),record->kind==1=>0,
+ record->bytes->length()+branch when{record->kind==0 || record->kind==1=>0,
  record->kind==2 || record->kind==3=>4,else=>8}
 };
-public let encode:Function(Code):Result<Bytes,Diagnostic>=function(code:Code):Result<Bytes,Diagnostic>{
+public let encode:Function(Code):Result<Bytes,Diagnostic>=function(initial:Code):Result<Bytes,Diagnostic>{
+ let code:Code=flush(initial);
  let span:Span=Span{start:0,end:0,line:1,column:1};
- var labels:Paged<Label>=empty<Label>();var length:Int=0;
+ var labels:LabelMap=newMap();var length:Int=0;
  loop over(code->records->pages->append(code->records->tail) as page:List<Record>){
   loop over(page as record:Record){
    branch when{record->kind==1=>{
     branch when{record->target<0 || record->target>=code->nextLabel=>{
      return Result<Bytes,Diagnostic>::Err(problem("internal",span,"machine label bounds"));
     },else=>unit};
-    branch on locate(labels,record->target,span){
-     Result<Int,Diagnostic>::Ok(offset:Int)=>{return Result<Bytes,Diagnostic>::Err(problem("internal",span,"duplicate machine label"));},
-     Result<Int,Diagnostic>::Err(error:Diagnostic)=>unit,
-    };
-    labels=push<Label>(labels,Label{id:record->target,offset:length});
+    labels=try addLabel(labels,Label{id:record->target,offset:length},span);
    },else=>{
     branch when{record->kind<0 || record->kind>5=>{return Result<Bytes,Diagnostic>::Err(problem("internal",span,"unknown machine record"));},else=>unit};
    }};
@@ -60,12 +81,13 @@ public let encode:Function(Code):Result<Bytes,Diagnostic>=function(code:Code):Re
  var offset:Int=0;
  loop over(code->records->pages->append(code->records->tail) as page:List<Record>){
   loop over(page as record:Record){
+   loop over(record->bytes as value:Int){result=result->append(try byte(value,span));};
    branch when{
-    record->kind==0=>{loop over(record->bytes as value:Int){result=result->append(try byte(value,span));};},
+    record->kind==0=>unit,
     record->kind==1=>unit,
     record->kind==2=>{
      let target:Int=try locate(labels,record->target,span);
-     result=try appendField(result,try i32(target-offset-4,span),span);
+     result=try appendField(result,try i32(target-offset-record->bytes->length()-4,span),span);
     },
     record->kind==3=>{result=try appendField(result,try i32(record->value,span),span);},
     record->kind==4=>{result=try appendField(result,try i64(record->value,span),span);},

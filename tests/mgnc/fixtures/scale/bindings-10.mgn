@@ -1,0 +1,2 @@
+namespace App;
+let main:Function(List<String>):Int=function(args:List<String>):Int{let v0:Int=args->length();let v1:Int=v0+1;let v2:Int=v1+1;let v3:Int=v2+1;let v4:Int=v3+1;let v5:Int=v4+1;let v6:Int=v5+1;let v7:Int=v6+1;let v8:Int=v7+1;let v9:Int=v8+1;let v10:Int=v9+1;v10%251};

@@ -3,7 +3,7 @@ use Std\Numeric\{Bits};
 use Mgnc\Data\{Paged,empty,push,lookup,Diagnostic,problem,Span};
 use Mgnc\IR\{Instruction,Block,FunctionIR,ModuleIR};
 use Mgnc\IRShape\{shape,blockIndex,integerAt};
-use Mgnc\Facts\{words,combine,equal,define,require};
+use Mgnc\Facts\{words,combine,equal,define,require,fromSlots,requireAvailable};
 let containsId:Function(List<Int>,Int):Bool=function(values:List<Int>,wanted:Int):Bool{
  loop over(values as value:Int){branch when{value==wanted=>{return true;},else=>unit};};false
 };
@@ -30,16 +30,16 @@ function(module:ModuleIR,functionInfo:FunctionIR):Result<Unit,Diagnostic>{
    return Result<Unit,Diagnostic>::Err(problem("internal",block->terminator->span,"invalid block ownership"));
   },else=>unit};
   ids=ids->append(block->id);end=block->end;
-  var definitions:List<Bits<64>>=words(functionInfo->slots->count,false);
+  var definedSlots:List<Int>=List<Int>[];
   var instructionIndex:Int=block->start;
   loop while(instructionIndex<block->end){
    let instruction:Instruction=try lookup<Instruction>(functionInfo->instructions,instructionIndex);
    try shape(module,functionInfo,instruction,false);
-   definitions=try define(definitions,instruction->slot,instruction->span);
+   definedSlots=definedSlots->append(instruction->slot);
    instructionIndex=instructionIndex+1;
   };
   try shape(module,functionInfo,block->terminator,true);
-  generated=push<List<Bits<64>>>(generated,definitions);index=index+1;
+  generated=push<List<Bits<64>>>(generated,try fromSlots(functionInfo->slots->count,definedSlots,span));index=index+1;
  };
  branch when{end!=functionInfo->instructions->count=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"unowned instruction"));},else=>unit};
  var reachable:List<Int>=List<Int>[0];index=0;
@@ -50,12 +50,29 @@ function(module:ModuleIR,functionInfo:FunctionIR):Result<Unit,Diagnostic>{
    branch when{!containsId(reachable,position)=>{reachable=reachable->append(position);},else=>unit};
   };index=index+1;
  };
+ var predecessors:Paged<List<Int>>=empty<List<Int>>();
+ index=0;
+ loop while(index<functionInfo->blocks->count){
+  let currentBlock:Block=try lookup<Block>(functionInfo->blocks,index);
+  var incomingBlocks:List<Int>=List<Int>[];var previousIndex:Int=0;
+  loop over(functionInfo->blocks->pages->append(functionInfo->blocks->tail) as page:List<Block>){
+   loop over(page as previousBlock:Block){
+    branch when{containsId(previousBlock->terminator->targets,currentBlock->id) && containsId(reachable,previousIndex)=>{
+     incomingBlocks=incomingBlocks->append(previousIndex);
+    },else=>unit};
+    previousIndex=previousIndex+1;
+   };
+  };
+  predecessors=push<List<Int>>(predecessors,incomingBlocks);index=index+1;
+ };
+ let fullWords:List<Bits<64>>=words(functionInfo->slots->count,true);
+ let emptyWords:List<Bits<64>>=words(functionInfo->slots->count,false);
  var outputs:Paged<List<Bits<64>>>=empty<List<Bits<64>>>();
  index=0;
  loop while(index<functionInfo->blocks->count){
   let initial:List<Bits<64>>=branch when{
    index==0=>try combine(parameterWords,try lookup<List<Bits<64>>>(generated,index),true,span),
-   else=>words(functionInfo->slots->count,true),
+   else=>fullWords,
   };
   outputs=push<List<Bits<64>>>(outputs,initial);index=index+1;
  };
@@ -67,22 +84,19 @@ function(module:ModuleIR,functionInfo:FunctionIR):Result<Unit,Diagnostic>{
   var nextInputs:Paged<List<Bits<64>>>=empty<List<Bits<64>>>();
   loop while(index<functionInfo->blocks->count){
    let block:Block=try lookup<Block>(functionInfo->blocks,index);
-   var incoming:List<Bits<64>>=words(functionInfo->slots->count,true);
+   var incoming:List<Bits<64>>=fullWords;
    branch when{
     index==0=>{incoming=parameterWords;},
-    !containsId(reachable,index)=>{incoming=words(functionInfo->slots->count,false);},
+    !containsId(reachable,index)=>{incoming=emptyWords;},
     else=>{
-     var predecessor:Int=0;var found:Bool=false;
-     loop while(predecessor<functionInfo->blocks->count){
-      let previous:Block=try lookup<Block>(functionInfo->blocks,predecessor);
-      branch when{containsId(reachable,predecessor) && containsId(previous->terminator->targets,block->id)=>{
+     var found:Bool=false;
+     loop over((try lookup<List<Int>>(predecessors,index)) as predecessor:Int){
        let outgoing:List<Bits<64>>=branch when{
         predecessor<index=>try lookup<List<Bits<64>>>(nextOutputs,predecessor),
         else=>try lookup<List<Bits<64>>>(outputs,predecessor),
        };
-       incoming=try combine(incoming,outgoing,false,span);found=true;
-      },else=>unit};
-      predecessor=predecessor+1;
+       incoming=branch when{found=>try combine(incoming,outgoing,false,span),else=>outgoing};
+       found=true;
      };
      branch when{!found=>{return Result<Unit,Diagnostic>::Err(problem("internal",span,"reachable block has no predecessor"));},else=>unit};
     },
@@ -96,14 +110,15 @@ function(module:ModuleIR,functionInfo:FunctionIR):Result<Unit,Diagnostic>{
  };
  loop over(reachable as position:Int){
   let block:Block=try lookup<Block>(functionInfo->blocks,position);
-  var definitions:List<Bits<64>>=try lookup<List<Bits<64>>>(inputs,position);
+  let definitions:List<Bits<64>>=try lookup<List<Bits<64>>>(inputs,position);
+  var written:Paged<Int>=empty<Int>();
   var instructionIndex:Int=block->start;
   loop while(instructionIndex<block->end){
    let instruction:Instruction=try lookup<Instruction>(functionInfo->instructions,instructionIndex);
-   loop over(instruction->inputs as slot:Int){try require(definitions,slot,instruction->span);};
-   definitions=try define(definitions,instruction->slot,instruction->span);instructionIndex=instructionIndex+1;
+   loop over(instruction->inputs as slot:Int){try requireAvailable(definitions,written,slot,instruction->span);};
+   written=push<Int>(written,instruction->slot);instructionIndex=instructionIndex+1;
   };
-  loop over(block->terminator->inputs as slot:Int){try require(definitions,slot,block->terminator->span);};
+  loop over(block->terminator->inputs as slot:Int){try requireAvailable(definitions,written,slot,block->terminator->span);};
  };
  Result<Unit,Diagnostic>::Ok(unit)
 };
