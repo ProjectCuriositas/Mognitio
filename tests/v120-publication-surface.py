@@ -3,7 +3,7 @@
 from pathlib import Path
 import hashlib,json,subprocess,tempfile
 ROOT=Path(__file__).resolve().parents[1];checks=0
-PREFIX="namespace App;use Std\\Numeric\\{Bits};use Std\\Binary\\{Bytes,bytesFromBits,bytesFromInts,ByteValueError,publishFile,BinaryFileMode,BinaryOutputError,BinaryOutputErrorKind};use Std\\Io\\{writeStdout};"
+PREFIX="namespace App;use Std\\Numeric\\{Bits,Unsigned,IntegerConversionError};use Std\\Binary\\{Bytes,bytesFromBits,bytesFromInts,ByteValueError,ByteOrder,BinaryDecodeError,publishFile,BinaryFileMode,BinaryOutputError,BinaryOutputErrorKind};use Std\\Io\\{writeStdout};"
 EMPTY="bytesFromBits(List<Bits<8>>[])"
 def run(args,code=0,out=b"",input=None):
  global checks
@@ -29,6 +29,9 @@ with tempfile.TemporaryDirectory(prefix="mgn-publish-surface-") as tmp:
  both(program('discard publishFile({discard writeStdout("p");""},{discard writeStdout("b");'+EMPTY+'},{discard writeStdout("m");BinaryFileMode::Data});0'),out=b"pbm")
  both(program('discard publishFile({discard writeStdout("p");""},{discard writeStdout("b");stop()},{discard writeStdout("m");BinaryFileMode::Data});0','let stop:Function():Bytes=function():Bytes{panic{"stop"}};'),4,b"pb")
  both(program('assert receiver()->length()==8;0','let receiver:Function():Bits<8>=function():Bits<8>{discard writeStdout("r");Bits<8>{1}};'),out=b"r")
+ both(program('assert receiver()->asInteger<Unsigned>()==Int<8,Unsigned>{1};0','let receiver:Function():Bits<8>=function():Bits<8>{discard writeStdout("r");Bits<8>{1}};'),out=b"r")
+ both(program('assert branch on receiver()->convertTo<Int<8,Unsigned>>(){Result<Int<8,Unsigned>,IntegerConversionError>::Ok(x:Int<8,Unsigned>)=>x==Int<8,Unsigned>{1},Result<Int<8,Unsigned>,IntegerConversionError>::Err=>false};0','let receiver:Function():Int=function():Int{discard writeStdout("r");1};'),out=b"r")
+ both(program('assert branch on receiver()->toBits<8>(ByteOrder::LittleEndian){Result<Bits<8>,BinaryDecodeError>::Ok(x:Bits<8>)=>x==Bits<8>{1},Result<Bits<8>,BinaryDecodeError>::Err=>false};0','let receiver:Function():Bytes=function():Bytes{discard writeStdout("r");bytesFromBits(List<Bits<8>>[Bits<8>{1}])};'),out=b"r")
  # A constructor Err propagates before publication despite an invalid first argument.
  extra='let attempt:Function():Result<Unit,ByteValueError>=function():Result<Unit,ByteValueError>{discard publishFile({discard writeStdout("p");""},try bytesFromInts(List<Int>[-1]),{discard writeStdout("m");BinaryFileMode::Data});Result<Unit,ByteValueError>::Ok(unit)};'
  both(program("branch on attempt(){Result<Unit,ByteValueError>::Ok=>1,Result<Unit,ByteValueError>::Err(e:ByteValueError)=>branch when{e->index==0 && e->value == -1=>0,else=>2}}",extra),out=b"p")
