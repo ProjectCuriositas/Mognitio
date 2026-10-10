@@ -5,11 +5,13 @@
 
 (defun operation-effects (op)
   (case op
+    ((:integer.convert :bits.left :bits.right :bits.at) '(:may-allocate :may-fail :call-barrier))
+    ((:integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not) '(:call-barrier))
     (:io.call '(:external-effect :may-allocate :may-fail :call-barrier))
     ((:call :call.value :call.interface :closure.call :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result :struct.make :enum.make :interface.pack :text.concat :text.slice) '(:may-allocate :may-fail :call-barrier))
     (:test.stage '(:may-fail :call-barrier))
     ((:text.length :text.equal :text.not-equal) '(:call-barrier))
-    ((:neg :add :sub :mul :div :rem) '(:may-fail))))
+    ((:numeric :neg :add :sub :mul :div :rem) '(:may-fail))))
 
 (defun make-instruction (&key result (type :bool) op value operands span
                              (effects (operation-effects op)))
@@ -150,6 +152,9 @@
                         (push value operands) (setf block end env updated)))
                     (values (emit-value block (checked-normal-type checked node)
                               (operation-info-kind (checked-operation checked node)) (node-span node)
+                              :value (let ((info (checked-operation checked node)))
+                                       (when (mognitio.semantic::numeric-method-p (operation-info-kind info))
+                                         (first (operation-info-parameter-types info))))
                               :operands (nreverse operands)) block env)))
                  (list-expression
                   (let ((operands nil))
@@ -174,8 +179,8 @@
                  (boolean-literal
                   (values (emit-value block :bool :constant (node-span node)
                              :value (ecase (boolean-literal-value node) (:true 1) (:false 0))) block env))
-                 (integer-literal
-                  (values (emit-value block :int :constant (node-span node)
+                 ((or integer-literal mognitio.syntax::scalar-literal)
+                  (values (emit-value block (checked-normal-type checked node) :constant (node-span node)
                                       :value (checked-literal checked node)) block env))
                  (variable-reference
                   (let ((symbol (checked-symbol checked node)))
@@ -191,7 +196,9 @@
                         (unless end (return-from lower-raw (values nil nil nil)))
                         (values (if (eq :not (token-kind (unary-expression-operator node)))
                                     (emit-value end :bool :eq (node-span node) :operands (list v (emit-value end :bool :constant (node-span node) :value 0)))
-                                    (emit-value end :int :neg (node-span node) :operands (list v))) end updated))))
+                                    (let ((type (checked-normal-type checked node)))
+                                      (emit-value end type (if (mognitio.semantic::fixed-integer-p type) :numeric :neg)
+                                        (node-span node) :value (when (mognitio.semantic::fixed-integer-p type) (list :neg type)) :operands (list v)))) end updated))))
                  (binary-expression
                   (when (member (token-kind (binary-expression-operator node)) '(:and :or))
                     (return-from lower-raw (lower-short-circuit node checked block env #'lower #'emit-value #'new-block #'new-value)))
@@ -201,8 +208,12 @@
                       (unless b-end (return-from lower-raw (values nil nil nil)))
                       (values (emit-value b-end (checked-normal-type checked node)
                                 (let ((info (checked-operation checked node)))
-                                  (if info (operation-info-kind info) (token-kind (binary-expression-operator node))))
+                                  (if (mognitio.semantic::numeric-scalar-p (first (operation-info-parameter-types info))) :numeric
+                                      (if info (operation-info-kind info) (token-kind (binary-expression-operator node)))))
                                 (node-span node)
+                                :value (let ((info (checked-operation checked node)))
+                                         (when (mognitio.semantic::numeric-scalar-p (first (operation-info-parameter-types info)))
+                                           (list (operation-info-kind info) (first (operation-info-parameter-types info)))))
                                 :operands (list a b)) b-end b-env))))
                  (if-expression
                   (multiple-value-bind (condition condition-end condition-env)
@@ -405,8 +416,10 @@
                                     (and callee (plusp target)
                                          (equal (second type) (ir-function-parameter-types callee))
                                          (equal (third type) (ir-function-result-type callee))))) targets))))
-                 (:literal (if (eq result :void) (eql (instruction-value i) 0) (if (eq result :bool) (member (instruction-value i) '(0 1))
-                               (and (eq result :int) (mognitio.integer:in-range-p (instruction-value i))))))
+                 (:literal (if (mognitio.semantic::numeric-scalar-p result)
+                               (mognitio.semantic::numeric-in-range-p (instruction-value i) result)
+                               (if (eq result :void) (eql (instruction-value i) 0) (if (eq result :bool) (member (instruction-value i) '(0 1))
+                               (and (eq result :int) (mognitio.integer:in-range-p (instruction-value i)))))))
                  (:text-literal (and (eq result :string)
                                      (typep (instruction-value i) '(integer 0 *))
                                      (< (instruction-value i) (length pool))))

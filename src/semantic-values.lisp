@@ -110,7 +110,13 @@
   (let* ((receiver (method-call-receiver node)) (head (c-expression receiver)) (type (c-structure head))
          (args (coerce (method-call-arguments node) 'list)) (children (mapcar #'c-expression args))
          (name (token-text (method-call-name node))) (parameters nil) (result nil) (op nil))
+    (when (and (plusp (length (mognitio.syntax::method-call-type-arguments node)))
+               (not (or (eq type :int) (numeric-scalar-p type))))
+      (fail-at (node-span node) :type "This method has no compile-time parameters"))
     (cond
+      ((or (eq type :int) (numeric-scalar-p type))
+       (multiple-value-setq (op parameters result) (numeric-method-signature (c-context) node type))
+       (c-operation node op (cons receiver args) (cons type parameters) result))
       ((nominal-type-p type :struct)
        (let* ((fields (type-info-fields (context-type (c-context) type)))
               (index (position name fields :key #'car :test #'string=))

@@ -12,7 +12,7 @@
 (defstruct assert-statement operand keyword-span span)
 (defstruct string-literal (payload nil :read-only t) (span nil :read-only t))
 (defstruct method-call (receiver nil :read-only t) (name nil :read-only t)
-  (arguments #() :read-only t) (span nil :read-only t))
+  (type-arguments #() :read-only t) (arguments #() :read-only t) (span nil :read-only t))
 (defstruct loop-expression (target nil :read-only t) (binder nil :read-only t) (body nil :read-only t) (condition nil :read-only t) (span nil :read-only t))
 (defstruct break-statement (value nil :read-only t) (span nil :read-only t))
 (defstruct continue-statement (span nil :read-only t))

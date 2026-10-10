@@ -32,6 +32,8 @@
              (verify-shape (node type)
                (let* ((contract (typep node 'contract-declaration))
                       (kind (if contract :interface (data-declaration-kind node))) (seen nil))
+                 (if (numeric-builtin-declaration-p node)
+                     (verify-numeric-builtin node type)
                  (if (eq kind :alias)
                      (v-check (equal type (v-resolve (data-declaration-target node))) "Invalid alias proof")
                      (let ((info (context-type context type)))
@@ -64,7 +66,7 @@
                                             (string= (requirement-name expected) (token-text (named-member-name member)))
                                             (equal (requirement-parameters expected) (mapcar (lambda (p) (v-resolve (parameter-type p))) (rest params)))
                                             (equal (requirement-result expected) (v-resolve (function-expression-result-type function))))
-                                       "Invalid contract signature"))))))))))
+                                       "Invalid contract signature")))))))))))
       (loop for node across (program-declarations program) when (typep node '(or data-declaration contract-declaration)) do
         (let* ((name (name-of node)) (stored (gethash name (value-context-names context)))
                (generic (typep stored 'generic-template)) (refs nil))

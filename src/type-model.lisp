@@ -1,5 +1,7 @@
 (in-package #:mognitio.semantic)
 
+(defvar *numeric-span* nil)
+
 (defstruct type-info id kind name fields variants methods origin arguments source-id)
 (defstruct variant-info id name types)
 (defstruct requirement name parameters result)
@@ -15,6 +17,8 @@
   (templates (make-hash-table :test #'equal))
   (instances (make-hash-table :test #'equal))
   (parameter-uses (make-hash-table :test #'equal))
+  (width-constraints (make-hash-table :test #'equal))
+  (constraint-edges nil)
   (next-template 0)
   (declarations (make-hash-table :test #'equal))
   (declaration-state (make-hash-table :test #'eq))
@@ -30,7 +34,7 @@
 (defun reference-type-p (type)
   (or (eq type :string) (nominal-type-p type) (function-type-p type) (list-type-p type) (and (consp type) (eq :buffer (first type)))))
 (defun valid-value-type-p (type)
-  (or (member type '(:int :bool :void :string)) (nominal-type-p type) (rigid-type-p type) (function-type-p type) (list-type-p type)))
+  (or (numeric-scalar-p type) (member type '(:int :bool :void :string)) (nominal-type-p type) (rigid-type-p type) (function-type-p type) (list-type-p type)))
 (defun reject-function-type (type form message)
   (declare (ignore form message)) type)
 (defun list-type-p (type) (and (consp type) (eq (first type) :list) (= (length type) 2)))
@@ -77,6 +81,8 @@
                        when (string= name (car pair)) collect (cdr pair))))
 
 (defun declare-value-type (context node)
+  (when (numeric-builtin-declaration-p node)
+    (return-from declare-value-type (declare-numeric-builtin context node)))
   (when (and (typep node 'data-declaration) (plusp (length (data-declaration-type-parameters node))))
     (return-from declare-value-type (declare-generic-type context node)))
   (let* ((contract-p (typep node 'contract-declaration))

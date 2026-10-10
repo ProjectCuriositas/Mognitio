@@ -1,6 +1,6 @@
 (in-package #:mognitio.project)
 
-(defstruct standard-catalog program declarations)
+(defstruct standard-catalog program declarations (namespace "Std\\Io") extensions)
 
 (defun standard-namespace-p (name)
   (equal "Std" (first (namespace-parts name))))
@@ -54,18 +54,22 @@ public let createDirectory: Function(String): Result<Unit,IoError> = function(pa
         (let ((name (raw-name token)))
           (unless (member name *predeclared* :test #'equal)
             (setf (mognitio.syntax::token-resolved-name token) (standard-key name))))))
-    (make-standard-catalog :program program :declarations (nreverse declarations))))
+    (make-standard-catalog :program program :declarations (nreverse declarations)
+                           :extensions (list (make-numeric-catalog)))))
 
 (defun standard-exports (project)
   (let ((table (make-hash-table :test #'equal)))
-    (dolist (decl (standard-catalog-declarations (project-standard project)))
-      (setf (gethash (cons "Std\\Io" (module-declaration-name decl)) table) decl))
+    (dolist (catalog (project-catalogs project))
+      (dolist (decl (standard-catalog-declarations catalog))
+        (setf (gethash (cons (standard-catalog-namespace catalog) (module-declaration-name decl)) table) decl)))
     table))
 
 (defun standard-declarations (project)
-  (coerce (program-declarations (standard-catalog-program (project-standard project))) 'list))
+  (loop for catalog in (project-catalogs project)
+        append (coerce (program-declarations (standard-catalog-program catalog)) 'list)))
 (defun standard-prelude (project)
-  (coerce (program-statements (standard-catalog-program (project-standard project))) 'list))
+  (loop for catalog in (project-catalogs project)
+        append (coerce (program-statements (standard-catalog-program catalog)) 'list)))
 
 (defun verify-standard-catalog (project)
   ;; Check the supplied records against the closed language surface, without
@@ -73,7 +77,8 @@ public let createDirectory: Function(String): Result<Unit,IoError> = function(pa
   (let* ((catalog (project-standard project)) (program (standard-catalog-program catalog))
          (source (program-source program)) (decls (standard-catalog-declarations catalog)))
     (flet ((check (ok) (unless ok (internal-error "Invalid standard catalog provenance or body"))))
-      (check (and (eq (mognitio.source::source-origin source) :standard)
+      (check (and (equal (standard-catalog-namespace catalog) "Std\\Io")
+                  (eq (mognitio.source::source-origin source) :standard)
                   (equal (source-path source) "standard:Std\\Io@0.14.0")
                   (null (program-root program)) (= (length decls) 14)
                   (= (length (program-declarations program)) 6) (= (length (program-statements program)) 8)))
@@ -97,6 +102,9 @@ public let createDirectory: Function(String): Result<Unit,IoError> = function(pa
               (loop for parameter across parameters for argument across (mognitio.syntax::io-expression-arguments body) do
                 (check (and (typep argument 'variable-reference) (eq (variable-reference-name argument) (parameter-name parameter))))))))))
   (verify-standard-shapes (project-standard project))
+  (let ((extensions (standard-catalog-extensions (project-standard project))))
+    (unless (= 1 (length extensions)) (internal-error "Missing numeric catalog"))
+    (verify-numeric-catalog (first extensions)))
   t)
 
 (in-package #:mognitio.semantic)

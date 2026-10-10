@@ -134,7 +134,16 @@
             (publish-roots (mognitio.ir:basic-block-id block) index)
             (setf span (mognitio.ir:instruction-span inst))
             (case (mognitio.ir:instruction-op inst)
-              ((:constant :function) (emit :imm-rax (mognitio.ir:instruction-value inst)))
+              ((:constant :function) (emit :imm-rax (mognitio.native.runtime::numeric-word (mognitio.ir:instruction-value inst))))
+              (:numeric
+               (load-value (first (mognitio.ir:instruction-operands inst)))
+               (when (second (mognitio.ir:instruction-operands inst))
+                 (load-value (second (mognitio.ir:instruction-operands inst)) :rcx))
+               (dolist (form (mognitio.native.runtime::verify-numeric-operation-forms
+                              (mognitio.ir:instruction-value inst)
+                              (mognitio.native.runtime::numeric-operation-forms
+                                (mognitio.ir:instruction-value inst) #'fresh-label)))
+                 (apply #'emit form)))
               (:runtime.argv
                (section :arguments (list (mognitio.ir:basic-block-id block) index)
                  `((:load-word :rax :r15 ,mognitio.native.runtime::+arguments+)
@@ -152,7 +161,7 @@
                (loop for argument in (mognitio.ir:instruction-operands inst) for offset from 0 by 8 do
                  (load-value argument) (emit :store-out offset :rax))
                (emit :call (list :function (mognitio.ir:instruction-value inst))))
-              ((:io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result)
+              ((:integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result)
                (loop for argument in (mognitio.ir:instruction-operands inst) for offset from 0 by 8 do
                  (load-value argument) (emit :store-out offset :rax))
                (emit :call (mognitio.native.runtime::value-helper-name inst)))
@@ -203,7 +212,7 @@
                (arithmetic inst)))
             (write-location (home (mognitio.ir:instruction-result inst)) :rax)
             (when (member (mognitio.ir:instruction-op inst)
-                          '(:io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
+                          '(:integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
               (push (list :operation (list (mognitio.ir:basic-block-id block) index) (ldiff code start)) sections))))
         (let ((term (mognitio.ir:basic-block-terminator block)))
           (ecase (first term)
