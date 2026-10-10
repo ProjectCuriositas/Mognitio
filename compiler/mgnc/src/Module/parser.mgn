@@ -1,0 +1,56 @@
+namespace Mgnc\Module;
+use Mgnc\Data\{Paged,empty,lookup,Token,Diagnostic,problem};
+use Mgnc\Syntax\{Node,Declaration,Program,ParsedExpression};
+use Mgnc\Parser\{expression};
+use Mgnc\ParseSupport\{requireToken,signature,Signature};
+public let parse:Function(Paged<Token>):Result<Program,Diagnostic>=
+function(tokens:Paged<Token>):Result<Program,Diagnostic>{
+    var cursor:Int=try requireToken(tokens,0,"namespace");
+    var moduleName:String="";
+    loop while(true){
+        let part:Token=try lookup<Token>(tokens,cursor);
+        branch when{part->kind!=1=>{return Result<Program,Diagnostic>::Err(problem("parse",part->span,"expected namespace name"));},else=>unit};
+        branch when{moduleName=="" && part->text=="Std"=>{return Result<Program,Diagnostic>::Err(problem("semantic",part->span,"reserved namespace"));},else=>unit};
+        moduleName=moduleName+part->text;cursor=cursor+1;
+        let separator:Token=try lookup<Token>(tokens,cursor);
+        branch when{separator->text=="\\"=>{moduleName=moduleName+"\\";cursor=cursor+1;},else=>{break;}};
+    };
+    cursor=try requireToken(tokens,cursor,";");
+    var nodes:Paged<Node>=empty<Node>();
+    var declarations:List<Declaration>=List<Declaration>[];
+    loop while(true){
+        let token:Token=try lookup<Token>(tokens,cursor);
+        branch when{token->kind==0=>{
+            return Result<Program,Diagnostic>::Ok(Program{nodes:nodes,declarations:declarations,moduleName:moduleName,end:token->span});
+        },else=>unit};
+        branch when{token->text=="use" || token->text=="type" || token->text=="template" ||
+            token->text=="public" || token->text=="alias" || token->text=="contract"=>{
+            return Result<Program,Diagnostic>::Err(problem("unsupported",token->span,"top-level feature is outside the native profile"));
+        },else=>unit};
+        branch when{token->text!="let" && token->text!="var"=>{
+            return Result<Program,Diagnostic>::Err(problem("parse",token->span,"expected top-level binding"));
+        },else=>unit};
+        let name:Token=try lookup<Token>(tokens,cursor+1);
+        branch when{name->kind!=1=>{return Result<Program,Diagnostic>::Err(problem("parse",name->span,"expected binding name"));},else=>unit};
+        cursor=try requireToken(tokens,cursor+2,":");
+        let annotation:Token=try lookup<Token>(tokens,cursor);
+        branch when{annotation->text!="Function"=>{
+            return Result<Program,Diagnostic>::Err(problem("unsupported",annotation->span,"top-level values require a direct function"));
+        },else=>unit};
+        let declared:Signature=try signature(tokens,cursor,false);
+        cursor=try requireToken(tokens,declared->next,branch when{declared->pendingEqual=>">=",else=>"="});
+        let initializer:Token=try lookup<Token>(tokens,cursor);
+        branch when{initializer->text!="function"=>{
+            return Result<Program,Diagnostic>::Err(problem("unsupported",initializer->span,"function aliases are outside the native profile"));
+        },else=>unit};
+        let actual:Signature=try signature(tokens,cursor,true);
+        let bodyStart:Token=try lookup<Token>(tokens,actual->next);
+        branch when{bodyStart->text!="{"=>{return Result<Program,Diagnostic>::Err(problem("parse",bodyStart->span,"expected function body"));},else=>unit};
+        let body:ParsedExpression=try expression(tokens,actual->next,nodes);
+        nodes=body->nodes;cursor=try requireToken(tokens,body->next,";");
+        declarations=declarations->append(Declaration{name:name->text,parameters:actual->parameters,
+            declaredParameters:declared->types,result:actual->result,declaredResult:declared->result,
+            body:body->root,span:name->span,mutable:token->text=="var"});
+    };
+    panic {"unreachable module exit"}
+};
