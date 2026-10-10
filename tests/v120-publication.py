@@ -122,7 +122,9 @@ with tempfile.TemporaryDirectory(prefix="mgn-publish-") as temporary:
         execute(native);assert stat.S_IMODE(target.stat().st_mode)&0o7000==0;target.unlink()
     # Concurrent no-replace commits have exactly one winner and preserve it.
     target=root/"race"
-    compile(body(target).replace("=>2}}","=>11}}"))
+    race_error="("+enum("e->kind","BinaryOutputErrorKind",KINDS,"AlreadyExists")+") && ("+enum("e->publication","BinaryPublicationState",STATES,"NotPublished")+")"
+    race_error+=" && (("+enum("e->phase","BinaryOutputPhase",PHASES,"Target")+") || ("+enum("e->phase","BinaryOutputPhase",PHASES,"Publish")+"))"
+    compile(body(target).replace("false=>0,else=>2",race_error+"=>11,else=>2"))
     procs=[subprocess.Popen([image],stdout=subprocess.PIPE,stderr=subprocess.PIPE) for _ in range(12)]
     codes=[]
     for p in procs:

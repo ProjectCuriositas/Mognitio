@@ -114,7 +114,18 @@ template capture<N:Int>=function(x:Bits<N>):Function():Bits<N>{function():Bits<N
 
     execute("assert branch on (-1)->convertTo<Int<8,Signed>>() {Result<Int<8,Signed>,IntegerConversionError>::Ok(x:Int<8,Signed>)=>x==Int<8,Signed>{-1},Result<Int<8,Signed>,IntegerConversionError>::Err(e:IntegerConversionError)=>false};assert (-1)->toBits()==Bits<64>{18446744073709551615};0")
     execute("assert Int<8,Marker>{127}==Narrow{127};0", "alias Marker=Signed;alias Narrow=Int<8,Marker>;")
+    execute("assert branch on once()->convertTo<Int<8,Unsigned>>(){Result<Int<8,Unsigned>,IntegerConversionError>::Ok(x:Int<8,Unsigned>)=>x==Int<8,Unsigned>{1},Result<Int<8,Unsigned>,IntegerConversionError>::Err=>false};0",
+            'let once:Function():Int=function():Int{1};')
+    for kind in ("Int<8,Signed>","Int<64,Unsigned>"):
+        for op in ("/","%"):
+            execute(f"discard {kind}{{1}}{op}{kind}{{0}};0",code=4,message=b"runtime error: division by zero\n")
+    execute("assert branch on Bits<8>{255}->shiftRight(0){Result<Bits<8>,BitShiftError>::Ok(x:Bits<8>)=>x==Bits<8>{255},Result<Bits<8>,BitShiftError>::Err=>false};assert branch on Bits<8>{255}->shiftLeft(8){Result<Bits<8>,BitShiftError>::Ok=>false,Result<Bits<8>,BitShiftError>::Err=>true};0")
     invalid = [
+        ("discard Int<8,Signed>{1};0", "type Signed=product{};"),
+        ("let x:Int<8,Signed>=1;0",""),
+        ("discard Bits<64>{18446744073709551616};0",""),
+        ("discard Bits<8>{1}->asInteger;0",""),
+
         ("discard Bits<8>{1}->length<Int>();0", ""),
         ("discard Bits<8>{1}->asInteger<Int>();0", ""),
         ("discard Int<8,Signed>{1}->convertTo<String>();0", ""),
@@ -151,6 +162,7 @@ template capture<N:Int>=function(x:Bits<N>):Function():Bits<N>{function():Bits<N
         previous = (root / "program").read_bytes()
         run([CLI, "build", root / "mognitio.toml", "-o", root / "program"], 1)
         assert (root / "program").read_bytes() == previous
+        run([CLI, "test", root / "mognitio.toml"], 1)
         snapshot = {"root": str(root), "manifest": manifest, "sources": {"src/app.mgn": text}}
         result = run(["sbcl", "--noinform", "--script", ROOT / "scripts/analysis-entry.lisp"],
                      input=json.dumps(snapshot).encode() + b"\n")

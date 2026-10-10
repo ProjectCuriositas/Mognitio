@@ -100,7 +100,7 @@ def save(path, value):
     temporary.replace(path)
 
 
-def main():
+def main(regression=False):
     if not __debug__:
         raise SystemExit("Do not disable verification assertions")
     def interrupted(signum, frame):
@@ -119,6 +119,8 @@ def main():
         for name, image in identity["images"].items():
             assert digest(roots[side] / name) == image["sha256"], "image changed"
     tools = {p.name: digest(p) for p in (Path(__file__), HERE / "v11-measure-profile.py", HERE / "v11-workloads.py", HERE / "v11-measure-environment.py")}
+    if regression:
+        tools["v120-performance.py"] = digest(HERE / "v120-performance.py")
     args.evidence = args.evidence.resolve()
     args.evidence.mkdir(parents=True, exist_ok=args.resume)
     checkpoint = args.evidence / "results.json"
@@ -131,7 +133,7 @@ def main():
     assert record["identities"] == identities and record["tools"] == tools, "resume identity mismatch"
     record["environments"].append(environment)
     save(checkpoint, record)
-    cells = profile.matrix()
+    cells = [dict(cell, improvement=False) for cell in profile.matrix()] if regression else profile.matrix()
     for index, cell in enumerate(cells):
         if index < len(record["cells"]):
             entry = record["cells"][index]

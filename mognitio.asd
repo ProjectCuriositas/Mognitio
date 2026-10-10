@@ -188,7 +188,7 @@
              (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" "tests/v010-projects.py"))) :output *standard-output* :error-output *error-output*)
              (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" "tests/v011-testing.py"))) :output *standard-output* :error-output *error-output*)
              (dolist (file '("tests/v012-entry.py" "tests/v012-io.py" "tests/v012-files.py" "tests/v012-execution.py" "tests/v012-reference.py" "tests/v012-review.py"
-                             "tests/v013-directory.py" "tests/v013-inheritance.py" "tests/v013-reference.py" "tests/v013-integration.py" "tests/v014-integration.py" "tests/v11-workloads.py" "tests/v11-measure-check.py" "tests/v120-projects.py" "tests/v120-numeric.py" "tests/v120-bytes.py" "tests/v120-publication.py"))
+                             "tests/v013-directory.py" "tests/v013-inheritance.py" "tests/v013-reference.py" "tests/v013-integration.py" "tests/v014-integration.py" "tests/v11-workloads.py" "tests/v11-measure-check.py" "tests/v120-projects.py" "tests/v120-numeric.py" "tests/v120-bytes.py" "tests/v120-publication.py" "tests/v120-publication-surface.py" "tests/v120-numeric-oracle.py" "tests/v120-emitter.py" "tests/v120-conformance.py"))
                (uiop:run-program (list "python3" (namestring (asdf:system-relative-pathname "mognitio" file)))
                                  :output *standard-output* :error-output *error-output*))))
 

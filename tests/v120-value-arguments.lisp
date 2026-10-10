@@ -55,3 +55,6 @@
     (same "Tag<-7>" (mognitio.semantic::diagnostic-type-name value context))
     (setf (mognitio.semantic::generic-template-parameters template) '((:parameter (:type 0) 0)))
     (signals internal-failure (verify-checked-program checked))))
+
+(deftest v120-unreserved-numeric-names
+  (v03-positive "type Bits<T>=product{value:T;};type Bytes=product{};type Signed=product{};type Unsigned=product{};let b:Bits<Int>=Bits<Int>{value:7};let y:Bytes=Bytes{};let s:Signed=Signed{};let u:Unsigned=Unsigned{};b->value==7" :true))

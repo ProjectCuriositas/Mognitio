@@ -1,0 +1,35 @@
+namespace Emitter\Fields;
+use Std\Numeric\{Bits,Signed,Unsigned,IntegerConversionError};
+use Std\Binary\{Bytes,bytesFromBits,ByteOrder,BitWidthError};
+public let u16:Function(Int):Result<Bytes,String>=function(value:Int):Result<Bytes,String>{
+ let fixed:Int<16,Unsigned>=try branch on value->convertTo<Int<16,Unsigned>>(){
+ Result<Int<16,Unsigned>,IntegerConversionError>::Ok(x:Int<16,Unsigned>)=>Result<Int<16,Unsigned>,String>::Ok(x),
+ Result<Int<16,Unsigned>,IntegerConversionError>::Err(e:IntegerConversionError)=>Result<Int<16,Unsigned>,String>::Err("field range")};
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+ Result<Bytes,BitWidthError>::Ok(x:Bytes)=>Result<Bytes,String>::Ok(x),
+ Result<Bytes,BitWidthError>::Err(e:BitWidthError)=>Result<Bytes,String>::Err("field width")}
+};
+public let u32:Function(Int):Result<Bytes,String>=function(value:Int):Result<Bytes,String>{
+ let fixed:Int<32,Unsigned>=try branch on value->convertTo<Int<32,Unsigned>>(){
+ Result<Int<32,Unsigned>,IntegerConversionError>::Ok(x:Int<32,Unsigned>)=>Result<Int<32,Unsigned>,String>::Ok(x),
+ Result<Int<32,Unsigned>,IntegerConversionError>::Err(e:IntegerConversionError)=>Result<Int<32,Unsigned>,String>::Err("field range")};
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+ Result<Bytes,BitWidthError>::Ok(x:Bytes)=>Result<Bytes,String>::Ok(x),
+ Result<Bytes,BitWidthError>::Err(e:BitWidthError)=>Result<Bytes,String>::Err("field width")}
+};
+public let u64:Function(Int):Result<Bytes,String>=function(value:Int):Result<Bytes,String>{
+ let fixed:Int<64,Unsigned>=try branch on value->convertTo<Int<64,Unsigned>>(){
+ Result<Int<64,Unsigned>,IntegerConversionError>::Ok(x:Int<64,Unsigned>)=>Result<Int<64,Unsigned>,String>::Ok(x),
+ Result<Int<64,Unsigned>,IntegerConversionError>::Err(e:IntegerConversionError)=>Result<Int<64,Unsigned>,String>::Err("field range")};
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+ Result<Bytes,BitWidthError>::Ok(x:Bytes)=>Result<Bytes,String>::Ok(x),
+ Result<Bytes,BitWidthError>::Err(e:BitWidthError)=>Result<Bytes,String>::Err("field width")}
+};
+public let s32:Function(Int):Result<Bytes,String>=function(value:Int):Result<Bytes,String>{
+ let fixed:Int<32,Signed>=try branch on value->convertTo<Int<32,Signed>>(){
+ Result<Int<32,Signed>,IntegerConversionError>::Ok(x:Int<32,Signed>)=>Result<Int<32,Signed>,String>::Ok(x),
+ Result<Int<32,Signed>,IntegerConversionError>::Err(e:IntegerConversionError)=>Result<Int<32,Signed>,String>::Err("field range")};
+ branch on fixed->toBits()->toBytes(ByteOrder::LittleEndian){
+ Result<Bytes,BitWidthError>::Ok(x:Bytes)=>Result<Bytes,String>::Ok(x),
+ Result<Bytes,BitWidthError>::Err(e:BitWidthError)=>Result<Bytes,String>::Err("field width")}
+};

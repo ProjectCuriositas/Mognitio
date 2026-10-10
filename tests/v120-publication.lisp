@@ -185,3 +185,102 @@
       (multiple-value-bind (out err code)
           (process-result (list (namestring (v12-native manifest '(:publication-faults ((:open-parent 0 -13)))))))
         (same 0 code) (same "" out) (same "" err)))))
+
+(deftest v120-publication-result-allocation
+  (let* ((path (v120-publication-path))
+         (manifest (v120-publication-manifest (v120-publication-body path nil nil nil)))
+         (released nil) (before (v11-fd-snapshot))
+         (mognitio.io::*publication-observer* (lambda (phase status)
+           (declare (ignore status)) (when (eq phase :close-parent) (setf released t)))))
+    (let ((mognitio.runtime::*allocation-hook*
+            (lambda (kind) (when (and released (eq kind :data)) (error 'storage-condition)))))
+      (multiple-value-bind (out err code) (v12-driver manifest)
+        (same 4 code) (same "" out) (same (format nil "runtime error: allocation failure~%") err)))
+    (is released) (same before (v11-fd-snapshot))
+    (is (probe-file path)) (delete-file path))
+  ;; Locate the first post-publication allocation, not a guessed allocation count.
+  (let ((reached nil))
+    (loop for ordinal from 1 to 32 until reached do
+      (let* ((path (v120-publication-path))
+             (manifest (v120-publication-manifest (v120-publication-body path nil nil nil)))
+             (image (v12-native manifest (list :fail-allocation ordinal))))
+        (multiple-value-bind (out err code) (process-result (list (namestring image)))
+          (when (probe-file path)
+            (same 4 code) (same "" out)
+            (same (format nil "runtime error: allocation failure~%") err)
+            (delete-file path) (setf reached t)))))
+    (is reached)))
+
+(deftest v120-publication-certified-errno-table
+  (dolist (row '((1 "PermissionDenied") (2 "NotFound") (4 "Other") (11 "Other")
+                (12 "ResourceExhausted") (13 "PermissionDenied") (16 "Other")
+                (17 "AlreadyExists") (18 "UnsupportedTarget") (20 "UnsupportedTarget")
+                (22 "UnsupportedTarget") (28 "ResourceExhausted") (30 "PermissionDenied")
+                (36 "Other") (38 "UnsupportedTarget") (39 "AlreadyExists")
+                (40 "Other") (95 "UnsupportedTarget") (116 "Other") (122 "ResourceExhausted")))
+    (destructuring-bind (errno kind) row
+      (dolist (native '(nil t))
+        (let* ((path (v120-publication-path))
+               (manifest (v120-publication-manifest (v120-publication-body path kind "Publish" "NotPublished")))
+               (mognitio.io::*publication-fault-hook* (lambda (phase) (when (eq phase :commit) (- errno)))))
+          (multiple-value-bind (out err code)
+              (if native
+                  (process-result (list (namestring (v12-native manifest
+                    (list :publication-faults (list (list :commit 1 (- errno))))))))
+                  (v12-driver manifest))
+            (same 0 code) (same "" out) (same "" err))
+          (is (not (probe-file path))))))))
+
+(deftest v120-publication-staging-collision
+  (dolist (native '(nil t))
+    (let* ((path (v120-publication-path))
+           (manifest (v120-publication-manifest (v120-publication-body path nil nil nil)))
+           (attempts 0)
+           (mognitio.io::*publication-fault-hook*
+             (lambda (phase) (when (and (eq phase :open-temp) (= 1 (incf attempts))) -17))))
+      (multiple-value-bind (out err code)
+          (if native (process-result (list (namestring (v12-native manifest '(:publication-faults ((:open-temp 1 -17)))))))
+              (v12-driver manifest))
+        (same 0 code) (same "" out) (same "" err))
+      (is (probe-file path)) (delete-file path))))
+
+(deftest v120-publication-lost-profile
+  ;; This private observation removes certification after the real profile gate.
+  ;; It tests the decision guard, not an enabled unsupported filesystem.
+  (dolist (row '((17 "AlreadyExists") (28 "ResourceExhausted")))
+    (destructuring-bind (errno kind) row
+      (dolist (native '(nil t))
+        (let* ((path (v120-publication-path))
+               (manifest (v120-publication-manifest (v120-publication-body path kind "Publish" "Unknown")))
+               (original (fdefinition 'mognitio.io::publication-classify-commit))
+               (forms (fdefinition 'mognitio.native.runtime::publication-write-commit-forms))
+               (mognitio.io::*publication-fault-hook* (lambda (at) (when (eq at :commit) (- errno)))))
+          (replacing (mognitio.io::publication-classify-commit
+                       (lambda (owner status)
+                         (setf (mognitio.io::publication-owner-profile owner) nil)
+                         (funcall original owner status)))
+            (replacing (mognitio.native.runtime::publication-write-commit-forms
+                         (lambda ()
+                           (loop for form in (funcall forms) append
+                             (append (when (equal form '(:publication-syscall :commit 316))
+                                       '((:imm-rax 0) (:store-frame -144 :rax))) (list form)))))
+              (multiple-value-bind (out err code)
+                  (if native (process-result (list (namestring (v12-native manifest
+                      (list :publication-faults (list (list :commit 1 (- errno))))))))
+                      (v12-driver manifest))
+                (same 0 code) (same "" out) (same "" err))))
+          (is (not (probe-file path))))))))
+
+(deftest v120-publication-gc-lifetime
+  (let ((manifest (v120-publication-manifest
+    "let data:Bytes=bytesFromBits(List<Bits<8>>[Bits<8>{255},Bits<8>{0}]);
+     let saved:Function():Bytes=function():Bytes{data};var i:Int=0;
+     loop while(i<200){
+       let outcome:Result<Unit,BinaryOutputError>=publishFile(\"\",saved(),BinaryFileMode::Data);
+       let extra:Bytes=data->concat(data);
+       assert extra->length()==4;
+       assert branch on outcome{Result<Unit,BinaryOutputError>::Ok=>false,Result<Unit,BinaryOutputError>::Err(e:BinaryOutputError)=>e->subject==\"\"};
+       assert saved()==data;i=i+1;
+     };0")))
+    (dolist (stress '(nil t))
+      (expect-project manifest (list :stress stress :validate t :arena-unit 4096 :cap 65536)))))
