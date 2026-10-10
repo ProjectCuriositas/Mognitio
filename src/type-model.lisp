@@ -43,7 +43,12 @@
   (let ((info (aref (value-context-types context) (second type))))
     (unless (equal type (canonical-type info)) (internal-error "Nominal identity mismatch")) info))
 (defun resolve-type-token (context token)
-  (cond ((typep token 'function-type-syntax)
+  (cond ((typep token 'mognitio.syntax::value-argument-syntax)
+         (fail-at (token-span token) :type "Integer argument is not a type"))
+        ((and (typep token 'token) (not (typep token 'type-syntax))
+              (value-parameter-p (gethash (token-text token) (value-context-names context))))
+         (fail-at (token-span token) :type "Value parameter is not a runtime type"))
+        ((typep token 'function-type-syntax)
          (list :function
                (map 'list (lambda (part) (resolve-type-token context part)) (function-type-syntax-parameters token))
                (resolve-type-token context (function-type-syntax-result token))))

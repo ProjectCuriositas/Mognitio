@@ -180,3 +180,10 @@ This uses 16 real 3 MiB files accepted by discovery, with one token at the front
 or tail and no diagnostics. Worker rows are injected into the actual coordinator
 loop; cancellation, shutdown, edits, and parent exit are observed independently
 of SBCL frontend throughput. A control-event barrier avoids scheduler races.
+
+## Compile-time integer arguments
+
+v120-value-arguments.lisp checks value/type separation, instance identity,
+signed boundaries, alias/template forwarding, closures, and negative proofs.
+v120-projects.py checks the shared CLI and analyzer through module imports.
+These tests cover the value-parameter increment, not the complete 1.2.0 scope.

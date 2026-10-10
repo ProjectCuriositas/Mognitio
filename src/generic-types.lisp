@@ -7,11 +7,11 @@
 (defun application-type-p (type)
   (and (consp type) (eq (first type) :application) (= (length type) 4)))
 (defun symbolic-type-p (type)
-  (or (rigid-type-p type) (application-type-p type)
+  (or (compile-time-parameter-p type) (application-type-p type)
       (and (list-type-p type) (symbolic-type-p (second type)))
       (and (function-type-p type) (some #'symbolic-type-p (append (second type) (list (third type)))))))
 (defun generic-argument-p (type)
-  (valid-value-type-p type))
+  (or (valid-value-type-p type) (integer-argument-p type) (value-parameter-p type)))
 (defun copy-type-names (names)
   (let ((copy (make-hash-table :test #'equal)))
     (maphash (lambda (name value) (setf (gethash name copy) value)) names) copy))
@@ -41,7 +41,12 @@
          (progn
            (setf (value-context-names context) (copy-type-names outer))
            (loop for token across tokens for ordinal from 0
-                 for name = (token-text token) for type = (list :parameter owner ordinal) do
+                 for name = (token-text token)
+                 for value-p = (typep token 'mognitio.syntax::value-parameter-syntax)
+                 for type = (list (if value-p :value-parameter :parameter) owner ordinal) do
+             (when value-p
+               (unless (eq :int (resolve-type-token context (mognitio.syntax::value-parameter-syntax-domain token)))
+                 (fail-at (token-span token) :type "Value parameter domain must be Int")))
              (when (or (gethash name (value-context-names context)) (gethash name (value-context-declarations context)) (member name '("Function" "Self") :test #'string=))
                (fail-at (token-span token) :semantic "Type parameter shadows a visible type"))
              (setf (gethash name (value-context-names context)) type)
@@ -60,7 +65,7 @@
 
 (defun substitute-generic-type (context type substitutions)
   (cond ((list-type-p type) (list :list (substitute-generic-type context (second type) substitutions)))
-        ((rigid-type-p type) (or (cdr (assoc type substitutions :test #'equal)) type))
+        ((compile-time-parameter-p type) (or (cdr (assoc type substitutions :test #'equal)) type))
         ((application-type-p type)
          (instantiate-generic-type context (gethash (third type) (value-context-templates context))
                                    (mapcar (lambda (arg) (substitute-generic-type context arg substitutions)) (fourth type))))
@@ -83,7 +88,7 @@
 (defun instantiate-generic-type (context template arguments)
   (unless (and (generic-template-p template)
                (= (length arguments) (length (generic-template-parameters template)))
-               (every #'generic-argument-p arguments))
+               (every #'argument-matches-parameter-p (generic-template-parameters template) arguments))
     (internal-error "Invalid generic type substitution"))
   (cond ((eq :alias (generic-template-kind template))
          (substitute-generic-type context (generic-template-target template)
@@ -118,7 +123,7 @@
           ((generic-template-p binding)
            (unless (and arguments (= (length arguments) (length (generic-template-parameters binding))))
              (fail-at (token-span token) :semantic "Generic type requires all type arguments"))
-           (let ((types (map 'list (lambda (arg) (resolve-type-token context arg)) arguments)))
+           (let ((types (resolve-generic-arguments context (generic-template-parameters binding) arguments)))
              (unless (every #'generic-argument-p types)
                (fail-at (token-span token) :semantic "Invalid generic type argument"))
              (instantiate-generic-type context binding types)))
@@ -171,14 +176,14 @@
 
 (defun visible-type-parameters (context)
   (sort (loop for value being the hash-values of (value-context-names context)
-              when (rigid-type-p value) collect value)
+              when (compile-time-parameter-p value) collect value)
         (lambda (a b) (or (< (second (second a)) (second (second b)))
                           (and (= (second (second a)) (second (second b))) (< (third a) (third b)))))))
 
 (defun resolve-function-type-arguments (context signature tokens node)
   (unless (= (length tokens) (length (signature-type-parameters signature)))
     (fail-at (node-span node) :semantic "Generic call requires all type arguments"))
-  (let ((arguments (map 'list (lambda (token) (resolve-type-token context token)) tokens)))
+  (let ((arguments (resolve-generic-arguments context (signature-type-parameters signature) tokens)))
     (unless (every #'generic-argument-p arguments)
       (fail-at (node-span node) :semantic "Invalid generic function type argument")) arguments))
 
@@ -188,8 +193,8 @@
       (when (eq :result (type-info-origin info)) (type-info-arguments info)))))
 
 (defun alpha-normalize (type owner)
-  (cond ((and (rigid-type-p type) (equal (second type) owner))
-         (list :parameter :alpha (third type)))
+  (cond ((and (compile-time-parameter-p type) (equal (second type) owner))
+         (list (first type) :alpha (third type)))
         ((application-type-p type)
          (list :application (second type) (third type)
                (mapcar (lambda (argument) (alpha-normalize argument owner)) (fourth type))))
@@ -211,7 +216,8 @@
   (let* ((declared (resolve-binding-signature context syntax))
          (left (first declared))
          (right (signature-type-parameters signature)))
-    (if (/= (length left) (length right))
+    (if (or (/= (length left) (length right))
+            (not (equal (mapcar #'first left) (mapcar #'first right))))
         "Generic arity mismatch"
         (let* ((left-owner (second (first left)))
                (right-owner (second (first right)))

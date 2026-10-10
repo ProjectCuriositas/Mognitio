@@ -31,7 +31,7 @@
                  (cond ((nominal-type-p type) (or (gethash type types) (internal-error "Unregistered concrete type")))
                        ((list-type-p type) (list :list (remap-type (second type))))
                        ((function-type-p type) (list :function (mapcar #'remap-type (second type)) (remap-type (third type))))
-                       ((or (rigid-type-p type) (application-type-p type)) (internal-error "Opaque type reached runtime mapping"))
+                       ((or (compile-time-parameter-p type) (application-type-p type)) (internal-error "Opaque type reached runtime mapping"))
                        (t type)))
                (type-for (type instance)
                  (remap-type (substitute-generic-type context type (function-instance-environment instance))))

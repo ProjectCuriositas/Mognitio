@@ -1,5 +1,7 @@
 # Verification
 
+The [1.2.0 implementation progress](v1.2.0-progress.md) records unreleased increments and remaining work.
+
 The [1.1.0 native runtime record](v1.1.0-runtime.md) describes the free-list,
 worklist, independent membership index, and their verification boundaries.
 

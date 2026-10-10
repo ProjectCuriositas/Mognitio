@@ -34,12 +34,12 @@
     (fail-at (node-span node) :semantic "Witness is not a type"))
   ;; A forward declaration is checked in its own compile-time scope.
   (let* ((outer (value-context-names context)) (isolated (copy-type-names outer)))
-    (maphash (lambda (name type) (when (rigid-type-p type) (remhash name isolated))) outer)
+    (maphash (lambda (name type) (when (compile-time-parameter-p type) (remhash name isolated))) outer)
     (unwind-protect
          (progn (setf (value-context-names context) isolated)
                 (ensure-value-declaration-in-scope context node))
       (maphash (lambda (name type)
-                 (unless (rigid-type-p (gethash name outer))
+                 (unless (compile-time-parameter-p (gethash name outer))
                    (setf (gethash name outer) type))) isolated)
       (setf (value-context-names context) outer))))
 (defun prepare-value-declarations (context program)

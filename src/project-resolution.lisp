@@ -120,6 +120,10 @@
   (cond
     ((null node))
     ((typep node 'token)
+     (when (typep node 'mognitio.syntax::value-parameter-syntax)
+       (syntax-walk (mognitio.syntax::value-parameter-syntax-domain node) token-function))
+     (when (typep node 'mognitio.syntax::value-argument-syntax)
+       (syntax-walk (mognitio.syntax::value-argument-syntax-reference node) token-function))
      (when (typep node 'type-syntax)
        (syntax-walk (type-syntax-name node) token-function)
        (syntax-walk (type-syntax-arguments node) token-function))

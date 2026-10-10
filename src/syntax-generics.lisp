@@ -11,3 +11,7 @@
     (concrete-function-reference (concrete-function-reference-span node))
     (try-expression (try-expression-span node))
     (panic-expression (panic-expression-span node))))
+
+;; Compile-time arguments are syntax, never runtime expressions.
+(defstruct (value-parameter-syntax (:include token)) domain)
+(defstruct (value-argument-syntax (:include token)) digits negative reference)
