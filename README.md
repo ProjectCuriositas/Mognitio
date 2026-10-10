@@ -7,6 +7,9 @@ Bits, immutable Bytes, explicit endian encoding, and transactional binary output
 Ordinary Int retains its signed 64-bit 1.x semantics. See the
 [implementation verification](verification/v1.2.0.md) and
 [binary emitter](examples/binary-emitter/README.md).
+Binary publication attempts unverified environments as well; certification
+refines failed-commit classification rather than enabling execution. See the
+[portability policy and evidence](verification/v1.2.0-publication-review.md).
 The static analyzer, stdio language server, build identities and Linux packaging
 remain part of the toolchain.
 The compiler targets Linux amd64. Official Linux packages and installer bundles

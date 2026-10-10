@@ -80,7 +80,17 @@
                 (unless (eq ownership :owned) (internal-error "Publication cleanup without ownership"))
                 (setf next :cleaned))
               (when (equal f '(:call (:runtime :allocate-block)))
-                (unless (eq ownership :released) (internal-error "Publication allocates Result before cleanup")))
+                (unless (or (eq ownership :released)
+                            (and (eq ownership :owned) (>= pc 7)
+                                 ;; Only the capacity-checked private name buffer
+                                 ;; may allocate while external resources are owned.
+                                 (equal (subseq forms (- pc 7) pc)
+                                   '((:store-frame -160 :rcx) (:mov-reg :rax :rcx)
+                                     (:imm-rcx 9223372036854775760) (:cmp) (:ja :allocation-failed)
+                                     (:add-imm :rax 8) (:store-out 0 :rax)))
+                                 (find '(:store-frame -24 :rdx)
+                                       (subseq forms (1+ pc) (min (length forms) (+ pc 24))) :test #'equal)))
+                  (internal-error "Publication allocates Result before cleanup")))
               (when (eq op :ret)
                 (unless (eq ownership :released) (internal-error "Publication return retains resources"))
                 (unless (equal (subseq forms (- pc 4) (- pc 2)) '((:load-frame :rcx -64) (:store-word :r15 0 :rcx)))
