@@ -22,7 +22,8 @@
        (v-body signature nil) (v-finish node (signature-type signature) t nil)))
     (specialization-reference
      (let* ((signature (gethash (token-text (specialization-reference-name node)) (value-context-function-templates (v-context))))
-            (arguments (map 'list #'v-resolve (specialization-reference-arguments node)))
+            (arguments (resolve-generic-arguments (v-context) (signature-type-parameters signature)
+                        (specialization-reference-arguments node)))
             (call (checked-call (v-program) node)))
        (v-check (and signature (= (length arguments) (length (signature-type-parameters signature)))) "Invalid template reference")
        (let ((type (substitute-generic-type (v-context) (signature-type signature) (pairlis (signature-type-parameters signature) arguments))))

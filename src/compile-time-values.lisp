@@ -1,0 +1,41 @@
+(in-package #:mognitio.semantic)
+
+(defun value-parameter-p (value)
+  (and (consp value) (eq (first value) :value-parameter) (= (length value) 3)))
+(defun compile-time-parameter-p (value)
+  (or (rigid-type-p value) (value-parameter-p value)))
+(defun integer-argument-p (value)
+  (and (consp value) (eq (first value) :integer-value) (= (length value) 2)
+       (mognitio.integer:in-range-p (second value))))
+(defun argument-matches-parameter-p (parameter argument)
+  (if (value-parameter-p parameter)
+      (or (integer-argument-p argument) (value-parameter-p argument))
+      (valid-value-type-p argument)))
+
+(defun resolve-integer-argument (context syntax)
+  (let ((reference syntax))
+    (when (typep syntax 'mognitio.syntax::value-argument-syntax)
+      (setf reference (mognitio.syntax::value-argument-syntax-reference syntax))
+      (unless reference
+        (multiple-value-bind (magnitude valid)
+            (mognitio.integer:decimal-magnitude
+              (token-text (mognitio.syntax::value-argument-syntax-digits syntax))
+              (mognitio.syntax::value-argument-syntax-negative syntax))
+          (unless valid (fail-at (token-span syntax) :type "Compile-time integer is outside Int"))
+          (return-from resolve-integer-argument
+            (list :integer-value (if (mognitio.syntax::value-argument-syntax-negative syntax)
+                                     (- magnitude) magnitude))))))
+    (unless (and (typep reference 'token) (not (typep reference 'type-syntax))
+                 (value-parameter-p (gethash (token-text reference) (value-context-names context))))
+      (fail-at (form-span syntax) :type "Expected a compile-time integer argument"))
+    (let ((value (gethash (token-text reference) (value-context-names context))))
+      (setf (gethash value (value-context-parameter-uses context)) t)
+      value)))
+
+(defun resolve-generic-arguments (context parameters syntax)
+  (unless (= (length parameters) (length syntax))
+    (internal-error "Generic argument arity mismatch"))
+  (loop for parameter in parameters for argument across syntax
+        collect (if (value-parameter-p parameter)
+                    (resolve-integer-argument context argument)
+                    (resolve-type-token context argument))))

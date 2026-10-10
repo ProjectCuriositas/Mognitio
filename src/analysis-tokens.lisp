@@ -59,6 +59,8 @@
                      (mognitio.semantic::checked-program-values checked) type))))))
          (types (x &optional (role "type"))
            (typecase x
+             (mognitio.syntax::value-argument-syntax
+              (types (mognitio.syntax::value-argument-syntax-reference x)))
              (type-syntax (types (type-syntax-name x) role)
               (map nil #'types (type-syntax-arguments x)))
              (function-type-syntax
@@ -87,7 +89,10 @@
              (data-declaration
               (emit (data-declaration-name node) "type" 1)
               (types (data-declaration-target node))
-              (map nil (lambda (p) (emit p "typeParameter" 1)) (data-declaration-type-parameters node))
+              (map nil (lambda (p)
+                         (emit p "typeParameter" 1)
+                         (when (typep p 'mognitio.syntax::value-parameter-syntax)
+                           (types (mognitio.syntax::value-parameter-syntax-domain p)))) (data-declaration-type-parameters node))
               (loop for member across (data-declaration-members node) do
                 (emit (named-member-name member)
                       (if (eq (data-declaration-kind node) :enum) "enumMember" "property") 1)
@@ -104,7 +109,10 @@
                     do (emit (local-binding-name method) "method" 1)))
              (template-declaration
               (emit (template-declaration-name node) "function" 3)
-              (map nil (lambda (p) (emit p "typeParameter" 1)) (template-declaration-parameters node)))
+              (map nil (lambda (p)
+                         (emit p "typeParameter" 1)
+                         (when (typep p 'mognitio.syntax::value-parameter-syntax)
+                           (types (mognitio.syntax::value-parameter-syntax-domain p)))) (template-declaration-parameters node)))
              (variable-reference
               (let ((resolved (gethash (token-text (variable-reference-name node))
                                       (mognitio.semantic::value-context-names

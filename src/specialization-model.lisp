@@ -41,7 +41,7 @@
         (walk-runtime-syntax checked child visit)))))
 
 (defun type-parameters-in (type)
-  (cond ((rigid-type-p type) (list type))
+  (cond ((compile-time-parameter-p type) (list type))
         ((application-type-p type) (remove-duplicates (mapcan #'type-parameters-in (copy-list (fourth type))) :test #'equal))
         ((list-type-p type) (type-parameters-in (second type)))
         ((function-type-p type) (remove-duplicates (mapcan #'type-parameters-in (append (second type) (list (third type)))) :test #'equal))))
@@ -106,8 +106,8 @@
                                                    :initial-contents (value-context-types source))) context))
 
 (defun concrete-type-key (context type)
-  (cond ((null type) nil) ((member type '(:int :bool :void :string)) type)
-        ((or (rigid-type-p type) (application-type-p type)) (internal-error "Unresolved runtime type parameter"))
+  (cond ((null type) nil) ((integer-argument-p type) type) ((member type '(:int :bool :void :string)) type)
+        ((or (compile-time-parameter-p type) (application-type-p type)) (internal-error "Unresolved runtime type parameter"))
         ((list-type-p type) (list :list (concrete-type-key context (second type))))
         ((function-type-p type) (list :function (mapcar (lambda (x) (concrete-type-key context x)) (second type))
                                      (concrete-type-key context (third type))))
@@ -135,7 +135,7 @@
                       (let ((type (substitute-generic-type context parameter caller-environment)))
                         (concrete-type-key context type) (cons parameter type))) free)
             (mapcar (lambda (parameter argument)
-                      (unless (generic-argument-p argument) (internal-error "Invalid instance argument domain"))
+                      (unless (argument-matches-parameter-p parameter argument) (internal-error "Invalid instance argument domain"))
                       (concrete-type-key context argument) (cons parameter argument))
                     (signature-type-parameters signature) arguments))))
 
