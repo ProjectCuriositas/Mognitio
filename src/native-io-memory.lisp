@@ -7,7 +7,7 @@
 (defun io-image-p ()
   (and *runtime-module*
        (some (lambda (function)
-               (some (lambda (block) (find :io.call (mognitio.ir:basic-block-instructions block) :key #'mognitio.ir:instruction-op))
+               (some (lambda (block) (some (lambda (inst) (member (mognitio.ir:instruction-op inst) '(:io.call :binary.publish))) (mognitio.ir:basic-block-instructions block)))
                      (mognitio.ir:ir-function-blocks function))) (mognitio.ir:module-functions *runtime-module*))))
 
 (defun io-signal-unit ()
@@ -68,4 +68,5 @@
           (when (io-image-p)
             (append (unless (argument-image-p) (list (utf8-feed-unit) (utf8-count-unit)))
                     (list (io-map-unit) (io-close-unit) (io-cleanup-unit) (io-cleanup-all-unit) (io-errno-unit))
-                    (directory-runtime-units)))))
+                    (directory-runtime-units)
+                    (list (publication-profile-unit) (publication-cleanup-unit) (publication-errno-unit))))))

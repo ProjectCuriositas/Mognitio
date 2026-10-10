@@ -30,10 +30,11 @@
       (dolist (block (mognitio.ir:ir-function-blocks function))
         (dolist (inst (mognitio.ir:basic-block-instructions block))
           (let ((op (mognitio.ir:instruction-op inst)) (name (value-helper-name inst)))
-            (when (and (member op '(:bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
+            (when (and (member op '(:binary.publish :bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
                        (not (member name seen :test #'equal)))
               (push name seen)
               (push (case op
+                      (:binary.publish (publication-operation-unit inst context))
                       ((:bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal) (binary-operation-unit inst context))
                       ((:integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at) (numeric-method-unit inst context))
                       (:io.call (io-operation-unit inst context))
