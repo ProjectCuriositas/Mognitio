@@ -1,11 +1,11 @@
 (in-package #:mognitio.tests)
 
 (defun v13-child-script (mode)
-  (format nil "#!/usr/bin/python3~%import os,struct,signal~%sequence=0~%def event(tag,stage=0,kind=0,version=3):~% global sequence~% os.write(3,struct.pack('<IHHQQIIQ',0x544e474d,version,tag,0,sequence,stage,kind,2**64-1));sequence+=1~%~A~%"
+  (format nil "#!/usr/bin/python3~%import os,struct,signal~%sequence=0~%def event(tag,stage=0,kind=0,version=4):~% global sequence~% os.write(3,struct.pack('<IHHQQIIQ',0x544e474d,version,tag,0,sequence,stage,kind,2**64-1));sequence+=1~%~A~%"
     (case mode
       (:before-ready "os._exit(123)")
       (:after-ready (format nil "event(1)~%os._exit(123)"))
-      (:old-version (format nil "event(1,version=2)~%os.read(4,1)~%os._exit(0)"))
+      (:old-version (format nil "event(1,version=3)~%os.read(4,1)~%os._exit(0)"))
       (otherwise
        (format nil "event(1)~%os.read(4,1)~%event(2,1)~%event(2,2)~%~A~%"
          (ecase mode
@@ -83,19 +83,19 @@
     (multiple-value-bind (out err code) (v12-driver (v13-manifest (format nil "discard readDirectory(~S);0" root)))
       (same "" out) (same 4 code) (is (search "allocation failure" err)))
     (same before (v11-fd-snapshot)))
-  ;; An independent v2 reader boundary rejects the real v3 child's first ready
-  ;; record. The opposite direction is the v2 child fixture above, not a claim
+  ;; An independent v3 reader boundary rejects the real v4 child's first ready
+  ;; record. The opposite direction is the v3 child fixture above, not a claim
   ;; that a second installed compiler build was used.
   (let ((original (fdefinition 'mognitio.testing::accept-event)) (attempt nil) (seen nil))
     (replacing (mognitio.testing::accept-event
       (lambda (reader)
         (let ((bytes (mognitio.testing::event-reader-buffer reader)))
           (setf seen (aref bytes 4))
-          (unless (and (= (aref bytes 4) 2) (= (aref bytes 5) 0))
-            (internal-error "Independent v2 reader rejects this ready version")))
+          (unless (and (= (aref bytes 4) 3) (= (aref bytes 5) 0))
+            (internal-error "Independent v3 reader rejects this ready version")))
         (funcall original reader)))
       (multiple-value-bind (out err code)
           (v11-driver (v11-manifest "unit" 1) (lambda (point object) (when (eq point :before-spawn) (setf attempt object))))
-        (same 3 code) (same "" out) (same 3 seen) (is (search "v2 reader rejects" err))
+        (same 3 code) (same "" out) (same 4 seen) (is (search "v3 reader rejects" err))
         (same nil (mognitio.testing::attempt-resources-execution-delegated attempt))))
     (v11-assert-released attempt)))

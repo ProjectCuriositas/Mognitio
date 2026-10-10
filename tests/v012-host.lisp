@@ -152,7 +152,7 @@
         (same 1 closed) (same before (v11-fd-snapshot))))))
 
 (deftest v012-private-protocol-and-extra-pipe
-  (dolist (version '(1 2 4))
+  (dolist (version '(1 2 3 5))
     (let ((record (v11-record 1 0 0 0 0)))
       (setf (aref record 4) version)
       (signals internal-failure (v11-feed (mognitio.testing::make-event-reader :ordinal 0 :site-count 1) record))))

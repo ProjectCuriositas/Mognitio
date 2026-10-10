@@ -3,7 +3,7 @@
 (defun v11-record (tag ordinal sequence stage kind &optional (site #xffffffffffffffff))
   ;; Independent encoder with literal protocol values, not production enum tables.
   (let ((bytes (make-array 40 :element-type '(unsigned-byte 8) :initial-element 0)))
-    (loop for (offset width value) in (list '(0 4 #x544e474d) '(4 2 3) (list 6 2 tag)
+    (loop for (offset width value) in (list '(0 4 #x544e474d) '(4 2 4) (list 6 2 tag)
                   (list 8 8 ordinal) (list 16 8 sequence) (list 24 4 stage) (list 28 4 kind) (list 32 8 site)) do
       (dotimes (n width) (setf (aref bytes (+ offset n)) (ldb (byte 8 (* 8 n)) value)))) bytes))
 (defun v11-feed (reader record)
@@ -38,7 +38,7 @@
     (same before (v11-fd-snapshot))))
 
 (deftest v011-protocol-independent-fixtures
-  (same #(77 71 78 84 3 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  (same #(77 71 78 84 4 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
           255 255 255 255 255 255 255 255) (v11-record 1 0 0 0 0))
   (dolist (chunk '(1 3 17 40))
     (let ((reader (mognitio.testing::make-event-reader :ordinal 0 :site-count 1)))

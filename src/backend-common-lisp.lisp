@@ -32,6 +32,9 @@
     (typecase node
       ((or data-declaration contract-declaration implementation-declaration struct-expression enum-expression field-expression this-expression branch-expression)
        (value-expression-form node checked names functions exits loops))
+      (mognitio.syntax::binary-intrinsic
+       (ordered (coerce (mognitio.syntax::binary-intrinsic-arguments node) 'list)
+         (lambda (args) (binary-host-form (checked-operation checked node) args (checked-program-values checked)))))
       (mognitio.syntax::io-expression
        (ordered (coerce (mognitio.syntax::io-expression-arguments node) 'list)
          (lambda (args)
@@ -117,6 +120,8 @@
                (let* ((info (checked-operation checked node)) (result (operation-info-result-type info))
                       (error-type (when (member (operation-info-kind info) '(:list.at :text.slice.result))
                                     (second (mognitio.semantic::type-info-arguments (context-type (checked-program-values checked) result))))))
+                 (if (mognitio.semantic::binary-method-p (operation-info-kind info))
+                     (binary-host-form info args (checked-program-values checked))
                  (if (mognitio.semantic::numeric-method-p (operation-info-kind info))
                      (numeric-method-form info args (checked-program-values checked))
                  (append
@@ -128,7 +133,7 @@
                            (:list.length 'mognitio.value::list-length-value)
                            (:list.append 'mognitio.value::list-append-value)
                            (:list.at 'mognitio.value::list-at-value)))
-                   args (when error-type (list (list 'cl:quote result) (list 'cl:quote error-type))))))))))
+                   args (when error-type (list (list 'cl:quote result) (list 'cl:quote error-type)))))))))))
       (call-expression
        (if (checked-pack checked node) (form (aref (call-expression-arguments node) 0))
            (ordered (cons (call-expression-callee node) (coerce (call-expression-arguments node) 'list))
@@ -157,6 +162,8 @@
                (lambda (args)
                  (let ((kind (operation-info-kind (checked-operation checked node))))
                    (cond
+                     ((member kind '(:bytes.equal :bytes.not-equal))
+                      (cons (if (eq kind :bytes.equal) 'mognitio.value::bytes-equal 'mognitio.value::bytes-not-equal) args))
                      ((member kind '(:text.concat :text.equal :text.not-equal))
                       (cons (ecase kind (:text.concat 'mognitio.text:text-concat) (:text.equal 'mognitio.text:text-equal)
                                         (:text.not-equal 'mognitio.text:text-not-equal)) args))

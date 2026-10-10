@@ -8,6 +8,7 @@
     (:string-index-out-of-bounds "runtime: string_index_out_of_bounds")
     (:string-size-overflow "runtime error: string length overflow")
     (:list-length-overflow "runtime error: list length overflow")
+    (:bytes-length-overflow "runtime error: bytes length overflow")
     (:allocation-failed "runtime error: allocation failure")
     (:invalid-exit-status "runtime error: invalid exit status")))
 (define-condition program-runtime-failure (error)
