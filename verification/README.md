@@ -1,5 +1,8 @@
 # Verification
 
+The [1.3.0 experimental compiler acceptance](v1.3.0.md) records all 55 conditions,
+with [resource results](v1.3.0-performance.md) and a fixed source/seed identity.
+
 The [1.2.0 implementation progress](v1.2.0-progress.md) records unreleased increments and remaining work.
 
 The [1.1.0 native runtime record](v1.1.0-runtime.md) describes the free-list,
@@ -8,7 +11,7 @@ worklist, independent membership index, and their verification boundaries.
 The [v0.14 review corrections](v0.14.0-review.md) cover first file close,
 scalar root lifetime, and primary-phase guard verification.
 
-The current implementation record is [v1.1.0](v1.1.0.md), with complete
+The retained 1.1.0 implementation record is [v1.1.0](v1.1.0.md), with complete
 [performance samples](v1.1.0-measurements.json). The retained [v0.14.0 record](v0.14.0.md) has its
 [coverage ledger](v0.14.0-conformance.md). The inherited [v0.13.0 record](v0.13.0.md)
 has a [42-condition ledger](v0.13.0-conformance.md) and [internal gates](v0.13.0-internals.md).

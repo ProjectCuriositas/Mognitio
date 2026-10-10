@@ -1,0 +1,1674 @@
+{
+  "logs": {
+    "focused": {
+      "sha256": "ba90a4d8c4ee85a103b723b1b6fdca2647af0e017930fccf92a0a43afd361c22",
+      "results": [
+        "MGNC_WIDTH_OK unicode_scalars=1112064",
+        "MGNC_FOUNDATION_OK elements=1000 snapshot=True bounds=3",
+        "MGNC_FRONTEND_OK sources=7 token_oracles=79 rejected=9",
+        "MGNC_PARSER_OK positive=11 negative=10 block_depth=128",
+        "MGNC_CHECKER_OK cases=55",
+        "MGNC_IR_OK cases=55",
+        "MGNC_IR_DEFINITIONS_OK positive=3 negative=4",
+        "MGNC_ENCODING_OK checks=30",
+        "MGNC_INTERNAL_DRIVER_OK checks=2",
+        "MGNC_SOURCE_PROFILE_OK cases=68",
+        "MGNC_NATIVE_OK checks=90 differential=True",
+        "MGNC_DRIVER_OK checks=50",
+        "MGNC_FAULTS_OK checks=9",
+        "MGNC_ISOLATED_OK cases=94 environments=2",
+        "MGNC_FOCUSED_SUITE_OK"
+      ]
+    },
+    "observations": {
+      "sha256": "fc17d7615ef40a02296ac2aec7d110a957e00025aae5d67dce2cce0e92e5e438",
+      "results": [
+        "MGNC_SOURCE_PROFILE_OK cases=76",
+        "MGNC_NATIVE_OK checks=90 differential=True",
+        "MGNC_WORKLOADS_OK observations=24 differential=True",
+        "MGNC_ISOLATED_OK cases=100 environments=2",
+        "MGNC_OBSERVATIONS_OK"
+      ]
+    },
+    "regular": {
+      "sha256": "f32124acf7cf5d8694cbfb5d4defe172a19217a547e1984c610b6d2db4fd0bf2",
+      "results": [
+        "V09_HEAP_OK mode=lifetime allocations=14010 collections=182 reclaimed=13938 reused=1 mapped=4096 peak_live=544 peak_roots=168 scans=1811 headers=1811 passes=182 sha256=5dd8c5256b80f8e9c86773882c6c5c0ace1a915931885a8c64768ab1eae14c9e",
+        "V09_HEAP_OK mode=lifetime allocations=14010 collections=14011 reclaimed=13996 reused=1 mapped=4096 peak_live=664 peak_roots=168 scans=164036 headers=164036 passes=14011 sha256=5d23848ff2f62f7e01e1b4c8d150851a1dd032b6b12e30e4fa115a6974bdfbd4",
+        "V09_HEAP_OK mode=reverse allocations=32 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=1792 peak_roots=32 scans=32 headers=32 passes=1 sha256=7c9812fcb68b62ff84d268df7ed0eb0bfe8bbcc86799a58559fff8a5b4d6f469",
+        "V09_HEAP_OK mode=forward allocations=32 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=1792 peak_roots=32 scans=32 headers=32 passes=1 sha256=09ab66b3c30fd73023eb653ce0c61e5929630613cbdee1d6a888fbd6ddf7645c",
+        "V09_HEAP_OK mode=reverse allocations=64 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=3584 peak_roots=32 scans=64 headers=64 passes=1 sha256=2ddf20c5d72fb29ea4ccb7fe12048921b123966d9e1977f60e6950bfa3556a90",
+        "V09_HEAP_OK mode=forward allocations=64 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=3584 peak_roots=32 scans=64 headers=64 passes=1 sha256=4bdf685b5258c314af16e6c5a270578336d6d5bce7014bcc51683af8b96d4d74",
+        "V09_HEAP_OK mode=reverse allocations=128 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=7168 peak_roots=32 scans=128 headers=128 passes=1 sha256=ecf5cc573a69d78289b3a2ce1be265b3fd83252055b3095df3e07013a547da41",
+        "V09_HEAP_OK mode=forward allocations=128 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=7168 peak_roots=32 scans=128 headers=128 passes=1 sha256=a4fdbd1086ca1fd39adf8295317e687e5e50fc2b0b02af420dc4baa43c8c2243",
+        "V09_HEAP_OK mode=extracted allocations=6003 collections=65 reclaimed=5950 reused=0 mapped=4096 peak_live=176 peak_roots=72 scans=130 headers=130 passes=65 sha256=86ae8cd0733d46292c64741add78884bf35316e7da68b12d58170331ab367c16",
+        "V09_HEAP_OK mode=extracted allocations=6003 collections=6004 reclaimed=5998 reused=0 mapped=4096 peak_live=160 peak_roots=72 scans=18003 headers=18003 passes=6004 sha256=9540f27b7c7e0f320e335b8b715696326912a2a3c8b865248c40d9c902b74fed",
+        "V09_HEAP_OK mode=cycle allocations=32 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=1792 peak_roots=32 scans=32 headers=32 passes=1 sha256=45e763b468879c614d3c60d88fbfe9ed604eaf5e7088e536f8f7c3daf1c8429d",
+        "Tests=214 Assertions=9261 Processes=1266 Failures=0",
+        "WORKLOADS_OK processes=98 observer_negatives=8 builtin_tests=5",
+        "RESUME_CHECK_OK negative_controls=11 positive_resume=1 observations=72 synthetic_counterexample=1",
+        "MEASUREMENT_CHECK_OK threshold_controls=12 matrix_cells=74 process_controls=5",
+        "VALUE_ARGUMENT_PROJECTS_OK checks=17",
+        "NUMERIC_SCALARS_OK checks=258",
+        "BYTES_ENCODING_OK checks=146",
+        "BINARY_PUBLICATION_OK checks=124",
+        "PUBLICATION_SURFACE_OK checks=64",
+        "PUBLICATION_PORTABILITY_OK checks=10 ntfs=not-requested",
+        "NUMERIC_ORACLE_OK checks=90 pairs=174760 wide_vectors=2128 seed=1202026",
+        "BINARY_EMITTER_OK checks=53 userlands=0",
+        "CONFORMANCE_MANIFEST_OK current=72 future=3",
+        "ACCEPTANCE_EDGES_OK checks=19"
+      ]
+    },
+    "consumer": {
+      "sha256": "6b9db9d7a6c1f1fade92b907bcfb14e2f991172bbcf42ad1f1627e40c1f6dc83",
+      "results": [
+        "PASS negative controls (11)"
+      ]
+    }
+  },
+  "consumer": {
+    "product_revision": "0b11655172c636bb44c856dc3469a99b33f1071c",
+    "compiler_revision": "847c6c79b09785071321582c9540d6edf5675a14",
+    "observations": 182,
+    "negative_controls": 11,
+    "rows": [
+      {
+        "name": "reference",
+        "backend": "run",
+        "acceptance": [
+          "CL001-01",
+          "CL001-08",
+          "CL001-13",
+          "CL001-15",
+          "CL001-16",
+          "CL001-18",
+          "CL001-19",
+          "CL001-24",
+          "CL001-27"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "reference",
+        "backend": "native",
+        "acceptance": [
+          "CL001-01",
+          "CL001-08",
+          "CL001-13",
+          "CL001-15",
+          "CL001-16",
+          "CL001-18",
+          "CL001-19",
+          "CL001-24",
+          "CL001-27"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "repeat-reference",
+        "backend": "run",
+        "acceptance": [
+          "CL001-17",
+          "CL001-33"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "repeat-reference",
+        "backend": "native",
+        "acceptance": [
+          "CL001-17",
+          "CL001-33"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "usage-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-2",
+        "backend": "run",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-2",
+        "backend": "native",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-3",
+        "backend": "run",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-3",
+        "backend": "native",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-4",
+        "backend": "run",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-4",
+        "backend": "native",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-5",
+        "backend": "run",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-5",
+        "backend": "native",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-escaped",
+        "backend": "run",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24",
+          "CL001-25"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "usage-escaped",
+        "backend": "native",
+        "acceptance": [
+          "CL001-02",
+          "CL001-24",
+          "CL001-25"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "config-order-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-01",
+          "CL001-04",
+          "CL001-05"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "config-order-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-01",
+          "CL001-04",
+          "CL001-05"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "config-order-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-01",
+          "CL001-04",
+          "CL001-05"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "config-order-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-01",
+          "CL001-04",
+          "CL001-05"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "bad-config-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-2",
+        "backend": "run",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-2",
+        "backend": "native",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-3",
+        "backend": "run",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-3",
+        "backend": "native",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-4",
+        "backend": "run",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-4",
+        "backend": "native",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-5",
+        "backend": "run",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-5",
+        "backend": "native",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-6",
+        "backend": "run",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-6",
+        "backend": "native",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-7",
+        "backend": "run",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-config-7",
+        "backend": "native",
+        "acceptance": [
+          "CL001-05",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-2",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-2",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-3",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-3",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-4",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-4",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-5",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-5",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-6",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-6",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-7",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-7",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-8",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-8",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-9",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-9",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-10",
+        "backend": "run",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "bad-path-10",
+        "backend": "native",
+        "acceptance": [
+          "CL001-06"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "overlap-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-07"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "overlap-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-07"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "overlap-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-07"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "overlap-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-07"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "ancestor-input",
+        "backend": "run",
+        "acceptance": [
+          "CL001-07"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "ancestor-input",
+        "backend": "native",
+        "acceptance": [
+          "CL001-07"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "prefix-only",
+        "backend": "run",
+        "acceptance": [
+          "CL001-07"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "prefix-only",
+        "backend": "native",
+        "acceptance": [
+          "CL001-07"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "spaced-config",
+        "backend": "run",
+        "acceptance": [
+          "CL001-03"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "spaced-config",
+        "backend": "native",
+        "acceptance": [
+          "CL001-03"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "lexical-symlink-base",
+        "backend": "run",
+        "acceptance": [
+          "CL001-03"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "lexical-symlink-base",
+        "backend": "native",
+        "acceptance": [
+          "CL001-03"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "crlf",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "crlf",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "config-envelope-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "config-envelope-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "config-envelope-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "config-envelope-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "config-envelope-2",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "config-envelope-2",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "config-envelope-3",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "config-envelope-3",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-2",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-2",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-3",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-3",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-4",
+        "backend": "run",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-envelope-4",
+        "backend": "native",
+        "acceptance": [
+          "CL001-08",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-2",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-2",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-3",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-3",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-4",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "page-grammar-4",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "body-0",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09",
+          "CL001-10",
+          "CL001-15",
+          "CL001-16"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "body-0",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09",
+          "CL001-10",
+          "CL001-15",
+          "CL001-16"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "body-1",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09",
+          "CL001-10",
+          "CL001-15",
+          "CL001-16"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "body-1",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09",
+          "CL001-10",
+          "CL001-15",
+          "CL001-16"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "body-2",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09",
+          "CL001-10",
+          "CL001-15",
+          "CL001-16"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "body-2",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09",
+          "CL001-10",
+          "CL001-15",
+          "CL001-16"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "body-3",
+        "backend": "run",
+        "acceptance": [
+          "CL001-09",
+          "CL001-10",
+          "CL001-15",
+          "CL001-16"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "body-3",
+        "backend": "native",
+        "acceptance": [
+          "CL001-09",
+          "CL001-10",
+          "CL001-15",
+          "CL001-16"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "entry-selection",
+        "backend": "run",
+        "acceptance": [
+          "CL001-11",
+          "CL001-12"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "entry-selection",
+        "backend": "native",
+        "acceptance": [
+          "CL001-11",
+          "CL001-12"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "stem-.page",
+        "backend": "run",
+        "acceptance": [
+          "CL001-12"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stem-.page",
+        "backend": "native",
+        "acceptance": [
+          "CL001-12"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stem-About.page",
+        "backend": "run",
+        "acceptance": [
+          "CL001-12"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stem-About.page",
+        "backend": "native",
+        "acceptance": [
+          "CL001-12"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stem-a_b.page",
+        "backend": "run",
+        "acceptance": [
+          "CL001-12"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stem-a_b.page",
+        "backend": "native",
+        "acceptance": [
+          "CL001-12"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stem-a--b.page",
+        "backend": "run",
+        "acceptance": [
+          "CL001-12"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stem-a--b.page",
+        "backend": "native",
+        "acceptance": [
+          "CL001-12"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "empty",
+        "backend": "run",
+        "acceptance": [
+          "CL001-13"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "empty",
+        "backend": "native",
+        "acceptance": [
+          "CL001-13"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "one",
+        "backend": "run",
+        "acceptance": [
+          "CL001-13"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "one",
+        "backend": "native",
+        "acceptance": [
+          "CL001-13"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "input-missing",
+        "backend": "run",
+        "acceptance": [
+          "CL001-14",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "input-missing",
+        "backend": "native",
+        "acceptance": [
+          "CL001-14",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "input-file",
+        "backend": "run",
+        "acceptance": [
+          "CL001-14",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "input-file",
+        "backend": "native",
+        "acceptance": [
+          "CL001-14",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "input-permission",
+        "backend": "run",
+        "acceptance": [
+          "CL001-14",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "input-permission",
+        "backend": "native",
+        "acceptance": [
+          "CL001-14",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "existing-empty",
+        "backend": "run",
+        "acceptance": [
+          "CL001-19"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "existing-empty",
+        "backend": "native",
+        "acceptance": [
+          "CL001-19"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "nonempty-file",
+        "backend": "run",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-file",
+        "backend": "native",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-dotfile",
+        "backend": "run",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-dotfile",
+        "backend": "native",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-directory",
+        "backend": "run",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-directory",
+        "backend": "native",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-symlink",
+        "backend": "run",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-symlink",
+        "backend": "native",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-generated",
+        "backend": "run",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "nonempty-generated",
+        "backend": "native",
+        "acceptance": [
+          "CL001-20",
+          "CL001-24"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "missing-output-parent",
+        "backend": "run",
+        "acceptance": [
+          "CL001-21"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "missing-output-parent",
+        "backend": "native",
+        "acceptance": [
+          "CL001-21"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "file-output-parent",
+        "backend": "run",
+        "acceptance": [
+          "CL001-21"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "file-output-parent",
+        "backend": "native",
+        "acceptance": [
+          "CL001-21"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-file",
+        "backend": "run",
+        "acceptance": [
+          "CL001-21"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-file",
+        "backend": "native",
+        "acceptance": [
+          "CL001-21"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "mkdir-permission",
+        "backend": "run",
+        "acceptance": [
+          "CL001-21"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "mkdir-permission",
+        "backend": "native",
+        "acceptance": [
+          "CL001-21"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "later-invalid",
+        "backend": "run",
+        "acceptance": [
+          "CL001-22",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "later-invalid",
+        "backend": "native",
+        "acceptance": [
+          "CL001-22",
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "first-invalid",
+        "backend": "run",
+        "acceptance": [
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "first-invalid",
+        "backend": "native",
+        "acceptance": [
+          "CL001-26"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-invalid-name",
+        "backend": "run",
+        "acceptance": [
+          "CL001-31",
+          "CL001-32",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-invalid-name",
+        "backend": "native",
+        "acceptance": [
+          "CL001-31",
+          "CL001-32",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-permission",
+        "backend": "run",
+        "acceptance": [
+          "CL001-32",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-permission",
+        "backend": "native",
+        "acceptance": [
+          "CL001-32",
+          "CL001-36"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "control-subject",
+        "backend": "run",
+        "acceptance": [
+          "CL001-25"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "control-subject",
+        "backend": "native",
+        "acceptance": [
+          "CL001-25"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "mognitio-tests",
+        "backend": "mgn-test",
+        "acceptance": [
+          "CL001-28"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "invalid-utf8-argv",
+        "backend": "run",
+        "acceptance": [
+          "CL001-35"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "invalid-utf8-argv",
+        "backend": "native",
+        "acceptance": [
+          "CL001-35"
+        ],
+        "exit": 2
+      },
+      {
+        "name": "standalone",
+        "backend": "isolated-native",
+        "acceptance": [
+          "CL001-29"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "external-interruption",
+        "backend": "native",
+        "acceptance": [
+          "CL001-33"
+        ],
+        "exit": -9
+      },
+      {
+        "name": "after-interruption",
+        "backend": "run",
+        "acceptance": [
+          "CL001-33"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "after-interruption",
+        "backend": "native",
+        "acceptance": [
+          "CL001-33"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "output-body",
+        "backend": "run",
+        "acceptance": [
+          "CL001-32",
+          "CL001-36",
+          "CL001-37"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-body",
+        "backend": "native",
+        "acceptance": [
+          "CL001-32",
+          "CL001-36",
+          "CL001-37"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-cleanup",
+        "backend": "run",
+        "acceptance": [
+          "CL001-32",
+          "CL001-36",
+          "CL001-37"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-cleanup",
+        "backend": "native",
+        "acceptance": [
+          "CL001-32",
+          "CL001-36",
+          "CL001-37"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-metadata",
+        "backend": "run",
+        "acceptance": [
+          "CL001-32",
+          "CL001-36",
+          "CL001-37"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "output-metadata",
+        "backend": "native",
+        "acceptance": [
+          "CL001-32",
+          "CL001-36",
+          "CL001-37"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "write-body",
+        "backend": "run",
+        "acceptance": [
+          "CL001-23"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "write-body",
+        "backend": "native",
+        "acceptance": [
+          "CL001-23"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "write-close",
+        "backend": "run",
+        "acceptance": [
+          "CL001-23"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "write-close",
+        "backend": "native",
+        "acceptance": [
+          "CL001-23"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stderr",
+        "backend": "run",
+        "acceptance": [
+          "CL001-25"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "stderr",
+        "backend": "native",
+        "acceptance": [
+          "CL001-25"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "target-missing-counterpart",
+        "backend": "run",
+        "acceptance": [
+          "CL001-19",
+          "CL001-36",
+          "CL001-37"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "target-missing-counterpart",
+        "backend": "native",
+        "acceptance": [
+          "CL001-19",
+          "CL001-36",
+          "CL001-37"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "text-measurements",
+        "backend": "native-measurement",
+        "acceptance": [],
+        "exit": 0
+      }
+    ]
+  }
+}
