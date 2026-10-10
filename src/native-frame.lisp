@@ -9,7 +9,7 @@
   (loop for b in (mognitio.ir:ir-function-blocks function) maximize
     (loop for i in (mognitio.ir:basic-block-instructions b)
           when (member (mognitio.ir:instruction-op i)
-                       '(:bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
+                       '(:binary.publish :bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
           maximize (- (length (mognitio.ir:instruction-operands i))
                       (if (eq (mognitio.ir:instruction-op i) :call.value) 1 0)) into size
           finally (return (or size 0)))))
@@ -142,7 +142,7 @@
                   (prefix (when (eq (first publication) :publish) (third publication)))
                   (pending (copy-list forms)))
              (unless (and linked (not unlinked)
-                          (member op '(:bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result)))
+                          (member op '(:binary.publish :bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result)))
                (internal-error "Invalid native call section"))
              (when (member :may-allocate (mognitio.ir:instruction-effects inst))
                (unless (and prefix (equal prefix (subseq pending 0 (length prefix))))
@@ -172,7 +172,7 @@
                    (expected-targets (case op
                                        (:call (list (list :function (mognitio.ir:instruction-value inst))))
                                        ((:call.interface :closure.call) '(:indirect))
-                                       ((:bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result) (list (mognitio.native.runtime::value-helper-name inst)))
+                                       ((:binary.publish :bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :io.call :struct.make :enum.make :interface.pack :closure.make :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result) (list (mognitio.native.runtime::value-helper-name inst)))
                                        (:call.value (mapcar (lambda (id) (list :function id)) (second (mognitio.ir:instruction-value inst))))
                                        (otherwise (list (list :helper op))))))
                (unless (equal actual-targets expected-targets) (internal-error "Unexpected native call target")))
@@ -189,7 +189,7 @@
                             (loop for block in (mognitio.ir:ir-function-blocks function) append
                       (loop for i in (mognitio.ir:basic-block-instructions block) for n from 0
                             when (member (mognitio.ir:instruction-op i)
-                                         '(:bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :runtime.argv :io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
+                                         '(:binary.publish :bytes.from-ints :bytes.from-bits :bytes.length :bytes.at :bytes.append :bytes.concat :bytes.slice :bytes.to-bits :bits.to-bytes :bytes.equal :bytes.not-equal :integer.convert :integer.to-bits :bits.integer :bits.length :bits.and :bits.or :bits.xor :bits.not :bits.left :bits.right :bits.at :runtime.argv :io.call :test.stage :call :call.value :text.length :text.equal :text.not-equal :text.concat :text.slice :struct.make :enum.make :interface.pack :call.interface :closure.make :closure.call :list.append :list.at :list.buffer :text.scalars :text.join :text.slice.result))
                             collect (list (mognitio.ir:basic-block-id block) n))))))
       (unless (and (subsetp expected operations :test #'equal) (subsetp operations expected :test #'equal))
         (internal-error "Missing native call sections")))

@@ -22,6 +22,11 @@
 (defun directory-cleanup-unit (&optional (name :directory.cleanup))
   (runtime-unit name
     (append (helper-frame 8)
+      (when (eq name :io.cleanup)
+        (append '((:load-frame :rax 16) (:load-word :rcx :rax 8)
+                  (:cmp-imm :rcx -2) (:jnz :ordinary-record)
+                  (:store-out 0 :rax) (:call (:runtime :publication.cleanup)))
+                (helper-return) '((:label :ordinary-record))))
       '((:load-frame :rax 16) (:store-frame -8 :rax) (:store-out 0 :rax)
         (:load-word :rdx :rax 8) (:cmp-imm :rdx -1) (:jl :bad-fd) (:jmp :close)
         (:label :bad-fd) (:imm-rdx -1) (:store-word :rax 8 :rdx)

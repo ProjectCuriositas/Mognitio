@@ -7,6 +7,9 @@
          (error (second parts)))
     (flet ((result-arguments () (list (list 'quote result) (list 'quote error))))
       (case op
+        (:binary.publish
+         (append (list 'mognitio.io::invoke-publication) args (result-arguments)
+                 (list (list 'quote (mapcar #'cdr (type-info-fields (context-type context error)))))))
         ((:bytes.from-ints :bytes.from-bits)
          (append (list 'mognitio.value::bytes-from-list (first args) (eq op :bytes.from-ints))
                  (result-arguments)))

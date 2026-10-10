@@ -22,6 +22,9 @@
                               (list success error))))
 (defun binary-intrinsic-signature (context op)
   (ecase op
+    (:binary.publish
+     (values (list :string :bytes (gethash "standard:Std\\Binary#BinaryFileMode" (value-context-names context)))
+             (binary-result context :void "standard:Std\\Binary#BinaryOutputError")))
     (:bytes.from-ints (values '((:list :int)) (binary-result context :bytes "standard:Std\\Binary#ByteValueError")))
     (:bytes.from-bits (values '((:list (:bits (:integer-value 8)))) :bytes))))
 (defun c-binary-intrinsic (node)
