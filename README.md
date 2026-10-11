@@ -2,7 +2,13 @@
 
 Mognitio is a typed language with immutable data, persistent lists, explicit
 contracts and generic templates, and first-class functions with snapshot captures.
-Version 1.2.0 adds compile-time integer parameters, checked fixed-width integers,
+Version 1.3.0 adds the experimental [mgnc compiler](compiler/mgnc/README.md),
+built explicitly from source with a fixed 1.2.0 seed. It compiles a scalar
+subset into standalone Linux amd64 executables. It is not included in Debian
+packages, APT installations or offline bundles, and does not replace the normal
+backend. See the [corrected acceptance record](verification/v1.3.0-review.md).
+
+The normal toolchain retains the 1.2.0 additions: compile-time integer parameters, checked fixed-width integers,
 Bits, immutable Bytes, explicit endian encoding, and transactional binary output.
 Ordinary Int retains its signed 64-bit 1.x semantics. See the
 [implementation verification](verification/v1.2.0.md) and
@@ -18,15 +24,15 @@ Follow the [APT repository instructions](https://projectcuriositas.github.io/apt
 for Ubuntu 24.04 and 26.04 amd64. The packaged toolchain includes its fixed runtime;
 a host SBCL installation is required only for source development.
 The [VS Code extension](https://marketplace.visualstudio.com/items?itemName=mognitio.mognitio)
-is versioned independently. The existing extension 0.1.1 does not accept a 1.1.0
-server and is not established as compatible with 1.2.0. Use a client version whose compatibility table explicitly includes the server version;
+is versioned independently. Use a client version whose compatibility table
+explicitly includes the 1.3.0 server;
 a compatible extension update is a separate project.
 
 ## Start here
 
 - [Examples](examples/): executable projects, including [multiple modules](examples/modules/).
 - [Test coverage](tests/README.md): current project cases and internal regression oracles.
-- [Release validation](verification/v1.1.0-release.md): frozen release checks.
+- [Release validation](verification/v1.3.0-release.md): frozen release checks.
 - [Language tests](examples/testing/README.md): `@test`, `assert`, and `mgn test`.
 - [File converter](examples/file-converter/README.md): arguments and text I/O.
 - [Directory converter](examples/directory-converter/README.md): explicit tree traversal.

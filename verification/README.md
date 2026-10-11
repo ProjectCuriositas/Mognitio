@@ -25,7 +25,7 @@ The retained v0.11 [72-case ledger](v0.11.0-testing.md) and
 [process evidence](v0.11.0-process.md) describe the inherited runner.
 The [runner review fixes](v0.11.0-review.md) cover host storage recovery,
 helper frame-register preservation, and committed-result diagnostics.
-The current release validation procedure is [v1.1.0](v1.1.0-release.md).
+The current release validation procedure is [v1.3.0](v1.3.0-release.md).
 The retained stable release record is [v1.0.0](v1.0.0-release.md).
 The retained source release record is [v0.14.0](v0.14.0-release.md).
 Run checks from the repository root on a non-root Linux amd64 host with SBCL,
