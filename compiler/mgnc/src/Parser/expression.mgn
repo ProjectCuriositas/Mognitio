@@ -2,13 +2,13 @@ namespace Mgnc\Parser;
 use Mgnc\ParseSupport\{requireToken,parseType,precedence};
 use Mgnc\Data\{Paged,empty,push,lookup,Token,Span,Diagnostic,problem};
 use Mgnc\Syntax\{Node,Parent,Frame,ParsedExpression,ParsedType};
-public let expression:Function(Paged<Token>,Int,Paged<Node>):Result<ParsedExpression,Diagnostic>=
-function(tokens:Paged<Token>,begin:Int,initial:Paged<Node>):Result<ParsedExpression,Diagnostic>{
+let parseFrom:Function(Paged<Token>,Int,Paged<Node>,Bool):Result<ParsedExpression,Diagnostic>=
+function(tokens:Paged<Token>,begin:Int,initial:Paged<Node>,bodyOnly:Bool):Result<ParsedExpression,Diagnostic>{
  var nodes:Paged<Node>=initial;
  var frames:Paged<Frame>=empty<Frame>();
  var parent:Parent=Parent::None;
- var cursor:Int=begin;
- var mode:Int=0;
+ var cursor:Int=branch when{bodyOnly=>try requireToken(tokens,begin,"{"),else=>begin};
+ var mode:Int=branch when{bodyOnly=>10,else=>0};
  var start:Int=begin;
  var power:Int=0;
  var first:Int=0;
@@ -81,7 +81,7 @@ nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<Int>[],span:origin->s
     let bindingPower:Int=precedence(token->text);
     branch when{bindingPower==0 || bindingPower<=power=>{last=first;ready=true;continue;},else=>unit};
     let left:Node=try lookup<Node>(nodes,first);
-    branch when{bindingPower>=30 && bindingPower<=40 && left->kind==5 && precedence(left->text)>=30 && precedence(left->text)<=40=>{
+    branch when{bindingPower==30 && left->kind==5 && precedence(left->text)==30=>{
      return Result<ParsedExpression,Diagnostic>::Err(problem("parse",token->span,"comparison chaining requires grouping"));
     },else=>unit};
     text=token->text;cursor=cursor+1;
@@ -158,7 +158,7 @@ nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<Int>[],span:origin->s
     first=last;cursor=try requireToken(tokens,cursor,")");
     let next:Token=try lookup<Token>(tokens,cursor);
     branch when{next->text!="{"=>{return Result<ParsedExpression,Diagnostic>::Err(problem("parse",next->span,"expected loop body"));},else=>unit};
-    frames=push<Frame>(frames,Frame{parent:parent,mode:22,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=0;start=cursor;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
+    frames=push<Frame>(frames,Frame{parent:parent,mode:22,start:start,power:power,first:first,site:site,children:children,text:text,annotation:annotation,flag:flag});parent=Parent::Some(frames->count-1);mode=10;start=cursor;cursor=cursor+1;power=0;first=0;site=cursor;children=List<Int>[];text="";annotation=0;flag=false;continue;
    },
    mode==22=>{nodes=push<Node>(nodes,Node{kind:17,text:"",children:List<Int>[first,last],span:origin->span,annotation:0,flag:false});last=nodes->count-1;ready=true;continue;},
    mode==30=>{
@@ -185,4 +185,12 @@ nodes=push<Node>(nodes,Node{kind:2,text:text,children:List<Int>[],span:origin->s
   };
  };
  panic {"unreachable parser exit"}
+};
+public let expression:Function(Paged<Token>,Int,Paged<Node>):Result<ParsedExpression,Diagnostic>=
+function(tokens:Paged<Token>,begin:Int,initial:Paged<Node>):Result<ParsedExpression,Diagnostic>{
+ parseFrom(tokens,begin,initial,false)
+};
+public let bodyBlock:Function(Paged<Token>,Int,Paged<Node>):Result<ParsedExpression,Diagnostic>=
+function(tokens:Paged<Token>,begin:Int,initial:Paged<Node>):Result<ParsedExpression,Diagnostic>{
+ parseFrom(tokens,begin,initial,true)
 };
