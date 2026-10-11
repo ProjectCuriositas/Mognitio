@@ -81,7 +81,8 @@ function(program:Program,node:Node,values:Paged<Value>,symbols:Paged<Symbol>,env
   },
   node->kind==9=>{
    let initializer:Value=try childValue(node,0,values);
-   try context(initializer,node->annotation,node->span);
+   let syntax:Node=try lookup<Node>(program->nodes,try childId(node,0));
+   try context(initializer,node->annotation,syntax->span);
    return Result<Value,Diagnostic>::Ok(value(3,initializer->normal));
   },
   node->kind==10=>{
@@ -92,7 +93,8 @@ function(program:Program,node:Node,values:Paged<Value>,symbols:Paged<Symbol>,env
    let symbol:Symbol=try lookup<Symbol>(symbols,id);
    branch when{!symbol->visible || !symbol->mutable=>{return Result<Value,Diagnostic>::Err(problem("semantic",node->span,"assignment requires a visible var"));},else=>unit};
    let operand:Value=try childValue(node,0,values);
-   try context(operand,symbol->valueType,node->span);
+   let syntax:Node=try lookup<Node>(program->nodes,try childId(node,0));
+   try context(operand,symbol->valueType,syntax->span);
    return Result<Value,Diagnostic>::Ok(Value{valueType:3,normal:operand->normal,symbol:reference,target:Parent::None,integer:0,minimum:false});
   },
   node->kind==11=>{

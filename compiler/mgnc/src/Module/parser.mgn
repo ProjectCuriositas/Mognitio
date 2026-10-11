@@ -1,7 +1,7 @@
 namespace Mgnc\Module;
 use Mgnc\Data\{Paged,empty,lookup,Token,Diagnostic,problem};
 use Mgnc\Syntax\{Node,Declaration,Program,ParsedExpression};
-use Mgnc\Parser\{expression};
+use Mgnc\Parser\{bodyBlock};
 use Mgnc\ParseSupport\{requireToken,signature,Signature};
 public let parse:Function(Paged<Token>):Result<Program,Diagnostic>=
 function(tokens:Paged<Token>):Result<Program,Diagnostic>{
@@ -46,7 +46,7 @@ function(tokens:Paged<Token>):Result<Program,Diagnostic>{
         let actual:Signature=try signature(tokens,cursor,true);
         let bodyStart:Token=try lookup<Token>(tokens,actual->next);
         branch when{bodyStart->text!="{"=>{return Result<Program,Diagnostic>::Err(problem("parse",bodyStart->span,"expected function body"));},else=>unit};
-        let body:ParsedExpression=try expression(tokens,actual->next,nodes);
+        let body:ParsedExpression=try bodyBlock(tokens,actual->next,nodes);
         nodes=body->nodes;cursor=try requireToken(tokens,body->next,";");
         declarations=declarations->append(Declaration{name:name->text,parameters:actual->parameters,
             declaredParameters:declared->types,result:actual->result,declaredResult:declared->result,

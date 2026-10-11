@@ -77,7 +77,7 @@ public let precedence:Function(String):Int=function(operator:String):Int{
     branch when{
         operator=="||"=>10,operator=="&&"=>20,
         operator=="==" || operator=="!="=>30,
-        operator=="<" || operator==">" || operator=="<=" || operator==">="=>40,
+        operator=="<" || operator==">" || operator=="<=" || operator==">="=>30,
         operator=="+" || operator=="-"=>50,
         operator=="*" || operator=="/" || operator=="%"=>60,
         else=>0,
