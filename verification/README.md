@@ -1,7 +1,9 @@
 # Verification
 
-The [1.3.0 experimental compiler acceptance](v1.3.0.md) records all 55 conditions,
-with [resource results](v1.3.0-performance.md) and a fixed source/seed identity.
+The current [1.3.0 review corrections](v1.3.0-review.md) record all 55 conditions,
+63 additional regressions and a complete resource rerun with a fixed source/seed.
+The [initial acceptance](v1.3.0.md) and [resource results](v1.3.0-performance.md)
+remain available as historical evidence.
 
 The [1.2.0 implementation progress](v1.2.0-progress.md) records unreleased increments and remaining work.
 

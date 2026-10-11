@@ -1,0 +1,112 @@
+{
+  "implementation_head": "ddd26aad57bc678dd9b859e697682fe4d72fc89c",
+  "cpu": "Intel(R) Core(TM) i9-10850K CPU @ 3.60GHz",
+  "os_release": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo",
+  "kernel": "7.0.0-38-generic",
+  "nonroot": true,
+  "memory": "MemTotal:       31445168 kB\nMemFree:        19059200 kB\nMemAvailable:   23208872 kB\nBuffers:          213068 kB\nCached:          6595016 kB\nSwapCached:            0 kB\nActive:          8504044 kB\nInactive:        2286920 kB\nActive(anon):    6476108 kB\nInactive(anon):        0 kB\nActive(file):    2027936 kB\nInactive(file):  2286920 kB\nUnevictable:         432 kB\nMlocked:             432 kB\nSwapTotal:       8388604 kB\nSwapFree:        8388604 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:              1688 kB\nWriteback:             0 kB\nAnonPages:       3983808 kB\nMapped:          1205076 kB\nShmem:           2493220 kB\nKReclaimable:     272372 kB\nSlab:             547260 kB\nSReclaimable:     207260 kB\nSUnreclaim:       340000 kB\nKernelStack:       29552 kB\nPageTables:        76680 kB\nSecPageTables:      3272 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    24111188 kB\nCommitted_AS:   34830000 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:      121288 kB\nVmallocChunk:          0 kB\nPercpu:            49440 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:    280576 kB\nFilePmdMapped:      2048 kB\nCmaTotal:              0 kB\nCmaFree:         5367808 kB\nUnaccepted:            0 kB\nBalloon:               0 kB\nGPUActive:             0 kB\nGPUReclaim:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      719344 kB\nDirectMap2M:    10715136 kB\nDirectMap1G:    22020096 kB",
+  "filesystem": "tmpfs rw,nosuid,nodev,nr_inodes=1048576,inode64,usrquota",
+  "cpu_governor": "powersave",
+  "affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "cgroup_limits": [
+    {
+      "cpu.max": "max 100000",
+      "memory.max": "max",
+      "memory.high": "max"
+    },
+    {
+      "cpu.max": "max 100000",
+      "memory.max": "max",
+      "memory.high": "max"
+    },
+    {
+      "cpu.max": "max 100000",
+      "memory.max": "max",
+      "memory.high": "max",
+      "cpuset.cpus.effective": "0-19"
+    },
+    {
+      "cpuset.cpus.effective": "0-19"
+    }
+  ],
+  "rlimits": {
+    "RLIMIT_CPU": [
+      -1,
+      -1
+    ],
+    "RLIMIT_AS": [
+      -1,
+      -1
+    ],
+    "RLIMIT_DATA": [
+      -1,
+      -1
+    ],
+    "RLIMIT_FSIZE": [
+      -1,
+      -1
+    ]
+  },
+  "load_before": [
+    1.06298828125,
+    1.12841796875,
+    0.7216796875
+  ],
+  "acl": "user::rwx\ngroup::rwx\nother::rwx",
+  "started_utc": "2026-10-11T00:32:37Z",
+  "noise_policy": "Retain slow samples. Repeat a whole cell only for a documented external cause; preserve the original batch.",
+  "excluded_jobs": "Compiler regression and focused acceptance completed before this sequential run.",
+  "warmups": 1,
+  "repeats": 5,
+  "load_after": [
+    1.06689453125,
+    1.03173828125,
+    0.86572265625
+  ],
+  "finished_utc": "2026-10-11T00:41:29Z",
+  "runner_exit": 0,
+  "swap_rows": [
+    {
+      "size_kib": 8388604,
+      "used_kib": 0,
+      "priority": -1
+    }
+  ],
+  "largest_lifetime_cpu_percent_before": [
+    9.4,
+    1.8,
+    0.6,
+    0.6,
+    0.2,
+    0.2,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.1,
+    0.0
+  ]
+}

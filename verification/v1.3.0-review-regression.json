@@ -1,0 +1,68 @@
+{
+  "tested_revision": "ddd26aad57bc678dd9b859e697682fe4d72fc89c",
+  "compiler_sha256": "1b76dacaad9399cd6c3e4f39c154053c38cbfb103e7cdd16e21455837d25836b",
+  "logs": {
+    "regular": {
+      "sha256": "f32124acf7cf5d8694cbfb5d4defe172a19217a547e1984c610b6d2db4fd0bf2",
+      "exit": 0,
+      "command": "sbcl --noinform --script scripts/test.lisp",
+      "results": [
+        "V09_HEAP_OK mode=lifetime allocations=14010 collections=182 reclaimed=13938 reused=1 mapped=4096 peak_live=544 peak_roots=168 scans=1811 headers=1811 passes=182 sha256=5dd8c5256b80f8e9c86773882c6c5c0ace1a915931885a8c64768ab1eae14c9e",
+        "V09_HEAP_OK mode=lifetime allocations=14010 collections=14011 reclaimed=13996 reused=1 mapped=4096 peak_live=664 peak_roots=168 scans=164036 headers=164036 passes=14011 sha256=5d23848ff2f62f7e01e1b4c8d150851a1dd032b6b12e30e4fa115a6974bdfbd4",
+        "V09_HEAP_OK mode=reverse allocations=32 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=1792 peak_roots=32 scans=32 headers=32 passes=1 sha256=7c9812fcb68b62ff84d268df7ed0eb0bfe8bbcc86799a58559fff8a5b4d6f469",
+        "V09_HEAP_OK mode=forward allocations=32 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=1792 peak_roots=32 scans=32 headers=32 passes=1 sha256=09ab66b3c30fd73023eb653ce0c61e5929630613cbdee1d6a888fbd6ddf7645c",
+        "V09_HEAP_OK mode=reverse allocations=64 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=3584 peak_roots=32 scans=64 headers=64 passes=1 sha256=2ddf20c5d72fb29ea4ccb7fe12048921b123966d9e1977f60e6950bfa3556a90",
+        "V09_HEAP_OK mode=forward allocations=64 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=3584 peak_roots=32 scans=64 headers=64 passes=1 sha256=4bdf685b5258c314af16e6c5a270578336d6d5bce7014bcc51683af8b96d4d74",
+        "V09_HEAP_OK mode=reverse allocations=128 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=7168 peak_roots=32 scans=128 headers=128 passes=1 sha256=ecf5cc573a69d78289b3a2ce1be265b3fd83252055b3095df3e07013a547da41",
+        "V09_HEAP_OK mode=forward allocations=128 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=7168 peak_roots=32 scans=128 headers=128 passes=1 sha256=a4fdbd1086ca1fd39adf8295317e687e5e50fc2b0b02af420dc4baa43c8c2243",
+        "V09_HEAP_OK mode=extracted allocations=6003 collections=65 reclaimed=5950 reused=0 mapped=4096 peak_live=176 peak_roots=72 scans=130 headers=130 passes=65 sha256=86ae8cd0733d46292c64741add78884bf35316e7da68b12d58170331ab367c16",
+        "V09_HEAP_OK mode=extracted allocations=6003 collections=6004 reclaimed=5998 reused=0 mapped=4096 peak_live=160 peak_roots=72 scans=18003 headers=18003 passes=6004 sha256=9540f27b7c7e0f320e335b8b715696326912a2a3c8b865248c40d9c902b74fed",
+        "V09_HEAP_OK mode=cycle allocations=32 collections=1 reclaimed=0 reused=0 mapped=65536 peak_live=1792 peak_roots=32 scans=32 headers=32 passes=1 sha256=45e763b468879c614d3c60d88fbfe9ed604eaf5e7088e536f8f7c3daf1c8429d",
+        "Tests=214 Assertions=9261 Processes=1266 Failures=0",
+        "WORKLOADS_OK processes=98 observer_negatives=8 builtin_tests=5",
+        "RESUME_CHECK_OK negative_controls=11 positive_resume=1 observations=72 synthetic_counterexample=1",
+        "MEASUREMENT_CHECK_OK threshold_controls=12 matrix_cells=74 process_controls=5",
+        "VALUE_ARGUMENT_PROJECTS_OK checks=17",
+        "NUMERIC_SCALARS_OK checks=258",
+        "BYTES_ENCODING_OK checks=146",
+        "BINARY_PUBLICATION_OK checks=124",
+        "PUBLICATION_SURFACE_OK checks=64",
+        "PUBLICATION_PORTABILITY_OK checks=10 ntfs=not-requested",
+        "NUMERIC_ORACLE_OK checks=90 pairs=174760 wide_vectors=2128 seed=1202026",
+        "BINARY_EMITTER_OK checks=53 userlands=0",
+        "CONFORMANCE_MANIFEST_OK current=72 future=3",
+        "ACCEPTANCE_EDGES_OK checks=19"
+      ]
+    },
+    "focused": {
+      "sha256": "48e39f3f2f15e7928342e1dd660b814f4db758219151f05b0fe674d5f3eccc68",
+      "exit": 0,
+      "command": "Sequential runners listed in tests/mgnc/README.md with verified SEED and COMPILER.",
+      "results": [
+        "MGNC_WIDTH_OK unicode_scalars=1112064",
+        "MGNC_FOUNDATION_OK elements=1000 snapshot=True bounds=3",
+        "MGNC_FRONTEND_OK sources=7 token_oracles=79 rejected=9",
+        "MGNC_PARSER_OK positive=11 negative=10 block_depth=128",
+        "MGNC_CHECKER_OK cases=55",
+        "MGNC_IR_OK cases=55",
+        "MGNC_IR_DEFINITIONS_OK positive=3 negative=4",
+        "MGNC_ENCODING_OK checks=30",
+        "MGNC_INTERNAL_DRIVER_OK checks=2",
+        "MGNC_SOURCE_PROFILE_OK cases=76",
+        "MGNC_NATIVE_OK checks=90 differential=True",
+        "MGNC_DRIVER_OK checks=50",
+        "MGNC_FAULTS_OK checks=9",
+        "MGNC_ISOLATED_OK cases=100 environments=2",
+        "MGNC_WORKLOADS_OK observations=24 differential=True",
+        "MGNC_REVIEW cases=63 passed=63 failed=[]",
+        "MGNC_FOCUSED_SUITE_OK"
+      ]
+    }
+  },
+  "consumer": {
+    "rerun": false,
+    "reason": "Consumer and regular toolchain executable sources are unchanged.",
+    "inherited_record": "v1.3.0-regression.json",
+    "product_revision": "0b11655172c636bb44c856dc3469a99b33f1071c"
+  }
+}
