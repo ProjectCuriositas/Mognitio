@@ -1,0 +1,124 @@
+namespace Mgnc\Lexical;
+use Mgnc\Data\{Paged,empty,push,Span,Diagnostic,problem};
+use Mgnc\Source\{Site,Lexeme,Snapshot};
+use Mgnc\Width\{scalarWidth,ascii10,ascii100,ascii101,ascii102,ascii103,ascii104,ascii105,ascii106,ascii107,ascii108,ascii109,ascii110,ascii111,ascii112,ascii113,ascii114,ascii115,ascii116,ascii117,ascii118,ascii119,ascii120,ascii121,ascii122,ascii123,ascii124,ascii125,ascii13,ascii32,ascii33,ascii34,ascii37,ascii38,ascii40,ascii41,ascii42,ascii43,ascii44,ascii45,ascii47,ascii48,ascii49,ascii50,ascii51,ascii52,ascii53,ascii54,ascii55,ascii56,ascii57,ascii58,ascii59,ascii60,ascii61,ascii62,ascii64,ascii65,ascii66,ascii67,ascii68,ascii69,ascii70,ascii71,ascii72,ascii73,ascii74,ascii75,ascii76,ascii77,ascii78,ascii79,ascii80,ascii81,ascii82,ascii83,ascii84,ascii85,ascii86,ascii87,ascii88,ascii89,ascii9,ascii90,ascii91,ascii92,ascii93,ascii95,ascii97,ascii98,ascii99};
+type WidthEntry=product{scalar:String;width:Int;};
+let isLetter: Function(String): Bool = function(scalar: String): Bool {
+    scalar == ascii97 || scalar == ascii98 || scalar == ascii99 || scalar == ascii100 || scalar == ascii101 || scalar == ascii102 || scalar == ascii103 || scalar == ascii104 || scalar == ascii105 || scalar == ascii106 || scalar == ascii107 || scalar == ascii108 || scalar == ascii109 || scalar == ascii110 || scalar == ascii111 || scalar == ascii112 || scalar == ascii113 || scalar == ascii114 || scalar == ascii115 || scalar == ascii116 || scalar == ascii117 || scalar == ascii118 || scalar == ascii119 || scalar == ascii120 || scalar == ascii121 || scalar == ascii122 || scalar == ascii65 || scalar == ascii66 || scalar == ascii67 || scalar == ascii68 || scalar == ascii69 || scalar == ascii70 || scalar == ascii71 || scalar == ascii72 || scalar == ascii73 || scalar == ascii74 || scalar == ascii75 || scalar == ascii76 || scalar == ascii77 || scalar == ascii78 || scalar == ascii79 || scalar == ascii80 || scalar == ascii81 || scalar == ascii82 || scalar == ascii83 || scalar == ascii84 || scalar == ascii85 || scalar == ascii86 || scalar == ascii87 || scalar == ascii88 || scalar == ascii89 || scalar == ascii90 || scalar == ascii95
+};
+let isDigit: Function(String): Bool = function(scalar: String): Bool {
+    scalar == ascii48 || scalar == ascii49 || scalar == ascii50 || scalar == ascii51 || scalar == ascii52 || scalar == ascii53 || scalar == ascii54 || scalar == ascii55 || scalar == ascii56 || scalar == ascii57
+};
+let wordKind: Function(String): Int = function(text: String): Int {
+    branch when { text == "assert" || text == "alias" || text == "as" || text == "branch" || text == "break" || text == "continue" || text == "contract" || text == "discard" || text == "else" || text == "function" || text == "implements" || text == "let" || text == "loop" || text == "on" || text == "over" || text == "panic" || text == "product" || text == "return" || text == "sum" || text == "template" || text == "try" || text == "type" || text == "var" || text == "when" || text == "while" || text == "witness" || text == "true" || text == "false" || text == "unit" || text == "namespace" || text == "use" || text == "public" => {return 4;}, else => unit };
+    1
+};
+
+let hexAlphabet:List<String>="0123456789abcdefABCDEF"->scalars();
+let hexDigit:Function(String):Int=function(scalar:String):Int{
+ var index:Int=0;
+ loop over(hexAlphabet as digit:String){
+  branch when{digit==scalar=>{return branch when{index<16=>index,else=>index-6};},else=>unit};
+  index=index+1;
+ };
+ -1
+};
+let pairKind:Function(String):Bool=function(pair:String):Bool{
+ pair=="->"||pair=="=>"||pair=="=="||pair=="!="||pair=="<="||pair==">="||pair=="&&"||pair=="||"||pair=="::"
+};
+public let scanSource:Function(String):Result<Snapshot,Diagnostic>=function(source:String):Result<Snapshot,Diagnostic>{
+ var tokens:Paged<Lexeme>=empty<Lexeme>();
+ var cache:List<WidthEntry>=List<WidthEntry>[];
+ // 0 normal, 1 identifier, 2 decimal, 3 comment, 4 pending operator,
+ // 5 string, 6 escape, 7 unicode opening brace, 8 unicode digits.
+ var state:Int=0;var text:String="";var fragments:List<String>=List<String>[];
+ var start:Int=0;var startLine:Int=1;var startColumn:Int=1;var startScalar:Int=0;
+ var offset:Int=0;var line:Int=1;var column:Int=1;var scalarIndex:Int=0;
+ var previousCR:Bool=false;var leadingZero:Bool=false;
+ var hexValue:Int=0;var hexCount:Int=0;
+ var sourceCursor:Int=0;
+ loop while(sourceCursor<source->length()){
+  let sourceEnd:Int=branch when{source->length()-sourceCursor>1024=>sourceCursor+1024,else=>source->length()};
+  let chunk:String=branch on source->slice(sourceCursor,sourceEnd){
+   Result<String,SliceError>::Ok(value:String)=>value,
+   Result<String,SliceError>::Err(error:SliceError)=>{return Result<Snapshot,Diagnostic>::Err(problem("internal",Span{start:offset,end:offset,line:line,column:column},"source cursor bounds"));},
+  };
+  sourceCursor=sourceEnd;
+  loop over(chunk->scalars() as scalar:String){
+   var width:Int=0;
+   loop over(cache as cached:WidthEntry){branch when{cached->scalar==scalar=>{width=cached->width;break;},else=>unit};};
+   branch when{width==0=>{width=scalarWidth(scalar);branch when{width>1=>{cache=cache->append(WidthEntry{scalar:scalar,width:width});},else=>unit};},else=>unit};
+   let hereStart:Int=offset;let hereLine:Int=line;let hereColumn:Int=column;let hereScalar:Int=scalarIndex;
+   offset=offset+width;scalarIndex=scalarIndex+1;
+   branch when{scalar==ascii13=>{line=line+1;column=1;},scalar==ascii10=>{branch when{!previousCR=>{line=line+1;},else=>unit};column=1;},else=>{column=column+1;}};
+   previousCR=scalar==ascii13;
+   let here:Span=Span{start:hereStart,end:offset,line:hereLine,column:hereColumn};
+   branch when{hereStart==0 && scalar=="\u{feff}"=>{return Result<Snapshot,Diagnostic>::Err(problem("source",here,"BOM is not allowed"));},else=>unit};
+   branch when{state==3=>{branch when{scalar!=ascii13 && scalar!=ascii10=>{continue;},else=>{state=0;}};},else=>unit};
+   branch when{state>=5=>{
+    branch when{scalar==ascii13||scalar==ascii10=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",here,"newline in string"));},else=>unit};
+    branch when{
+     state==5=>{
+      branch when{scalar==ascii34=>{
+       tokens=push<Lexeme>(tokens,Lexeme{kind:5,text:"",site:Site{span:Span{start:start,end:offset,line:startLine,column:startColumn},scalarStart:startScalar,scalarEnd:scalarIndex,endLine:line,endColumn:column}});state=0;
+      },scalar==ascii92=>{state=6;},else=>unit};
+     },
+     state==6=>{
+      branch when{scalar==ascii34||scalar==ascii92||scalar==ascii110||scalar==ascii114||scalar==ascii116||scalar==ascii48=>{state=5;},scalar==ascii117=>{state=7;},else=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",here,"invalid escape"));}};
+     },
+     state==7=>{branch when{scalar!=ascii123=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",here,"expected unicode brace"));},else=>unit};hexValue=0;hexCount=0;state=8;},
+     else=>{
+      branch when{scalar==ascii125=>{
+       branch when{hexCount==0||hexValue>1114111||(hexValue>=55296&&hexValue<=57343)=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",here,"invalid unicode scalar"));},else=>unit};state=5;
+      },else=>{
+       let digit:Int=hexDigit(scalar);
+       branch when{digit<0||hexCount==6=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",here,"invalid unicode escape"));},else=>unit};hexValue=hexValue*16+digit;hexCount=hexCount+1;
+      }};
+     },
+    };
+    continue;
+   },else=>unit};
+   branch when{state==1&&(isLetter(scalar)||isDigit(scalar))=>{fragments=fragments->append(scalar);continue;},else=>unit};
+   branch when{state==2&&isDigit(scalar)=>{
+    branch when{leadingZero=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",here,"leading zero in decimal"));},else=>unit};continue;
+   },else=>unit};
+   branch when{state==1||state==2=>{
+    branch when{state==2&&isLetter(scalar)=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",here,"invalid decimal suffix"));},else=>unit};
+    let name:String=branch when{state==1=>fragments->join(""),else=>""};
+    tokens=push<Lexeme>(tokens,Lexeme{kind:branch when{state==1=>wordKind(name),else=>2},text:name,site:Site{span:Span{start:start,end:hereStart,line:startLine,column:startColumn},scalarStart:startScalar,scalarEnd:hereScalar,endLine:hereLine,endColumn:hereColumn}});state=0;
+   },else=>unit};
+   branch when{state==4=>{
+    let pair:String=text+scalar;
+    branch when{
+     pair=="//"=>{state=3;continue;},
+     pairKind(pair)=>{tokens=push<Lexeme>(tokens,Lexeme{kind:3,text:pair,site:Site{span:Span{start:start,end:offset,line:startLine,column:startColumn},scalarStart:startScalar,scalarEnd:scalarIndex,endLine:line,endColumn:column}});state=0;continue;},
+     else=>{
+      branch when{(text==ascii38||text==ascii124)=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",Span{start:start,end:hereStart,line:startLine,column:startColumn},"incomplete operator"));},else=>unit};
+      tokens=push<Lexeme>(tokens,Lexeme{kind:3,text:text,site:Site{span:Span{start:start,end:hereStart,line:startLine,column:startColumn},scalarStart:startScalar,scalarEnd:hereScalar,endLine:hereLine,endColumn:hereColumn}});state=0;
+     },
+    };
+   },else=>unit};
+   branch when{
+    scalar==ascii32||scalar==ascii9||scalar==ascii13||scalar==ascii10=>unit,
+    isLetter(scalar)=>{state=1;fragments=List<String>[scalar];},
+    isDigit(scalar)=>{state=2;leadingZero=scalar==ascii48;},
+    scalar==ascii34=>{state=5;},
+    scalar==ascii47||scalar==ascii45||scalar==ascii43||scalar==ascii61||scalar==ascii33||scalar==ascii60||scalar==ascii62||scalar==ascii38||scalar==ascii124||scalar==ascii58=>{state=4;text=scalar;},
+    scalar==ascii123||scalar==ascii125||scalar==ascii40||scalar==ascii41||scalar==ascii59||scalar==ascii44||scalar==ascii92||scalar==ascii42||scalar==ascii37||scalar==ascii91||scalar==ascii93||scalar==ascii64=>{
+     tokens=push<Lexeme>(tokens,Lexeme{kind:3,text:scalar,site:Site{span:here,scalarStart:hereScalar,scalarEnd:scalarIndex,endLine:line,endColumn:column}});
+    },
+    else=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",here,"invalid source character"));},
+   };
+   start=hereStart;startLine=hereLine;startColumn=hereColumn;startScalar=hereScalar;
+  };
+ };
+ let endSite:Site=Site{span:Span{start:offset,end:offset,line:line,column:column},scalarStart:scalarIndex,scalarEnd:scalarIndex,endLine:line,endColumn:column};
+ branch when{state>=5=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",endSite->span,"unterminated string"));},else=>unit};
+ branch when{state==1||state==2||state==4=>{
+  branch when{state==4&&(text==ascii38||text==ascii124)=>{return Result<Snapshot,Diagnostic>::Err(problem("lexical",endSite->span,"incomplete operator"));},else=>unit};
+  let name:String=branch when{state==1=>fragments->join(""),state==4=>text,else=>""};
+  tokens=push<Lexeme>(tokens,Lexeme{kind:branch when{state==1=>wordKind(name),state==2=>2,else=>3},text:name,site:Site{span:Span{start:start,end:offset,line:startLine,column:startColumn},scalarStart:startScalar,scalarEnd:scalarIndex,endLine:line,endColumn:column}});
+ },else=>unit};
+ tokens=push<Lexeme>(tokens,Lexeme{kind:0,text:"",site:endSite});
+ Result<Snapshot,Diagnostic>::Ok(Snapshot{text:source,tokens:tokens,end:endSite})
+};

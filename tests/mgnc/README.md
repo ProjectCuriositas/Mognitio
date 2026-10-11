@@ -16,6 +16,10 @@ Run foundation.py, frontend.py, parser.py, checker.py, ir.py,
 ir-definitions.py, encoding.py and driver-internal.py with --seed SEED.
 Check generated width data with generate-width.py --check.
 
+The v1.4 internal source snapshot, string lexer and residual terminal scanner
+are checked by shared_lexer.py --seed SEED. They are isolated from the public
+Driver until the shared structural parser and native bridge are ready.
+
 Run source_profile.py, native.py, workloads.py, driver.py and faults.py with
 --compiler COMPILER. Native execution can also compare against the independent
 fixed seed using --seed SEED. Tests cover immutable operands, non-completion,

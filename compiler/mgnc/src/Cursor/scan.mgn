@@ -1,0 +1,42 @@
+namespace Mgnc\Cursor;
+use Mgnc\Data\{Diagnostic,Span,lookup,problem};
+use Mgnc\Source\{Snapshot,Lexeme,Site};
+public type Terminal=product{token:Lexeme;next:Int;};
+// Integer cursor = token index * 2 + ASCII part (operators have at most two characters).
+// A token end always normalizes to the next token's part zero.
+let character:Function(Lexeme,Int):Result<String,Diagnostic>=function(token:Lexeme,part:Int):Result<String,Diagnostic>{
+ branch on token->text->slice(part,part+1){
+  Result<String,SliceError>::Ok(value:String)=>Result<String,Diagnostic>::Ok(value),
+  Result<String,SliceError>::Err(error:SliceError)=>Result<String,Diagnostic>::Err(problem("internal",token->site->span,"invalid operator cursor")),
+ }
+};
+let advance:Function(Lexeme,Int):Int=function(token:Lexeme,cursor:Int):Int{
+ branch when{cursor%2+1==token->text->length()=>(cursor/2+1)*2,else=>cursor+1}
+};
+let paired:Function(String):Bool=function(value:String):Bool{
+ value=="->"||value=="=>"||value=="=="||value=="!="||value=="<="||value==">="||value=="&&"||value=="||"||value=="::"
+};
+public let scanAt:Function(Snapshot,Int,Bool):Result<Terminal,Diagnostic>=function(source:Snapshot,cursor:Int,genericClose:Bool):Result<Terminal,Diagnostic>{
+ let original:Lexeme=try lookup<Lexeme>(source->tokens,cursor/2);
+ let part:Int=cursor%2;
+ branch when{original->kind!=3=>{
+  branch when{part!=0=>{return Result<Terminal,Diagnostic>::Err(problem("internal",original->site->span,"part in non-operator"));},else=>unit};
+  return Result<Terminal,Diagnostic>::Ok(Terminal{token:original,next:branch when{original->kind==0=>cursor,else=>cursor+2}});
+ },else=>unit};
+ let first:String=try character(original,part);
+ branch when{part==0&&(!genericClose||first!=">")=>{return Result<Terminal,Diagnostic>::Ok(Terminal{token:original,next:cursor+2});},else=>unit};
+ var text:String=first;var next:Int=advance(original,cursor);
+ var end:Int=original->site->span->start+part+1;
+ var scalarEnd:Int=original->site->scalarStart+part+1;
+ var endColumn:Int=original->site->span->column+part+1;
+ branch when{!genericClose||first!=">"=>{
+  let following:Lexeme=try lookup<Lexeme>(source->tokens,next/2);
+  branch when{following->kind==3 && following->site->span->start+next%2==end=>{
+   let second:String=try character(following,next%2);
+   let combined:String=first+second;
+   branch when{paired(combined)=>{text=combined;next=advance(following,next);end=end+1;scalarEnd=scalarEnd+1;endColumn=endColumn+1;},else=>unit};
+  },else=>unit};
+ },else=>unit};
+ let token:Lexeme=Lexeme{kind:3,text:text,site:Site{span:Span{start:original->site->span->start+part,end:end,line:original->site->span->line,column:original->site->span->column+part},scalarStart:original->site->scalarStart+part,scalarEnd:scalarEnd,endLine:original->site->span->line,endColumn:endColumn}};
+ Result<Terminal,Diagnostic>::Ok(Terminal{token:token,next:next})
+};

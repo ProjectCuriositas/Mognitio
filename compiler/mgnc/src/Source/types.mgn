@@ -1,0 +1,12 @@
+namespace Mgnc\Source;
+use Mgnc\Data\{Span,Paged,Diagnostic,problem};
+// Original scalar ranges retain huge literals without decoding or copying them.
+public type Site=product{span:Span;scalarStart:Int;scalarEnd:Int;endLine:Int;endColumn:Int;};
+public type Lexeme=product{kind:Int;text:String;site:Site;};
+public type Snapshot=product{text:String;tokens:Paged<Lexeme>;end:Site;};
+public let spelling:Function(Snapshot,Lexeme):Result<String,Diagnostic>=function(source:Snapshot,token:Lexeme):Result<String,Diagnostic>{
+ branch on source->text->slice(token->site->scalarStart,token->site->scalarEnd){
+  Result<String,SliceError>::Ok(value:String)=>Result<String,Diagnostic>::Ok(value),
+  Result<String,SliceError>::Err(error:SliceError)=>Result<String,Diagnostic>::Err(problem("internal",token->site->span,"invalid source range")),
+ }
+};
